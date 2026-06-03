@@ -26,7 +26,7 @@ class BookingCard extends StatelessWidget {
           InkWell(
             onTap: () => Navigator.pushNamed(
               context,
-              AppRoutes.bookingFlow,
+              AppRoutes.clubDetailed,
               arguments: BookingTarget.fromBooking(booking),
             ),
             borderRadius: const BorderRadius.vertical(

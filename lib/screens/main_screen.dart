@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/screens/bookings/bookings_screen.dart';
 import 'package:sportbook/screens/settings/settings_screen.dart';
 import '../widgets/navbar/bottom_navbar.dart';
 import 'home/home_screen.dart';
@@ -14,9 +15,9 @@ class _MainScreenState extends State<MainScreen> {
 
   static const _screens = [
     HomeScreen(),
-    _PlaceholderScreen(icon: Icons.search_rounded,          label: 'Explore'),
-    _PlaceholderScreen(icon: Icons.calendar_month_rounded,  label: 'Bookings'),
-    _PlaceholderScreen(icon: Icons.group_rounded,           label: 'Players'),
+    _PlaceholderScreen(icon: Icons.search_rounded, label: 'Explore'),
+    BookingsScreen(),
+    _PlaceholderScreen(icon: Icons.group_rounded, label: 'Players'),
     SettingsScreen(),
   ];
 
@@ -39,12 +40,18 @@ class _PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Center(child: Column(
-      mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: Colors.white38, size: 48),
-        const SizedBox(height: 12),
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 18)),
-      ],
-    )),
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white38, size: 48),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white38, fontSize: 18),
+          ),
+        ],
+      ),
+    ),
   );
 }
