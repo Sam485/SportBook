@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/widgets/common/banner_carousel.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../services/data_service.dart';
@@ -159,78 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Banner ────────────────────────────────────────────────────────────────
   Widget _banner() => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-    child: Container(
-      height: 138,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          colors: [const Color(0xFF1A5276), AppTheme.kAccent.withOpacity(0.85)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.kAccent.withOpacity(0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(right: -24, top: -24, child: _circle(130, 0.08)),
-          Positioned(right: 30, bottom: -36, child: _circle(90, 0.06)),
-          const Positioned(
-            right: 28,
-            top: 16,
-            child: Text('⚽', style: TextStyle(fontSize: 28)),
-          ),
-          const Positioned(
-            right: 80,
-            bottom: 16,
-            child: Text('🏸', style: TextStyle(fontSize: 22)),
-          ),
-          const Positioned(
-            right: 16,
-            bottom: 16,
-            child: Text('🏀', style: TextStyle(fontSize: 20)),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Book Your Next\nSport Session',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    height: 1.2,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Find courts, book slots, meet players',
-                  style: TextStyle(color: Colors.white70, fontSize: 12.5),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-
-  Widget _circle(double s, double o) => Container(
-    width: s,
-    height: s,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withOpacity(o),
-    ),
+    child: const BannerCarousel(),
   );
 
   // ── Categories ────────────────────────────────────────────────────────────

@@ -5,7 +5,11 @@ class SportCategory {
   final String id;
   final String name;
   final String emoji;
-  const SportCategory({required this.id, required this.name, required this.emoji});
+  const SportCategory({
+    required this.id,
+    required this.name,
+    required this.emoji,
+  });
 }
 
 // ─── Sport Club ───────────────────────────────────────────────────────────────
@@ -13,7 +17,7 @@ class SportClub {
   final String id;
   final String name;
   final String initials;
-  final Color  color;
+  final Color color;
   final double distanceKm;
   final String openTime;
   final String closeTime;
@@ -21,7 +25,7 @@ class SportClub {
   final String description;
   final List<String> sports;
   final List<String> imageUrls;
-  final int    totalCourts;
+  final int totalCourts;
   final double pricePerHour;
 
   const SportClub({
@@ -49,14 +53,14 @@ class SportBooking {
   final String title;
   final String ownerName;
   final String ownerInitials;
-  final Color  ownerColor;
+  final Color ownerColor;
   final List<String> sportTypes;
   final String venue;
   final List<String> imageUrls;
   final String openTime;
   final String closeTime;
-  final int    bookedSlots;
-  final int    totalSlots;
+  final int bookedSlots;
+  final int totalSlots;
 
   const SportBooking({
     required this.id,
@@ -81,13 +85,13 @@ class BookingTarget {
   final String id;
   final String name;
   final String initials;
-  final Color  color;
+  final Color color;
   final List<String> sports;
   final String venue;
   final List<String> imageUrls;
   final String openTime;
   final String closeTime;
-  final int    totalCourts;
+  final int totalCourts;
   final double pricePerHour;
 
   const BookingTarget({
@@ -107,40 +111,67 @@ class BookingTarget {
   bool get isGym => sports.any((s) => s == 'Gym');
 
   factory BookingTarget.fromClub(SportClub c) => BookingTarget(
-        id:          c.id,
-        name:        c.name,
-        initials:    c.initials,
-        color:       c.color,
-        sports:      c.sports,
-        venue:       c.venue,
-        imageUrls:   c.imageUrls,
-        openTime:    c.openTime,
-        closeTime:   c.closeTime,
-        totalCourts: c.totalCourts,
-        pricePerHour: c.pricePerHour,
-      );
+    id: c.id,
+    name: c.name,
+    initials: c.initials,
+    color: c.color,
+    sports: c.sports,
+    venue: c.venue,
+    imageUrls: c.imageUrls,
+    openTime: c.openTime,
+    closeTime: c.closeTime,
+    totalCourts: c.totalCourts,
+    pricePerHour: c.pricePerHour,
+  );
 
   factory BookingTarget.fromBooking(SportBooking b) => BookingTarget(
-        id:          b.id,
-        name:        b.title,
-        initials:    b.ownerInitials,
-        color:       b.ownerColor,
-        sports:      b.sportTypes.toSet().toList(),
-        venue:       b.venue,
-        imageUrls:   b.imageUrls,
-        openTime:    b.openTime,
-        closeTime:   b.closeTime,
-        totalCourts: b.totalSlots,
-        pricePerHour: 12.0,
-      );
+    id: b.id,
+    name: b.title,
+    initials: b.ownerInitials,
+    color: b.ownerColor,
+    sports: b.sportTypes.toSet().toList(),
+    venue: b.venue,
+    imageUrls: b.imageUrls,
+    openTime: b.openTime,
+    closeTime: b.closeTime,
+    totalCourts: b.totalSlots,
+    pricePerHour: 12.0,
+  );
 }
 
 // ─── Trainer ──────────────────────────────────────────────────────────────────
 class Trainer {
-  final int    index;
+  final int index;
   final String name;
   final String specialty;
   final String imageUrl;
-  const Trainer({required this.index, required this.name,
-      required this.specialty, required this.imageUrl});
+  const Trainer({
+    required this.index,
+    required this.name,
+    required this.specialty,
+    required this.imageUrl,
+  });
+}
+
+// ─── PaymentMethod ──────────────────────────────────────────────────────────────────
+enum PaymentMethod { cash, ecash }
+
+extension PaymentMethodExtension on PaymentMethod {
+  String get displayName {
+    switch (this) {
+      case PaymentMethod.cash:
+        return 'Cash';
+      case PaymentMethod.ecash:
+        return 'E-Cash';
+    }
+  }
+
+  String get apiValue {
+    switch (this) {
+      case PaymentMethod.cash:
+        return 'CASH';
+      case PaymentMethod.ecash:
+        return 'E_CASH';
+    }
+  }
 }

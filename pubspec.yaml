@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_nav_bar: ^5.0.7
   provider: ^6.1.2
+  time_range: ^1.1.1
+  carousel_slider: ^5.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
