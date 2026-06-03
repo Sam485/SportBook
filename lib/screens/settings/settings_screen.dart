@@ -130,10 +130,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.all(15),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: AppTheme.kAccent,
-            child: const Icon(Icons.person, color: Colors.white),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: Image.network(
+              'https://i.pravatar.cc/150?img=3',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: AppTheme.kCardAlt,
+                child: const Icon(
+                  Icons.image_not_supported,
+                  color: AppTheme.kTextSub,
+                  size: 36,
+                ),
+              ),
+              loadingBuilder: (_, c, p) => p == null
+                  ? c
+                  : Container(
+                      color: AppTheme.kCardAlt,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.kAccent,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+            ),
           ),
           Text(
             'John Doe',
