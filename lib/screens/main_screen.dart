@@ -17,7 +17,6 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     _PlaceholderScreen(icon: Icons.search_rounded, label: 'Explore'),
     BookingsScreen(),
-    _PlaceholderScreen(icon: Icons.group_rounded, label: 'Players'),
     SettingsScreen(),
   ];
 
