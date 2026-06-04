@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sportbook/screens/booking_flow/steps/step_payment.dart';
+import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../providers/booking_provider.dart';
 import 'steps/step_category.dart';
 import 'steps/step_court.dart';
-import 'steps/step_date.dart';
-import 'steps/step_time.dart';
+import 'steps/step_date_time.dart';
 
 class BookingFlowScreen extends StatefulWidget {
   final BookingTarget target;
@@ -26,7 +27,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   int get _totalSteps => _skipCategory ? 3 : 4;
 
   List<String> get _stepLabels => _skipCategory
-      ? ['Court', 'Date', 'Time']
+      ? ['Court', 'Date-Time', 'Payment']
       : ['Category', 'Court', 'Date', 'Time'];
 
   @override
@@ -108,14 +109,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                 children: _skipCategory
                     ? [
                         StepCourt(onNext: _next),
-                        StepDate(onNext: _next),
-                        StepTime(onConfirm: () => _handleConfirm(provider)),
+                        StepDateAndTime(onConfirm: _next),
+                        StepPayment(onConfirm: () => _handleConfirm(provider)),
                       ]
                     : [
                         StepCategory(onNext: _next),
                         StepCourt(onNext: _next),
-                        StepDate(onNext: _next),
-                        StepTime(onConfirm: () => _handleConfirm(provider)),
+                        StepDateAndTime(onConfirm: _next),
+                        StepPayment(onConfirm: () => _handleConfirm(provider)),
                       ],
               ),
             ),
@@ -205,44 +206,16 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   void _handleConfirm(BookingProvider p) {
     if (!p.canConfirm) return;
     p.confirmBooking();
-    final sport = p.selectedSport ?? '';
-    final court = p.selectedCourt!;
-    final date = _fmtDate(p.selectedDate!);
-    final time = p.timeRangeLabel;
-    final price = p.totalPrice.toStringAsFixed(0);
-
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '✅  ${widget.target.name} · $sport · Court $court · $date · $time · \$$price',
-          style: TextStyle(color: Colors.white.withOpacity(0.9)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PaymentSuccessPage(
+          onGoHome: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onViewBooking: () {
+            // Navigate to booking detail/history page
+          },
         ),
-        backgroundColor: const Color(0xFF1A3A5C),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        duration: const Duration(seconds: 4),
       ),
     );
-  }
-
-  static String _fmtDate(DateTime d) {
-    const m = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final isToday = DateUtils.isSameDay(d, DateTime.now());
-    return isToday ? 'Today' : '${m[d.month - 1]} ${d.day}';
   }
 }
 
