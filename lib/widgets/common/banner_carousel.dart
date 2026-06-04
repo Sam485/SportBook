@@ -1,0 +1,104 @@
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/material.dart';
+import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/services/data_service.dart';
+
+class BannerCarousel extends StatefulWidget {
+  const BannerCarousel({super.key});
+
+  @override
+  State<BannerCarousel> createState() => _BannerCarouselState();
+}
+
+class _BannerCarouselState extends State<BannerCarousel> {
+  int _page = 0;
+  List<String> bannerUrl = [
+    'https://imgs.search.brave.com/XNAVwFxoVagfWe_ADlCQObgy3cTH3zT9UzAB4tm8k3E/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzdkLzU2/Lzg1LzdkNTY4NWJk/NTBmZjQ2MmRkM2Iw/ZjMxZmM4ZDcwYzli/LmpwZw',
+    'https://imgs.search.brave.com/kNCsOQhi-aUgzvIEIuQOF4iAGo-gg_m7klVqN63-3us/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9taXIt/czMtY2RuLWNmLmJl/aGFuY2UubmV0L3By/b2plY3RzLzQwNC8w/NTBiYzkyNDk2Mjg1/MjMuWTNKdmNDdzRN/akFzTmpReExEVTBP/Q3d4T0RJLnBuZw',
+    'https://imgs.search.brave.com/FiemXdsZE4tViFUT3XQbo4cdSC1OS0Rhy-WwWO6i2i4/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS1wc2Qvc3Bv/cnQtY29uY2VwdC1i/YW5uZXItdGVtcGxh/dGUtZGVzaWduXzIz/LTIxNDg1MzgxNjIu/anBnP3NlbXQ9YWlz/X2h5YnJpZCZ3PTc0/MCZxPTgw',
+    'https://imgs.search.brave.com/2zEovOYU5ZJCLn92gtNi84eHOXMkd4LL0UXJYhEf2oY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/Z2F0b3JwcmludHMu/Y29tL3dwLWNvbnRl/bnQvdXBsb2Fkcy8y/MDE1LzAzL0Zvb3Ri/YWxsLUZpcmUtU3Bv/cnRzLUJhbm5lci0x/OTIweDk2MC5qcGc',
+    'https://imgs.search.brave.com/GbaPJVSOcJ-W71AvFWGNTnDgbWVmnksL9PZOI5F5pOQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2Y2LzVk/L2QxL2Y2NWRkMWFj/MTNhNzYwYTc2YzQ5/ZmE0ODRmODhkNmMx/LmpwZw',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        CarouselSlider(
+          options: CarouselOptions(
+            height: 150,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 5),
+            autoPlayAnimationDuration: const Duration(milliseconds: 800),
+            autoPlayCurve: Curves.fastOutSlowIn,
+            viewportFraction: 1.0,
+            enlargeCenterPage: false,
+            pauseAutoPlayOnTouch: true,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _page = index;
+              });
+            },
+          ),
+          items: bannerUrl.map((url) {
+            return Builder(
+              builder: (BuildContext context) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    url,
+                    width: MediaQuery.of(context).size.width,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: AppTheme.kCardAlt,
+                      child: const Icon(
+                        Icons.image_not_supported,
+                        color: AppTheme.kTextSub,
+                        size: 36,
+                      ),
+                    ),
+                    loadingBuilder: (_, c, p) => p == null
+                        ? c
+                        : Container(
+                            color: AppTheme.kCardAlt,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: AppTheme.kAccent,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                  ),
+                );
+              },
+            );
+          }).toList(),
+        ),
+        if (bannerUrl.length > 1)
+          Positioned(
+            bottom: 10,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                bannerUrl.length,
+                (i) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: i == _page ? 18 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: i == _page
+                        ? AppTheme.kAccent
+                        : Colors.white.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

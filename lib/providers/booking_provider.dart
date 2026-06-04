@@ -4,11 +4,11 @@ import '../models/models.dart';
 class BookingProvider extends ChangeNotifier {
   // ── Flow state ─────────────────────────────────────────────────────────────
   BookingTarget? target;
-  String?   selectedSport;
-  int?      selectedCourt;   // court number (1-based) or trainer index
+  String? selectedSport;
+  int? selectedCourt; // court number (1-based) or trainer index
   DateTime? selectedDate;
-  int?      startHour;       // 0-23
-  int?      endHour;         // 0-23, exclusive (endHour > startHour)
+  int? startHour; // 0-23
+  int? endHour; // 0-23, exclusive (endHour > startHour)
 
   // ── Persisted bookings ─────────────────────────────────────────────────────
   // Key: "targetId-courtNum-yyyyMMdd-sport"
@@ -25,9 +25,9 @@ class BookingProvider extends ChangeNotifier {
 
   bool get canConfirm =>
       selectedCourt != null &&
-      selectedDate  != null &&
-      startHour     != null &&
-      endHour       != null &&
+      selectedDate != null &&
+      startHour != null &&
+      endHour != null &&
       endHour! > startHour!;
 
   String get timeRangeLabel {
@@ -38,39 +38,38 @@ class BookingProvider extends ChangeNotifier {
   int get durationHours =>
       (startHour != null && endHour != null) ? endHour! - startHour! : 0;
 
-  double get totalPrice =>
-      durationHours * (target?.pricePerHour ?? 0);
+  double get totalPrice => durationHours * (target?.pricePerHour ?? 0);
 
   // ── Setters ────────────────────────────────────────────────────────────────
   void setTarget(BookingTarget t) {
-    target        = t;
+    target = t;
     selectedSport = t.sports.length == 1 ? t.sports.first : null;
     selectedCourt = null;
-    selectedDate  = null;
-    startHour     = null;
-    endHour       = null;
+    selectedDate = null;
+    startHour = null;
+    endHour = null;
     notifyListeners();
   }
 
   void selectSport(String sport) {
     selectedSport = sport;
     selectedCourt = null;
-    startHour     = null;
-    endHour       = null;
+    startHour = null;
+    endHour = null;
     notifyListeners();
   }
 
   void selectCourt(int court) {
     selectedCourt = court;
-    startHour     = null;
-    endHour       = null;
+    startHour = null;
+    endHour = null;
     notifyListeners();
   }
 
   void selectDate(DateTime date) {
     selectedDate = date;
-    startHour    = null;
-    endHour      = null;
+    startHour = null;
+    endHour = null;
     notifyListeners();
   }
 
@@ -87,7 +86,8 @@ class BookingProvider extends ChangeNotifier {
 
   // ── Booking conflict helpers ───────────────────────────────────────────────
   String _rangeKey(int court, DateTime date, String sport) {
-    final d = '${date.year}${date.month.toString().padLeft(2,'0')}${date.day.toString().padLeft(2,'0')}';
+    final d =
+        '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
     return '${target?.id ?? ''}-$court-$d-$sport';
   }
 
@@ -117,19 +117,30 @@ class BookingProvider extends ChangeNotifier {
   }
 
   void reset() {
-    target        = null;
+    target = null;
     selectedSport = null;
     selectedCourt = null;
-    selectedDate  = null;
-    startHour     = null;
-    endHour       = null;
+    selectedDate = null;
+    startHour = null;
+    endHour = null;
     notifyListeners();
   }
 
   // ── Helper ─────────────────────────────────────────────────────────────────
   static String _fmtH(int h) {
-    final p  = h >= 12 ? 'PM' : 'AM';
+    final p = h >= 12 ? 'PM' : 'AM';
     final hr = h % 12 == 0 ? 12 : h % 12;
     return '$hr:00 $p';
+  }
+
+  void clearTimeSelection() {
+    startHour = null;
+    endHour = null;
+    notifyListeners();
+  }
+
+  void clearEndHour() {
+    endHour = null;
+    notifyListeners();
   }
 }

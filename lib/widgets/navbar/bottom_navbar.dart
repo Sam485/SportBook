@@ -18,9 +18,13 @@ class AppBottomNavBar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Color(0xFF0C1E34),
         border: Border(top: BorderSide(color: AppTheme.kBorder, width: 1)),
-        boxShadow: [BoxShadow(
-            color: Colors.black38, blurRadius: 20,
-            offset: Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -37,11 +41,10 @@ class AppBottomNavBar extends StatelessWidget {
             selectedIndex: selectedIndex,
             onTabChange: onTabChange,
             tabs: const [
-              GButton(icon: Icons.home_rounded,            text: 'Home'),
-              GButton(icon: Icons.search_rounded,          text: 'Explore'),
-              GButton(icon: Icons.calendar_month_rounded,  text: 'Bookings'),
-              GButton(icon: Icons.group_rounded,           text: 'Players'),
-              GButton(icon: Icons.settings_rounded,        text: 'Settings'),
+              GButton(icon: Icons.home_rounded, text: 'Home'),
+              GButton(icon: Icons.search_rounded, text: 'Explore'),
+              GButton(icon: Icons.calendar_month_rounded, text: 'Bookings'),
+              GButton(icon: Icons.settings_rounded, text: 'Settings'),
             ],
           ),
         ),
