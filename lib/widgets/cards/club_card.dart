@@ -68,7 +68,7 @@ class _ClubCardState extends State<ClubCard> {
       child: InkWell(
         onTap: () => Navigator.pushNamed(
           context,
-          AppRoutes.bookingFlow,
+          AppRoutes.clubDetailed,
           arguments: BookingTarget.fromClub(c),
         ),
         child: Column(
