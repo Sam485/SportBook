@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _validateAndLogin() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, AppRoutes.verify);
+      Navigator.pushNamed(context, AppRoutes.verify, arguments: false);
     }
   }
 

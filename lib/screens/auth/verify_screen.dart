@@ -6,7 +6,8 @@ import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
 
 class VerifyScreen extends StatefulWidget {
-  const VerifyScreen({super.key});
+  bool isSignUp;
+  VerifyScreen({super.key, required this.isSignUp});
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
@@ -102,7 +103,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
     await Future.delayed(const Duration(seconds: 2)); // simulate API call
     setState(() => _isLoading = false);
     if (mounted) {
-      Navigator.pushNamed(context, AppRoutes.home);
+      if (widget.isSignUp == true) {
+        Navigator.pushNamed(context, AppRoutes.createProfile);
+      } else {
+        Navigator.pushNamed(context, AppRoutes.home);
+      }
     }
   }
 
