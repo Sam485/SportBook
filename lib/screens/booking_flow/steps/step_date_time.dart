@@ -194,26 +194,26 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   // Handle confirm with validation
-  void _handleConfirm(BookingProvider p) {
-    if (!p.canConfirm) return;
+  // void _handleConfirm(BookingProvider p) {
+  //   if (!p.canConfirm) return;
 
-    final sport = p.selectedSport ?? '';
-    final court = p.selectedCourt ?? 0;
-    final date = p.selectedDate!;
-    final startHour = p.startHour!;
-    final endHour = p.endHour!;
+  //   final sport = p.selectedSport ?? '';
+  //   final court = p.selectedCourt ?? 0;
+  //   final date = p.selectedDate!;
+  //   final startHour = p.startHour!;
+  //   final endHour = p.endHour!;
 
-    // Check if the selected time is already booked
-    if (_isTimeRangeBooked(p, court, date, sport, startHour, endHour)) {
-      _showTimeBookedAlert(context, startHour, endHour);
-      // Clear the invalid time selection
-      p.clearTimeSelection();
-      return;
-    }
+  //   // Check if the selected time is already booked
+  //   if (_isTimeRangeBooked(p, court, date, sport, startHour, endHour)) {
+  //     _showTimeBookedAlert(context, startHour, endHour);
+  //     // Clear the invalid time selection
+  //     p.clearTimeSelection();
+  //     return;
+  //   }
 
-    // If validation passes, proceed with confirmation
-    widget.onConfirm();
-  }
+  //   // If validation passes, proceed with confirmation
+  //   widget.onConfirm();
+  // }
 
   @override
   Widget build(BuildContext context) {

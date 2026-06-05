@@ -79,17 +79,17 @@ class _StepPaymentState extends State<StepPayment>
     _detailAnim.forward(from: 0);
   }
 
-  void _handleConfirm() {
-    if (_formKey.currentState!.validate()) {
-      // Save user info to provider or pass to parent
-      final p = context.read<BookingProvider>();
-      p.setUserInfo(
-        name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
-      );
-      widget.onConfirm();
-    }
-  }
+  // void _handleConfirm() {
+  //   if (_formKey.currentState!.validate()) {
+  //     // Save user info to provider or pass to parent
+  //     final p = context.read<BookingProvider>();
+  //     p.setUserInfo(
+  //       name: _nameController.text.trim(),
+  //       phone: _phoneController.text.trim(),
+  //     );
+  //     widget.onConfirm();
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -988,16 +988,16 @@ class _KhqrIcon extends StatelessWidget {
 }
 
 // ── Cash Icon ────────────────────────────────────────────────────────────────
-class _CashIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Icon(
-      Icons.payments_rounded,
-      color: Color(0xFF4CAF50),
-      size: 28,
-    );
-  }
-}
+// class _CashIcon extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return const Icon(
+//       Icons.payments_rounded,
+//       color: Color(0xFF4CAF50),
+//       size: 28,
+//     );
+//   }
+// }
 
 // ── Mock QR Painter ──────────────────────────────────────────────────────────
 class _MockQrPainter extends CustomPainter {
