@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/screens/auth/create_profile_screen.dart';
 import 'package:sportbook/screens/auth/forget_screen.dart';
 import 'package:sportbook/screens/auth/landing_screen.dart';
 import 'package:sportbook/screens/auth/login_screen.dart';
@@ -18,14 +19,21 @@ class AppRoutes {
   static const login = '/login';
   static const forget = '/forget';
   static const verify = '/verify';
+  static const createProfile = '/createProfile';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
         return MaterialPageRoute(builder: (_) => const MainScreen());
 
+      case createProfile:
+        return MaterialPageRoute(builder: (_) => CreateProfileScreen());
+
       case verify:
-        return MaterialPageRoute(builder: (_) => const VerifyScreen());
+        final target = settings.arguments as bool;
+        return MaterialPageRoute(
+          builder: (_) => VerifyScreen(isSignUp: target),
+        );
 
       case forget:
         return MaterialPageRoute(builder: (_) => const ForgetScreen());
