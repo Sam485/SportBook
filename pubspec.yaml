@@ -38,6 +38,7 @@ dependencies:
   provider: ^6.1.2
   time_range: ^1.1.1
   carousel_slider: ^5.1.2
+  image_picker: ^1.2.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
