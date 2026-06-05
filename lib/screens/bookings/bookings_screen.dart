@@ -7,12 +7,11 @@ class BookingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text('Bookings')),
       body: SafeArea(
-        child: Center(
-          child: Text(
-            'Bookings Screen',
-            style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
-          ),
+        child: CustomScrollView(
+          physics: ClampingScrollPhysics(),
+          slivers: [SliverToBoxAdapter()],
         ),
       ),
     );
