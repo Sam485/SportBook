@@ -56,6 +56,59 @@ class AppTheme {
     fontWeight: FontWeight.w700,
   );
 
+  static const tsLabel = TextStyle(fontSize: 16, color: Colors.white);
+
+  static const tsButtonLabel = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.3,
+  );
+
+  // ── Elevated Button Style ────────────────────────────────────────────────────
+  static final elevatedButtonStyle = ElevatedButton.styleFrom(
+    backgroundColor: kAccent,
+    foregroundColor: Colors.white,
+    elevation: 0,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  );
+
+  static final outlineButtonStyle = OutlinedButton.styleFrom(
+    foregroundColor: Colors.white,
+    side: const BorderSide(color: Color(0xFF2E3548), width: 1.5),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  );
+  // ── TextField helpers ────────────────────────────────────────────────────
+  static InputDecoration textFieldDecoration(
+    IconData icon,
+    String label, {
+    double radius = 20,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: 'Enter your $label',
+      prefixIcon: Icon(icon),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(radius)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radius),
+        borderSide: const BorderSide(color: Colors.grey),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radius),
+        borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radius),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radius),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
   // ── Decoration helpers ────────────────────────────────────────────────────
   static BoxDecoration cardDecoration({double radius = 20}) => BoxDecoration(
     color: kCard,
