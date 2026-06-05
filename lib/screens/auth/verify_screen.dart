@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
 
+// ignore: must_be_immutable
 class VerifyScreen extends StatefulWidget {
   bool isSignUp;
   VerifyScreen({super.key, required this.isSignUp});
