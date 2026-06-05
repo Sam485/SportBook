@@ -68,7 +68,7 @@ class _ClubCardState extends State<ClubCard> {
       child: InkWell(
         onTap: () => Navigator.pushNamed(
           context,
-          AppRoutes.clubDetailed,
+          AppRoutes.bookingFlow,
           arguments: BookingTarget.fromClub(c),
         ),
         child: Column(
@@ -196,86 +196,93 @@ class _ClubCardState extends State<ClubCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name + hours
-                  Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: c.color.withOpacity(0.2),
-                          border: Border.all(color: c.color, width: 1.8),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          c.initials,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                  InkWell(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.clubDetailed,
+                      arguments: BookingTarget.fromClub(c),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: c.color.withOpacity(0.2),
+                            border: Border.all(color: c.color, width: 1.8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            c.initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              c.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                c.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.lock_open_outlined,
-                                  color: AppTheme.kAccent,
-                                  size: 11,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  c.openTime,
-                                  style: const TextStyle(
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.lock_open_outlined,
                                     color: AppTheme.kAccent,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
+                                    size: 11,
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  width: 3,
-                                  height: 3,
-                                  decoration: const BoxDecoration(
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    c.openTime,
+                                    style: const TextStyle(
+                                      color: AppTheme.kAccent,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    width: 3,
+                                    height: 3,
+                                    decoration: const BoxDecoration(
+                                      color: AppTheme.kTextSub,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.lock_outline,
                                     color: AppTheme.kTextSub,
-                                    shape: BoxShape.circle,
+                                    size: 11,
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Icon(
-                                  Icons.lock_outline,
-                                  color: AppTheme.kTextSub,
-                                  size: 11,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  c.closeTime,
-                                  style: const TextStyle(
-                                    color: AppTheme.kTextSub,
-                                    fontSize: 10,
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    c.closeTime,
+                                    style: const TextStyle(
+                                      color: AppTheme.kTextSub,
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 6),

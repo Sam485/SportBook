@@ -64,6 +64,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       begin: const Offset(0, 0.12),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+
+    // Auto-select today's date after the first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoSelectTodayDate();
+    });
   }
 
   @override
@@ -72,12 +77,142 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     super.dispose();
   }
 
+  // Auto-select today's date when screen loads
+  void _autoSelectTodayDate() {
+    final p = context.read<BookingProvider>();
+    final today = DateTime.now();
+
+    // Only auto-select if no date is already selected
+    if (p.selectedDate == null) {
+      p.selectDate(today);
+      // Trigger animation for time section
+      _animController.forward(from: 0);
+    }
+  }
+
   void _onDateSelected(BookingProvider p, DateTime date) {
     p.selectDate(date);
     // Reset time selection when date changes
     p.clearTimeSelection();
     // Trigger animation for time section
     _animController.forward(from: 0);
+  }
+
+  // Check if the selected time range is already booked
+  bool _isTimeRangeBooked(
+    BookingProvider p,
+    int court,
+    DateTime date,
+    String sport,
+    int startHour,
+    int endHour,
+  ) {
+    final bookedRanges = p.bookedRanges(court, date, sport);
+    for (final range in bookedRanges) {
+      // Check if the selected range overlaps with any booked range
+      if (startHour < range[1] && endHour > range[0]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Show alert dialog for already booked time
+  void _showTimeBookedAlert(BuildContext context, int startHour, int endHour) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: const [
+              Icon(Icons.event_busy_rounded, color: Colors.redAccent, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Time Already Booked',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'The selected time slot is no longer available.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time_rounded,
+                      color: Colors.redAccent,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_fmtH(startHour)} - ${_fmtH(endHour)}',
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Please select a different time slot.',
+                style: TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: const Color(0xFF1A1A2E),
+          elevation: 24,
+        );
+      },
+    );
+  }
+
+  // Handle confirm with validation
+  void _handleConfirm(BookingProvider p) {
+    if (!p.canConfirm) return;
+
+    final sport = p.selectedSport ?? '';
+    final court = p.selectedCourt ?? 0;
+    final date = p.selectedDate!;
+    final startHour = p.startHour!;
+    final endHour = p.endHour!;
+
+    // Check if the selected time is already booked
+    if (_isTimeRangeBooked(p, court, date, sport, startHour, endHour)) {
+      _showTimeBookedAlert(context, startHour, endHour);
+      // Clear the invalid time selection
+      p.clearTimeSelection();
+      return;
+    }
+
+    // If validation passes, proceed with confirmation
+    widget.onConfirm();
   }
 
   @override
@@ -143,7 +278,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     );
                   },
                 );
-                if (picked != null) {
+                if (picked != null &&
+                    !DateUtils.isSameDay(picked, p.selectedDate)) {
                   _onDateSelected(p, picked);
                 }
               },
@@ -327,7 +463,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 8),
 
                   // Divider with label
                   Row(
@@ -508,7 +644,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     onTap: (h) => p.selectEndHour(h),
                   ),
 
-                  // ── Live summary ─────────────────────────────────────────
+                  // ── Live summary with confirm button ─────────────────────────
                   if (p.canConfirm) ...[
                     const SizedBox(height: 20),
                     Container(
@@ -570,6 +706,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 16),
                   ],
                 ],
               ),

@@ -143,4 +143,13 @@ class BookingProvider extends ChangeNotifier {
     endHour = null;
     notifyListeners();
   }
+
+  // Add to BookingProvider class
+  void setUserInfo({required String name, required String phone}) {
+    // Store these values for booking confirmation
+    // You can add these fields to your provider
+    var userName = name;
+    var userPhone = phone;
+    notifyListeners();
+  }
 }

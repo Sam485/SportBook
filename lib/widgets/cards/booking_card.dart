@@ -28,7 +28,7 @@ class BookingCard extends StatelessWidget {
             InkWell(
               onTap: () => Navigator.pushNamed(
                 context,
-                AppRoutes.clubDetailed,
+                AppRoutes.bookingFlow,
                 arguments: BookingTarget.fromBooking(booking),
               ),
               borderRadius: const BorderRadius.vertical(
@@ -41,35 +41,42 @@ class BookingCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Owner row
-                    Row(
-                      children: [
-                        _avatar(booking.ownerInitials, booking.ownerColor),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                booking.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.2,
+                    InkWell(
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.clubDetailed,
+                        arguments: BookingTarget.fromBooking(booking),
+                      ),
+                      child: Row(
+                        children: [
+                          _avatar(booking.ownerInitials, booking.ownerColor),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  booking.title,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              _timeRow(booking.openTime, booking.closeTime),
-                            ],
+                                const SizedBox(height: 4),
+                                _timeRow(booking.openTime, booking.closeTime),
+                              ],
+                            ),
                           ),
-                        ),
-                        const Icon(
-                          Icons.keyboard_arrow_right_rounded,
-                          color: AppTheme.kTextSub,
-                          size: 18,
-                        ),
-                      ],
+                          const Icon(
+                            Icons.keyboard_arrow_right_rounded,
+                            color: AppTheme.kTextSub,
+                            size: 18,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Container(height: 1, color: AppTheme.kBorder),

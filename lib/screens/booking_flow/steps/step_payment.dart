@@ -18,6 +18,11 @@ class _StepPaymentState extends State<StepPayment>
     with TickerProviderStateMixin {
   PaymentMethod? _selected;
 
+  // Form fields
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+
   late AnimationController _khqrAnim;
   late AnimationController _cashAnim;
   late AnimationController _detailAnim;
@@ -50,6 +55,8 @@ class _StepPaymentState extends State<StepPayment>
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
     _khqrAnim.dispose();
     _cashAnim.dispose();
     _detailAnim.dispose();
@@ -70,6 +77,18 @@ class _StepPaymentState extends State<StepPayment>
     }
 
     _detailAnim.forward(from: 0);
+  }
+
+  void _handleConfirm() {
+    if (_formKey.currentState!.validate()) {
+      // Save user info to provider or pass to parent
+      final p = context.read<BookingProvider>();
+      p.setUserInfo(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+      );
+      widget.onConfirm();
+    }
   }
 
   @override
@@ -99,6 +118,14 @@ class _StepPaymentState extends State<StepPayment>
         _BookingSummaryCard(p: p),
         const SizedBox(height: 28),
 
+        // ── User Information Form ───────────────────────────────────────────
+        _UserInfoForm(
+          formKey: _formKey,
+          nameController: _nameController,
+          phoneController: _phoneController,
+        ),
+        const SizedBox(height: 28),
+
         // ── Label ───────────────────────────────────────────────────────────
         const Text(
           'SELECT PAYMENT',
@@ -126,18 +153,18 @@ class _StepPaymentState extends State<StepPayment>
         const SizedBox(height: 12),
 
         // ── Cash Card ───────────────────────────────────────────────────────
-        _PaymentCard(
-          selected: _selected == PaymentMethod.cash,
-          animController: _cashAnim,
-          onTap: () => _selectMethod(PaymentMethod.cash),
-          icon: _CashIcon(),
-          title: 'Pay with Cash',
-          subtitle: 'Pay at the venue before your session starts',
-          badge: 'On-site',
-          badgeColor: const Color(0xFFF59E0B),
-          accentColor: const Color(0xFF4CAF50),
-        ),
-        const SizedBox(height: 24),
+        // _PaymentCard(
+        //   selected: _selected == PaymentMethod.cash,
+        //   animController: _cashAnim,
+        //   onTap: () => _selectMethod(PaymentMethod.cash),
+        //   icon: _CashIcon(),
+        //   title: 'Pay with Cash',
+        //   subtitle: 'Pay at the venue before your session starts',
+        //   badge: 'On-site',
+        //   badgeColor: const Color(0xFFF59E0B),
+        //   accentColor: const Color(0xFF4CAF50),
+        // ),
+        // const SizedBox(height: 24),
 
         // ── Detail panel (animated) ──────────────────────────────────────────
         if (_selected != null)
@@ -145,12 +172,171 @@ class _StepPaymentState extends State<StepPayment>
             opacity: _detailFade,
             child: SlideTransition(
               position: _detailSlide,
-              child: _selected == PaymentMethod.khqr
-                  ? _KhqrDetail(totalPrice: p.totalPrice)
-                  : _CashDetail(totalPrice: p.totalPrice),
+              child: Column(
+                children: [
+                  _selected == PaymentMethod.khqr
+                      ? _KhqrDetail(totalPrice: p.totalPrice)
+                      : _CashDetail(totalPrice: p.totalPrice),
+                ],
+              ),
             ),
           ),
       ],
+    );
+  }
+}
+
+// ── User Information Form ─────────────────────────────────────────────────────
+class _UserInfoForm extends StatelessWidget {
+  final GlobalKey<FormState> formKey;
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+
+  const _UserInfoForm({
+    required this.formKey,
+    required this.nameController,
+    required this.phoneController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.kCardAlt,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.kBorder),
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'CONTACT INFORMATION',
+              style: TextStyle(
+                color: AppTheme.kTextSub,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Full Name Field
+            TextFormField(
+              controller: nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Full Name',
+                labelStyle: const TextStyle(color: AppTheme.kTextSub),
+                hintText: 'Enter your full name',
+                hintStyle: const TextStyle(color: AppTheme.kTextSub),
+                prefixIcon: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppTheme.kTextSub,
+                  size: 20,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.kBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppTheme.kAccent,
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFF0D0D1A),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your full name';
+                }
+                if (value.trim().length < 2) {
+                  return 'Name must be at least 2 characters';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Phone Number Field
+            TextFormField(
+              controller: phoneController,
+              style: const TextStyle(color: Colors.white),
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Phone Number',
+                labelStyle: const TextStyle(color: AppTheme.kTextSub),
+                hintText: 'Enter your phone number',
+                hintStyle: const TextStyle(color: AppTheme.kTextSub),
+                prefixIcon: const Icon(
+                  Icons.phone_android_rounded,
+                  color: AppTheme.kTextSub,
+                  size: 20,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.kBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppTheme.kAccent,
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.redAccent),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFF0D0D1A),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your phone number';
+                }
+                // Basic phone number validation
+                final phoneRegex = RegExp(r'^[0-9+\-\s]{8,15}$');
+                if (!phoneRegex.hasMatch(value.trim())) {
+                  return 'Please enter a valid phone number';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
