@@ -20,14 +20,14 @@ class SportMateApp extends StatelessWidget {
   const SportMateApp({super.key});
 
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => BookingProvider())],
       child: MaterialApp(
         title: 'SportMate',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
-        initialRoute: AppRoutes.home,
+        initialRoute: AppRoutes.landing,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );
