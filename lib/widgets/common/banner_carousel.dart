@@ -1,7 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/services/data_service.dart';
 
 class BannerCarousel extends StatefulWidget {
   const BannerCarousel({super.key});

@@ -99,99 +99,99 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   // Check if the selected time range is already booked
-  bool _isTimeRangeBooked(
-    BookingProvider p,
-    int court,
-    DateTime date,
-    String sport,
-    int startHour,
-    int endHour,
-  ) {
-    final bookedRanges = p.bookedRanges(court, date, sport);
-    for (final range in bookedRanges) {
-      // Check if the selected range overlaps with any booked range
-      if (startHour < range[1] && endHour > range[0]) {
-        return true;
-      }
-    }
-    return false;
-  }
+  // bool _isTimeRangeBooked(
+  //   BookingProvider p,
+  //   int court,
+  //   DateTime date,
+  //   String sport,
+  //   int startHour,
+  //   int endHour,
+  // ) {
+  //   final bookedRanges = p.bookedRanges(court, date, sport);
+  //   for (final range in bookedRanges) {
+  //     // Check if the selected range overlaps with any booked range
+  //     if (startHour < range[1] && endHour > range[0]) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
 
   // Show alert dialog for already booked time
-  void _showTimeBookedAlert(BuildContext context, int startHour, int endHour) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: const [
-              Icon(Icons.event_busy_rounded, color: Colors.redAccent, size: 28),
-              SizedBox(width: 12),
-              Text(
-                'Time Already Booked',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'The selected time slot is no longer available.',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.access_time_rounded,
-                      color: Colors.redAccent,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_fmtH(startHour)} - ${_fmtH(endHour)}',
-                      style: const TextStyle(
-                        color: Colors.redAccent,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Please select a different time slot.',
-                style: TextStyle(fontSize: 13, color: Colors.white70),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK', style: TextStyle(fontSize: 16)),
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: const Color(0xFF1A1A2E),
-          elevation: 24,
-        );
-      },
-    );
-  }
+  // void _showTimeBookedAlert(BuildContext context, int startHour, int endHour) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Row(
+  //           children: const [
+  //             Icon(Icons.event_busy_rounded, color: Colors.redAccent, size: 28),
+  //             SizedBox(width: 12),
+  //             Text(
+  //               'Time Already Booked',
+  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //             ),
+  //           ],
+  //         ),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             const Text(
+  //               'The selected time slot is no longer available.',
+  //               style: TextStyle(fontSize: 14),
+  //             ),
+  //             const SizedBox(height: 12),
+  //             Container(
+  //               padding: const EdgeInsets.all(12),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.redAccent.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(8),
+  //                 border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+  //               ),
+  //               child: Row(
+  //                 children: [
+  //                   const Icon(
+  //                     Icons.access_time_rounded,
+  //                     color: Colors.redAccent,
+  //                     size: 18,
+  //                   ),
+  //                   const SizedBox(width: 8),
+  //                   Text(
+  //                     '${_fmtH(startHour)} - ${_fmtH(endHour)}',
+  //                     style: const TextStyle(
+  //                       color: Colors.redAccent,
+  //                       fontSize: 16,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const SizedBox(height: 12),
+  //             const Text(
+  //               'Please select a different time slot.',
+  //               style: TextStyle(fontSize: 13, color: Colors.white70),
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: const Text('OK', style: TextStyle(fontSize: 16)),
+  //           ),
+  //         ],
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(20),
+  //         ),
+  //         backgroundColor: const Color(0xFF1A1A2E),
+  //         elevation: 24,
+  //       );
+  //     },
+  //   );
+  // }
 
   // Handle confirm with validation
   // void _handleConfirm(BookingProvider p) {

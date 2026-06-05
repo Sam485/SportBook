@@ -9,6 +9,8 @@ class BookingProvider extends ChangeNotifier {
   DateTime? selectedDate;
   int? startHour; // 0-23
   int? endHour; // 0-23, exclusive (endHour > startHour)
+  String? userName;
+  String? userPhone;
 
   // ── Persisted bookings ─────────────────────────────────────────────────────
   // Key: "targetId-courtNum-yyyyMMdd-sport"
@@ -148,8 +150,8 @@ class BookingProvider extends ChangeNotifier {
   void setUserInfo({required String name, required String phone}) {
     // Store these values for booking confirmation
     // You can add these fields to your provider
-    var userName = name;
-    var userPhone = phone;
+    userName = name;
+    userPhone = phone;
     notifyListeners();
   }
 }
