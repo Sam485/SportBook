@@ -5,6 +5,7 @@ import 'package:sportbook/screens/auth/landing_screen.dart';
 import 'package:sportbook/screens/auth/login_screen.dart';
 import 'package:sportbook/screens/auth/signup_screen.dart';
 import 'package:sportbook/screens/auth/verify_screen.dart';
+import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 import '../models/models.dart';
 import '../screens/main_screen.dart';
 import '../screens/booking_flow/booking_flow_screen.dart';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const forget = '/forget';
   static const verify = '/verify';
   static const createProfile = '/createProfile';
+  static const bookedDetailed = '/bookedDetailed';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -28,6 +30,9 @@ class AppRoutes {
 
       case createProfile:
         return MaterialPageRoute(builder: (_) => CreateProfileScreen());
+
+      case bookedDetailed:
+        return MaterialPageRoute(builder: (_) => BookedDetailed());
 
       case verify:
         final target = settings.arguments as bool;
