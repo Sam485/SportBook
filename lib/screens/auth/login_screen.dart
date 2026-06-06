@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Phone", style: AppTheme.tsLabel),
+            Text("Phone or Username", style: AppTheme.tsLabel),
             const SizedBox(height: 10),
             TextFormField(
               controller: _phoneController,
@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               decoration: AppTheme.textFieldDecoration(
                 Icons.phone,
-                'Phone Number',
+                'Phone or Username',
                 suffixIcon: null,
               ),
             ),
