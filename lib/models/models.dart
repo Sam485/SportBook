@@ -57,10 +57,17 @@ class SportBooking {
   final List<String> sportTypes;
   final String venue;
   final List<String> imageUrls;
-  final String openTime;
-  final String closeTime;
+  final String openTime; // club open hour (display only)
+  final String closeTime; // club close hour (display only)
   final int bookedSlots;
   final int totalSlots;
+
+  // ── NEW: user's actual booking data ──
+  final DateTime? bookingDate; // the day the user booked
+  final int? bookingStartHour; // 0-23
+  final int? bookingEndHour; // 0-23
+  final String? userName;
+  final String? userPhone;
 
   const SportBooking({
     required this.id,
@@ -75,9 +82,56 @@ class SportBooking {
     required this.closeTime,
     required this.bookedSlots,
     required this.totalSlots,
+    this.bookingDate,
+    this.bookingStartHour,
+    this.bookingEndHour,
+    this.userName,
+    this.userPhone,
   });
 
   String get primarySport => sportTypes.isNotEmpty ? sportTypes.first : 'Sport';
+
+  // Helpers for formatted display
+  static String _fmtH(int h) {
+    final p = h >= 12 ? 'PM' : 'AM';
+    final hr = h % 12 == 0 ? 12 : h % 12;
+    return '$hr:00 $p';
+  }
+
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  static const _weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+
+  String get formattedBookingDate {
+    if (bookingDate == null) return '—';
+    final d = bookingDate!;
+    return '${_weekdays[d.weekday - 1]}, ${_months[d.month - 1]} ${d.day}';
+  }
+
+  String get formattedTimeRange {
+    if (bookingStartHour == null || bookingEndHour == null) return '—';
+    return '${_fmtH(bookingStartHour!)} – ${_fmtH(bookingEndHour!)}';
+  }
 }
 
 // ─── Booking Target (passed to BookingFlowScreen) ─────────────────────────────

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
 
@@ -217,7 +218,17 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: widget.onViewBooking,
+                          onPressed: () {
+                            final booking = p.confirmedBooking;
+                            if (booking != null) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.bookedDetailed,
+                                arguments:
+                                    booking, // ✅ pass SportBooking, not provider
+                              );
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.kAccent,
                             foregroundColor: Colors.black,

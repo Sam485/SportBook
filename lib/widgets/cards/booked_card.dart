@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
-import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 
 class BookedCard extends StatefulWidget {
   final SportBooking booking;
@@ -17,33 +17,23 @@ class _BookedCardState extends State<BookedCard> {
   /// Returns how long until the booking starts.
   /// Returns null if the start time can't be parsed or is already past.
   Duration? _timeUntilStart() {
-    try {
-      final now = TimeOfDay.now();
-      final parts = b.openTime.split(' '); // e.g. ['08:00', 'AM']
-      final hm = parts[0].split(':');
-      int hour = int.parse(hm[0]);
-      final int minute = int.parse(hm[1]);
-      final bool isPm = parts[1].toUpperCase() == 'PM';
-      if (isPm && hour != 12) hour += 12;
-      if (!isPm && hour == 12) hour = 0;
+    final start = b.bookingStartHour;
+    final date = b.bookingDate;
+    if (start == null || date == null) return null;
 
-      final nowMinutes = now.hour * 60 + now.minute;
-      final startMinutes = hour * 60 + minute;
-      final diff = startMinutes - nowMinutes;
-
-      return diff > 0 ? Duration(minutes: diff) : null;
-    } catch (_) {
-      return null;
-    }
+    final now = DateTime.now();
+    final bookingStart = DateTime(date.year, date.month, date.day, start, 0);
+    final diff = bookingStart.difference(now);
+    return diff.isNegative ? null : diff;
   }
 
-  // String _formatCountdown(Duration d) {
-  //   final h = d.inHours;
-  //   final m = d.inMinutes % 60;
-  //   if (h > 0 && m > 0) return '${h}h ${m}m';
-  //   if (h > 0) return '${h}h';
-  //   return '${m}m';
-  // }
+  String _formatCountdown(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    if (h > 0 && m > 0) return '${h}h ${m}m';
+    if (h > 0) return '${h}h';
+    return '${m}m';
+  }
 
   void _onCancel() {
     showDialog(
@@ -113,7 +103,27 @@ class _BookedCardState extends State<BookedCard> {
   // ── Owner / Club Row ───────────────────────────────────────────────────────
   Widget _ownerRow() {
     return InkWell(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.bookedDetailed),
+      onTap: () => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => DraggableScrollableSheet(
+          initialChildSize: 0.80,
+          minChildSize: 0.5,
+          maxChildSize: 0.85,
+          builder: (context, scrollController) => Container(
+            decoration: BoxDecoration(
+              color: AppTheme.kBg,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              border: Border.all(color: AppTheme.kBorder),
+            ),
+            child: Expanded(child: BookedDetailed(booking: b)),
+          ),
+        ),
+      ),
+      //Navigator.pushNamed(context, AppRoutes.bookedDetailed, arguments: b),
       child: Row(
         children: [
           // Avatar circle with initials
@@ -274,68 +284,65 @@ class _BookedCardState extends State<BookedCard> {
   Widget _bottomRow(Duration? countdown) {
     return Row(
       children: [
-        // Countdown or "In Progress"
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              //countdown != null ?
-              'Upcoming',
-              //: 'In Progress',
+              countdown != null ? 'Upcoming' : 'In Progress',
               style: AppTheme.tsBody.copyWith(fontSize: 13),
             ),
             const SizedBox(height: 2),
-            Text(
-              //countdown != null ? _formatCountdown(countdown) : '🟢 Now',
-              '3h 43mn',
-              style:
-                  //countdown != null ?
-                  AppTheme.tsLabel.copyWith(fontSize: 22),
-              // const TextStyle(
-              //     color: Colors.greenAccent,
-              //     fontSize: 18,
-              //     fontWeight: FontWeight.w800,
-              //   ),
-            ),
+            countdown != null
+                ? Text(
+                    _formatCountdown(countdown),
+                    style: AppTheme.tsLabel.copyWith(fontSize: 22),
+                  )
+                : const Text(
+                    '🟢 Now',
+                    style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
           ],
         ),
         const Spacer(),
-        // Cancel button — only show if not yet started
-        //if (countdown != null)
-        ElevatedButton(
-          onPressed: _onCancel,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent.withOpacity(0.15),
-            foregroundColor: Colors.redAccent,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: Colors.redAccent, width: 1),
+        if (countdown != null)
+          ElevatedButton(
+            onPressed: _onCancel,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withOpacity(0.15),
+              foregroundColor: Colors.redAccent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: const BorderSide(color: Colors.redAccent, width: 1),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.greenAccent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.greenAccent, width: 1),
+            ),
+            child: const Text(
+              'Active',
+              style: TextStyle(
+                color: Colors.greenAccent,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
           ),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          ),
-        ),
-        // else
-        //   Container(
-        //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        //     decoration: BoxDecoration(
-        //       color: Colors.greenAccent.withOpacity(0.12),
-        //       borderRadius: BorderRadius.circular(10),
-        //       border: Border.all(color: Colors.greenAccent, width: 1),
-        //     ),
-        //     child: const Text(
-        //       'Active',
-        //       style: TextStyle(
-        //         color: Colors.greenAccent,
-        //         fontWeight: FontWeight.w700,
-        //         fontSize: 14,
-        //       ),
-        //     ),
-        //   ),
       ],
     );
   }

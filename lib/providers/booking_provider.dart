@@ -11,6 +11,7 @@ class BookingProvider extends ChangeNotifier {
   int? endHour; // 0-23, exclusive (endHour > startHour)
   String? userName;
   String? userPhone;
+  SportBooking? confirmedBooking;
 
   // ── Persisted bookings ─────────────────────────────────────────────────────
   // Key: "targetId-courtNum-yyyyMMdd-sport"
@@ -115,6 +116,28 @@ class BookingProvider extends ChangeNotifier {
     if (!canConfirm) return;
     final key = _rangeKey(selectedCourt!, selectedDate!, selectedSport ?? '');
     (_bookedRanges[key] ??= []).add([startHour!, endHour!]);
+
+    // Build the SportBooking from current provider state
+    confirmedBooking = SportBooking(
+      id: key,
+      title: target!.name,
+      ownerName: target!.name,
+      ownerInitials: target!.initials,
+      ownerColor: target!.color,
+      sportTypes: selectedSport != null ? [selectedSport!] : target!.sports,
+      venue: target!.venue,
+      imageUrls: target!.imageUrls,
+      openTime: target!.openTime,
+      closeTime: target!.closeTime,
+      bookedSlots: 1,
+      totalSlots: target!.totalCourts,
+      bookingDate: selectedDate,
+      bookingStartHour: startHour,
+      bookingEndHour: endHour,
+      userName: userName,
+      userPhone: userPhone,
+    );
+
     notifyListeners();
   }
 
