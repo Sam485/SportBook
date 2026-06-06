@@ -32,7 +32,10 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => CreateProfileScreen());
 
       case bookedDetailed:
-        return MaterialPageRoute(builder: (_) => BookedDetailed());
+        final target = settings.arguments as SportBooking;
+        return MaterialPageRoute(
+          builder: (_) => BookedDetailed(booking: target),
+        );
 
       case verify:
         final target = settings.arguments as bool;

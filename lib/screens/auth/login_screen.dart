@@ -173,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _validateAndLogin();
         },
         child: Text('Login', style: AppTheme.tsButtonLabel),
-        style: AppTheme.elevatedButtonStyle,
+        style: AppTheme.elevatedButtonStyle(),
       ),
     );
   }

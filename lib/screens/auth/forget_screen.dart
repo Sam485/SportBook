@@ -117,7 +117,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
           _validateAndLogin();
         },
         child: Text('Reset Password', style: AppTheme.tsButtonLabel),
-        style: AppTheme.elevatedButtonStyle,
+        style: AppTheme.elevatedButtonStyle(),
       ),
     );
   }
