@@ -275,4 +275,14 @@ class DataService {
         .where((b) => b.sportTypes.any((s) => s.toLowerCase() == categoryId))
         .toList();
   }
+
+  // ── Filter helpers ─────────────────────────────────────────────────────────
+  static List<SportBooking> searchClubs(String query) {
+    if (query.isEmpty) return bookings;
+    final lowerQuery = query.toLowerCase();
+
+    return bookings.where((booking) {
+      return booking.title.toLowerCase().contains(lowerQuery);
+    }).toList();
+  }
 }
