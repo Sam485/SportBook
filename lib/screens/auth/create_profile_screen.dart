@@ -347,7 +347,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _submit,
-        style: AppTheme.elevatedButtonStyle,
+        style: AppTheme.elevatedButtonStyle(),
         child: _isLoading
             ? const SizedBox(
                 width: 22,

@@ -268,7 +268,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: _isComplete && !_isLoading ? _verify : null,
-        style: AppTheme.elevatedButtonStyle,
+        style: AppTheme.elevatedButtonStyle(),
         child: _isLoading
             ? const SizedBox(
                 width: 22,

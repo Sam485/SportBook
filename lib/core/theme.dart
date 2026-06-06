@@ -65,18 +65,30 @@ class AppTheme {
   );
 
   // ── Elevated Button Style ────────────────────────────────────────────────────
-  static final elevatedButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: kAccent,
-    foregroundColor: Colors.white,
-    elevation: 0,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-  );
 
-  static final outlineButtonStyle = OutlinedButton.styleFrom(
-    foregroundColor: Colors.white,
-    side: const BorderSide(color: Color(0xFF2E3548), width: 1.5),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-  );
+  static ButtonStyle elevatedButtonStyle({
+    Color? backgroundColor,
+    Color? foregroundColor,
+  }) {
+    return ElevatedButton.styleFrom(
+      backgroundColor: backgroundColor ?? kAccent,
+      foregroundColor: foregroundColor ?? Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+  }
+
+  static ButtonStyle outlineButtonStyle({
+    Color? backgroundColor,
+    Color? foregroundColor,
+  }) {
+    return OutlinedButton.styleFrom(
+      foregroundColor: Colors.white,
+      side: const BorderSide(color: Color(0xFF2E3548), width: 1.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+  }
+
   // ── TextField helpers ────────────────────────────────────────────────────
   static InputDecoration textFieldDecoration(
     IconData icon,
