@@ -205,7 +205,7 @@ class _LandingScreenState extends State<LandingScreen> {
             height: 52,
             child: ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.signUp),
-              style: AppTheme.elevatedButtonStyle,
+              style: AppTheme.elevatedButtonStyle(),
               child: const Text('Sign Up', style: AppTheme.tsButtonLabel),
             ),
           ),
@@ -218,7 +218,7 @@ class _LandingScreenState extends State<LandingScreen> {
             height: 52,
             child: OutlinedButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
-              style: AppTheme.outlineButtonStyle,
+              style: AppTheme.outlineButtonStyle(),
               child: const Text('Login', style: AppTheme.tsButtonLabel),
             ),
           ),

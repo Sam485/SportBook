@@ -188,7 +188,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _validateAndLogin();
         },
         child: Text('Sign Up', style: AppTheme.tsButtonLabel),
-        style: AppTheme.elevatedButtonStyle,
+        style: AppTheme.elevatedButtonStyle(),
       ),
     );
   }

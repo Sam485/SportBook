@@ -19,16 +19,14 @@ class BookingFlowScreen extends StatefulWidget {
 
 class _BookingFlowScreenState extends State<BookingFlowScreen> {
   late final PageController _page;
-  int _step = 0; // 0=category, 1=court, 2=date, 3=time
+  int _step = 0;
+  final _paymentKey = GlobalKey<StepPaymentState>(); // ✅ works now
 
-  // When sports.length == 1, skip category step
   bool get _skipCategory => widget.target.sports.length == 1;
-
   int get _totalSteps => _skipCategory ? 3 : 4;
-
   List<String> get _stepLabels => _skipCategory
       ? ['Court', 'Date-Time', 'Payment']
-      : ['Category', 'Court', 'Date', 'Time'];
+      : ['Category', 'Court', 'Date', 'Payment'];
 
   @override
   void initState() {
@@ -37,7 +35,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final p = context.read<BookingProvider>();
       p.setTarget(widget.target);
-      // auto-select sport when only one
       if (_skipCategory && widget.target.sports.isNotEmpty) {
         p.selectSport(widget.target.sports.first);
       }
@@ -84,10 +81,29 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       case 2:
         return p.canProceedFromDate;
       case 3:
-        return p.canConfirm;
+        return true; // ✅ StepPayment handles its own validation
       default:
         return false;
     }
+  }
+
+  void _handleConfirm(BookingProvider p) {
+    // ✅ Delegates to StepPayment: validates form → setUserInfo → confirmBooking
+    _paymentKey.currentState?.handleConfirm();
+  }
+
+  // Called by StepPayment after validation passes
+  void _onPaymentConfirmed(BookingProvider p) {
+    if (!p.canConfirm) return;
+    p.confirmBooking();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PaymentSuccessPage(
+          onGoHome: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onViewBooking: () {},
+        ),
+      ),
+    );
   }
 
   @override
@@ -98,10 +114,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         appBar: _buildAppBar(provider),
         body: Column(
           children: [
-            // ── Step progress ──────────────────────────────────────────
             _StepIndicator(steps: _stepLabels, currentStep: _step),
-
-            // ── Page content ───────────────────────────────────────────
             Expanded(
               child: PageView(
                 controller: _page,
@@ -110,18 +123,22 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                     ? [
                         StepCourt(onNext: _next),
                         StepDateAndTime(onConfirm: _next),
-                        StepPayment(onConfirm: () => _handleConfirm(provider)),
+                        StepPayment(
+                          key: _paymentKey,
+                          onConfirm: () => _onPaymentConfirmed(provider),
+                        ),
                       ]
                     : [
                         StepCategory(onNext: _next),
                         StepCourt(onNext: _next),
                         StepDateAndTime(onConfirm: _next),
-                        StepPayment(onConfirm: () => _handleConfirm(provider)),
+                        StepPayment(
+                          key: _paymentKey,
+                          onConfirm: () => _onPaymentConfirmed(provider),
+                        ),
                       ],
               ),
             ),
-
-            // ── Bottom action bar ──────────────────────────────────────
             _BottomBar(
               step: _step,
               totalSteps: _totalSteps,
@@ -167,7 +184,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       ],
     ),
     actions: [
-      // Venue header badge
       Container(
         margin: const EdgeInsets.only(right: 16),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -202,28 +218,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       ),
     ],
   );
-
-  void _handleConfirm(BookingProvider p) {
-    if (!p.canConfirm) return;
-    p.confirmBooking();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PaymentSuccessPage(
-          onGoHome: () => Navigator.of(context).popUntil((r) => r.isFirst),
-          onViewBooking: () {
-            // Navigate to booking detail/history page
-          },
-        ),
-      ),
-    );
-  }
 }
 
-// ── Step Indicator ─────────────────────────────────────────────────────────────
+// ── Step Indicator ────────────────────────────────────────────────────────────
 class _StepIndicator extends StatelessWidget {
   final List<String> steps;
   final int currentStep;
-
   const _StepIndicator({required this.steps, required this.currentStep});
 
   @override
@@ -297,7 +297,7 @@ class _StepIndicator extends StatelessWidget {
   }
 }
 
-// ── Bottom action bar ──────────────────────────────────────────────────────────
+// ── Bottom Bar ────────────────────────────────────────────────────────────────
 class _BottomBar extends StatelessWidget {
   final int step, totalSteps;
   final bool canProceed;
@@ -334,7 +334,6 @@ class _BottomBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Summary pill (visible when enough data collected)
           if (isLastStep && provider.canConfirm) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -400,10 +399,8 @@ class _BottomBar extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-
           Row(
             children: [
-              // Back button
               GestureDetector(
                 onTap: onBack,
                 child: Container(
@@ -423,11 +420,9 @@ class _BottomBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Next / Confirm button
               Expanded(
                 child: GestureDetector(
-                  onTap: canProceed ? (isLastStep ? onConfirm : onNext) : null,
+                  onTap: isLastStep ? onConfirm : (canProceed ? onNext : null),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     height: 52,
