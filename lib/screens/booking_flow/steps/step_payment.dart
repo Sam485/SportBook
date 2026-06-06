@@ -11,14 +11,15 @@ class StepPayment extends StatefulWidget {
   const StepPayment({super.key, required this.onConfirm});
 
   @override
-  State<StepPayment> createState() => _StepPaymentState();
+  State<StepPayment> createState() => StepPaymentState(); // ✅ public
 }
 
-class _StepPaymentState extends State<StepPayment>
+class StepPaymentState
+    extends
+        State<StepPayment> // ✅ public, no underscore
     with TickerProviderStateMixin {
   PaymentMethod? _selected;
 
-  // Form fields
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -45,7 +46,6 @@ class _StepPaymentState extends State<StepPayment>
       vsync: this,
       duration: const Duration(milliseconds: 350),
     );
-
     _detailFade = CurvedAnimation(parent: _detailAnim, curve: Curves.easeOut);
     _detailSlide = Tween<Offset>(
       begin: const Offset(0, 0.1),
@@ -67,7 +67,6 @@ class _StepPaymentState extends State<StepPayment>
     if (_selected == method) return;
     HapticFeedback.selectionClick();
     setState(() => _selected = method);
-
     if (method == PaymentMethod.khqr) {
       _khqrAnim.forward();
       _cashAnim.reverse();
@@ -75,21 +74,29 @@ class _StepPaymentState extends State<StepPayment>
       _cashAnim.forward();
       _khqrAnim.reverse();
     }
-
     _detailAnim.forward(from: 0);
   }
 
-  // void _handleConfirm() {
-  //   if (_formKey.currentState!.validate()) {
-  //     // Save user info to provider or pass to parent
-  //     final p = context.read<BookingProvider>();
-  //     p.setUserInfo(
-  //       name: _nameController.text.trim(),
-  //       phone: _phoneController.text.trim(),
-  //     );
-  //     widget.onConfirm();
-  //   }
-  // }
+  // ✅ Public method called by booking_flow_screen via GlobalKey
+  void handleConfirm() {
+    if (_selected == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a payment method'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+    if (_formKey.currentState!.validate()) {
+      final p = context.read<BookingProvider>();
+      p.setUserInfo(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+      );
+      widget.onConfirm();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +105,6 @@ class _StepPaymentState extends State<StepPayment>
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
-        // ── Header ──────────────────────────────────────────────────────────
         const Text(
           'Payment Method',
           style: TextStyle(
@@ -113,20 +119,14 @@ class _StepPaymentState extends State<StepPayment>
           style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
         ),
         const SizedBox(height: 24),
-
-        // ── Booking summary card ─────────────────────────────────────────────
         _BookingSummaryCard(p: p),
         const SizedBox(height: 28),
-
-        // ── User Information Form ───────────────────────────────────────────
         _UserInfoForm(
           formKey: _formKey,
           nameController: _nameController,
           phoneController: _phoneController,
         ),
         const SizedBox(height: 28),
-
-        // ── Label ───────────────────────────────────────────────────────────
         const Text(
           'SELECT PAYMENT',
           style: TextStyle(
@@ -137,8 +137,6 @@ class _StepPaymentState extends State<StepPayment>
           ),
         ),
         const SizedBox(height: 12),
-
-        // ── KHQR Card ───────────────────────────────────────────────────────
         _PaymentCard(
           selected: _selected == PaymentMethod.khqr,
           animController: _khqrAnim,
@@ -151,22 +149,6 @@ class _StepPaymentState extends State<StepPayment>
           accentColor: const Color(0xFF0072CE),
         ),
         const SizedBox(height: 12),
-
-        // ── Cash Card ───────────────────────────────────────────────────────
-        // _PaymentCard(
-        //   selected: _selected == PaymentMethod.cash,
-        //   animController: _cashAnim,
-        //   onTap: () => _selectMethod(PaymentMethod.cash),
-        //   icon: _CashIcon(),
-        //   title: 'Pay with Cash',
-        //   subtitle: 'Pay at the venue before your session starts',
-        //   badge: 'On-site',
-        //   badgeColor: const Color(0xFFF59E0B),
-        //   accentColor: const Color(0xFF4CAF50),
-        // ),
-        // const SizedBox(height: 24),
-
-        // ── Detail panel (animated) ──────────────────────────────────────────
         if (_selected != null)
           FadeTransition(
             opacity: _detailFade,
@@ -222,8 +204,6 @@ class _UserInfoForm extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Full Name Field
             TextFormField(
               controller: nameController,
               style: const TextStyle(color: Colors.white),
@@ -277,8 +257,6 @@ class _UserInfoForm extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-
-            // Phone Number Field
             TextFormField(
               controller: phoneController,
               style: const TextStyle(color: Colors.white),
@@ -326,7 +304,6 @@ class _UserInfoForm extends StatelessWidget {
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter your phone number';
                 }
-                // Basic phone number validation
                 final phoneRegex = RegExp(r'^[0-9+\-\s]{8,15}$');
                 if (!phoneRegex.hasMatch(value.trim())) {
                   return 'Please enter a valid phone number';
@@ -341,7 +318,7 @@ class _UserInfoForm extends StatelessWidget {
   }
 }
 
-// ── Booking Summary Card ─────────────────────────────────────────────────────
+// ── Booking Summary Card ──────────────────────────────────────────────────────
 class _BookingSummaryCard extends StatelessWidget {
   final BookingProvider p;
   const _BookingSummaryCard({required this.p});
@@ -395,7 +372,7 @@ class _BookingSummaryCard extends StatelessWidget {
           _SummaryRow(
             icon: Icons.grid_view_rounded,
             label: 'Court',
-            value: p.target != null ? p.target!.name : '—',
+            value: p.target?.name ?? '—',
           ),
           const SizedBox(height: 10),
           _SummaryRow(
@@ -474,7 +451,7 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-// ── Payment Option Card ──────────────────────────────────────────────────────
+// ── Payment Option Card ───────────────────────────────────────────────────────
 class _PaymentCard extends StatelessWidget {
   final bool selected;
   final AnimationController animController;
@@ -515,7 +492,6 @@ class _PaymentCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Icon container
             AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               width: 52,
@@ -534,8 +510,6 @@ class _PaymentCard extends StatelessWidget {
               child: Center(child: icon),
             ),
             const SizedBox(width: 14),
-
-            // Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,8 +560,6 @@ class _PaymentCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Radio dot
             const SizedBox(width: 12),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -612,7 +584,7 @@ class _PaymentCard extends StatelessWidget {
   }
 }
 
-// ── KHQR Detail Panel ────────────────────────────────────────────────────────
+// ── KHQR Detail Panel ─────────────────────────────────────────────────────────
 class _KhqrDetail extends StatelessWidget {
   final double totalPrice;
   const _KhqrDetail({required this.totalPrice});
@@ -628,7 +600,6 @@ class _KhqrDetail extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Header
           Row(
             children: [
               Container(
@@ -664,8 +635,6 @@ class _KhqrDetail extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Mock QR code placeholder
           Container(
             width: 180,
             height: 180,
@@ -679,8 +648,6 @@ class _KhqrDetail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Amount chip
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
@@ -700,8 +667,6 @@ class _KhqrDetail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Supported banks
           const Text(
             'Supported Banks & Wallets',
             style: TextStyle(
@@ -716,7 +681,7 @@ class _KhqrDetail extends StatelessWidget {
             runSpacing: 8,
             alignment: WrapAlignment.center,
             children:
-                const [
+                [
                       'ABA',
                       'ACLEDA',
                       'Wing',
@@ -749,8 +714,6 @@ class _KhqrDetail extends StatelessWidget {
                     .toList(),
           ),
           const SizedBox(height: 16),
-
-          // Instructions
           _InstructionRow(
             step: '1',
             text: 'Open your banking app and tap "Scan QR"',
@@ -773,7 +736,7 @@ class _KhqrDetail extends StatelessWidget {
   }
 }
 
-// ── Cash Detail Panel ────────────────────────────────────────────────────────
+// ── Cash Detail Panel ─────────────────────────────────────────────────────────
 class _CashDetail extends StatelessWidget {
   final double totalPrice;
   const _CashDetail({required this.totalPrice});
@@ -789,7 +752,6 @@ class _CashDetail extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Header
           Row(
             children: [
               Container(
@@ -825,8 +787,6 @@ class _CashDetail extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Amount due
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
@@ -869,8 +829,6 @@ class _CashDetail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Warning notice
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -878,16 +836,16 @@ class _CashDetail extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.orange.withOpacity(0.25)),
             ),
-            child: Row(
+            child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
                   color: Colors.orange,
                   size: 15,
                 ),
-                const SizedBox(width: 8),
-                const Expanded(
+                SizedBox(width: 8),
+                Expanded(
                   child: Text(
                     'Please arrive 10 minutes early to complete payment at the front desk before your session.',
                     style: TextStyle(
@@ -901,8 +859,6 @@ class _CashDetail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Instructions
           _InstructionRow(
             step: '1',
             text: 'Tap "Confirm Booking" to reserve your court',
@@ -928,7 +884,7 @@ class _CashDetail extends StatelessWidget {
   }
 }
 
-// ── Instruction Row ──────────────────────────────────────────────────────────
+// ── Instruction Row ───────────────────────────────────────────────────────────
 class _InstructionRow extends StatelessWidget {
   final String step;
   final String text;
@@ -974,32 +930,19 @@ class _InstructionRow extends StatelessWidget {
   }
 }
 
-// ── KHQR SVG-style Icon ──────────────────────────────────────────────────────
+// ── KHQR Icon ─────────────────────────────────────────────────────────────────
 class _KhqrIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Stack(
-      alignment: Alignment.center,
-      children: [
-        Icon(Icons.qr_code_rounded, color: Color(0xFF0072CE), size: 28),
-      ],
+    return const Icon(
+      Icons.qr_code_rounded,
+      color: Color(0xFF0072CE),
+      size: 28,
     );
   }
 }
 
-// ── Cash Icon ────────────────────────────────────────────────────────────────
-// class _CashIcon extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return const Icon(
-//       Icons.payments_rounded,
-//       color: Color(0xFF4CAF50),
-//       size: 28,
-//     );
-//   }
-// }
-
-// ── Mock QR Painter ──────────────────────────────────────────────────────────
+// ── Mock QR Painter ───────────────────────────────────────────────────────────
 class _MockQrPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -1009,7 +952,6 @@ class _MockQrPainter extends CustomPainter {
 
     final cellSize = size.width / 21;
 
-    // Simulate a QR pattern with position detection squares + random modules
     void drawCell(int col, int row) {
       canvas.drawRect(
         Rect.fromLTWH(
@@ -1023,7 +965,6 @@ class _MockQrPainter extends CustomPainter {
     }
 
     void drawSquare(int col, int row, int size) {
-      // Outer
       for (int i = col; i < col + size; i++) {
         drawCell(i, row);
         drawCell(i, row + size - 1);
@@ -1032,7 +973,6 @@ class _MockQrPainter extends CustomPainter {
         drawCell(col, j);
         drawCell(col + size - 1, j);
       }
-      // Inner
       for (int i = col + 2; i < col + size - 2; i++) {
         for (int j = row + 2; j < row + size - 2; j++) {
           drawCell(i, j);
@@ -1040,18 +980,15 @@ class _MockQrPainter extends CustomPainter {
       }
     }
 
-    // 3 corner position squares
     drawSquare(0, 0, 7);
     drawSquare(14, 0, 7);
     drawSquare(0, 14, 7);
 
-    // Timing patterns
     for (int i = 8; i < 13; i += 2) {
       drawCell(i, 6);
       drawCell(6, i);
     }
 
-    // Random data modules (simulated)
     final pattern = [
       [8, 8],
       [9, 8],
