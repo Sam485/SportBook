@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/screens/bookings/bookings_screen.dart';
+import 'package:sportbook/screens/explore/explore_screen.dart';
 import 'package:sportbook/screens/settings/settings_screen.dart';
 import '../widgets/navbar/bottom_navbar.dart';
 import 'home/home_screen.dart';
@@ -15,7 +16,7 @@ class _MainScreenState extends State<MainScreen> {
 
   static const _screens = [
     HomeScreen(),
-    _PlaceholderScreen(icon: Icons.search_rounded, label: 'Explore'),
+    ExploreScreen(),
     BookingsScreen(),
     SettingsScreen(),
   ];
@@ -30,27 +31,4 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _PlaceholderScreen({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white38, size: 48),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white38, fontSize: 18),
-          ),
-        ],
-      ),
-    ),
-  );
 }
