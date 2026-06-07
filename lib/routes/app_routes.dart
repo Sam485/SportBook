@@ -5,8 +5,10 @@ import 'package:sportbook/screens/auth/landing_screen.dart';
 import 'package:sportbook/screens/auth/login_screen.dart';
 import 'package:sportbook/screens/auth/signup_screen.dart';
 import 'package:sportbook/screens/auth/verify_screen.dart';
+import 'package:sportbook/screens/bookings/bookings_screen.dart';
 import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 import 'package:sportbook/screens/home/Notification/notification_screen.dart';
+import 'package:sportbook/screens/home/ViewAll/view_all.dart';
 import '../models/models.dart';
 import '../screens/main_screen.dart';
 import '../screens/booking_flow/booking_flow_screen.dart';
@@ -24,11 +26,28 @@ class AppRoutes {
   static const createProfile = '/createProfile';
   static const bookedDetailed = '/bookedDetailed';
   static const notification = '/notification';
+  static const viewAll = '/viewAll';
+  static const allbookings = '/allBookings';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
         return MaterialPageRoute(builder: (_) => const MainScreen());
+
+      case allbookings:
+        final target = settings.arguments as bool;
+        return MaterialPageRoute(
+          builder: (_) => BookingsScreen(isView: target),
+        );
+
+      case viewAll:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => ViewAll(
+            title: args['title'] as String,
+            data: args['data'] as List<SportClub>,
+          ),
+        );
 
       case notification:
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
