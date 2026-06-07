@@ -7,6 +7,7 @@ import '../../services/data_service.dart';
 import '../../widgets/common/section_header.dart';
 import '../../widgets/cards/booking_card.dart';
 import '../../widgets/cards/club_card.dart';
+import '../../widgets/common/location_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,12 +17,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedCat = 'all';
+  String _locationLabel = 'New York'; // display name
 
   List<SportClub> get _clubs => DataService.filteredClubs(_selectedCat);
   List<SportBooking> get _bookings =>
       DataService.filteredBookings(_selectedCat);
 
-  // ── Navigate to View All ──────────────────────────────────────────────────
   void _navigateViewAll() {
     final clubs = _clubs;
     if (clubs.isEmpty) return;
@@ -36,6 +37,19 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
   }
 
+  // ── Location picker ───────────────────────────────────────────────────────
+  void _openLocationPicker() async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const LocationPickerSheet(),
+    );
+    if (result != null && result.isNotEmpty) {
+      setState(() => _locationLabel = result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(child: _banner()),
             SliverToBoxAdapter(child: _categories()),
             SliverToBoxAdapter(
-              // ✅ onAction now correctly calls the method via context-safe callback
               child: SectionHeader(
                 title: 'Clubs Nearby',
                 onAction: _navigateViewAll,
@@ -74,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
   Widget _header() => Padding(
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
     child: Row(
@@ -119,28 +131,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 2),
-            Row(
-              children: const [
-                Icon(
-                  Icons.location_on_rounded,
-                  color: AppTheme.kAccent,
-                  size: 13,
-                ),
-                SizedBox(width: 3),
-                Text(
-                  'New York',
-                  style: TextStyle(
+            // ✅ Tapping this now opens the location picker
+            InkWell(
+              onTap: _openLocationPicker,
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_rounded,
                     color: AppTheme.kAccent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    size: 13,
                   ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppTheme.kAccent,
-                  size: 16,
-                ),
-              ],
+                  const SizedBox(width: 3),
+                  Text(
+                    _locationLabel,
+                    style: const TextStyle(
+                      color: AppTheme.kAccent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppTheme.kAccent,
+                    size: 16,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -183,13 +200,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  // ── Banner ────────────────────────────────────────────────────────────────
   Widget _banner() => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
     child: const BannerCarousel(),
   );
 
-  // ── Categories ────────────────────────────────────────────────────────────
   Widget _categories() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: SizedBox(
@@ -245,7 +260,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  // ── Clubs horizontal list ─────────────────────────────────────────────────
   Widget _clubsList() {
     final clubs = _clubs;
     if (clubs.isEmpty) {
