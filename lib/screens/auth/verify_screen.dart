@@ -105,9 +105,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
     setState(() => _isLoading = false);
     if (mounted) {
       if (widget.isSignUp == true) {
-        Navigator.pushNamed(context, AppRoutes.createProfile);
+        Navigator.pushReplacementNamed(context, AppRoutes.createProfile);
       } else {
-        Navigator.pushNamed(context, AppRoutes.home);
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     }
   }
