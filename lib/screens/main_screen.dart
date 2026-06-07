@@ -17,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
   static const _screens = [
     HomeScreen(),
     ExploreScreen(),
-    BookingsScreen(),
+    BookingsScreen(isView: false),
     SettingsScreen(),
   ];
 
