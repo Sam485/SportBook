@@ -27,7 +27,7 @@ class SportMateApp extends StatelessWidget {
         title: 'SportMate',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark,
-        initialRoute: AppRoutes.landing,
+        initialRoute: AppRoutes.home,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );
