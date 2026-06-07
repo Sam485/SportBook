@@ -242,7 +242,7 @@ class BookedDetailed extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hosted by ${booking.ownerName ?? "Organizer"}',
+                          'Hosted by ${booking.ownerName}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,

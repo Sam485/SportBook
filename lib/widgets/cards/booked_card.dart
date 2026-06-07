@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 
 class BookedCard extends StatefulWidget {
   final SportBooking booking;
@@ -58,7 +57,6 @@ class _BookedCardState extends State<BookedCard> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: call your cancel booking service here
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text(
