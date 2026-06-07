@@ -229,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: 45,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.85),
+                      color: AppTheme.kTextSub,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: AppTheme.kBg),
@@ -284,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: 45,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
+                          color: AppTheme.kTextSub,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -332,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: 45,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
+                          color: AppTheme.kTextSub,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -383,7 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: 45,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
+                          color: AppTheme.kTextSub,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
