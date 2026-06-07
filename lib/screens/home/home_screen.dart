@@ -21,6 +21,21 @@ class _HomeScreenState extends State<HomeScreen> {
   List<SportBooking> get _bookings =>
       DataService.filteredBookings(_selectedCat);
 
+  // ── Navigate to View All ──────────────────────────────────────────────────
+  void _navigateViewAll() {
+    final clubs = _clubs;
+    if (clubs.isEmpty) return;
+    Navigator.pushNamed(
+      context,
+      AppRoutes.viewAll,
+      arguments: {'title': 'Clubs Nearby', 'data': clubs},
+    );
+  }
+
+  void _navigateBookings() {
+    Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,11 +48,18 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(child: _banner()),
             SliverToBoxAdapter(child: _categories()),
             SliverToBoxAdapter(
-              child: const SectionHeader(title: 'Clubs Nearby'),
+              // ✅ onAction now correctly calls the method via context-safe callback
+              child: SectionHeader(
+                title: 'Clubs Nearby',
+                onAction: _navigateViewAll,
+              ),
             ),
             SliverToBoxAdapter(child: _clubsList()),
             SliverToBoxAdapter(
-              child: const SectionHeader(title: 'Upcoming Bookings'),
+              child: SectionHeader(
+                title: 'Upcoming Bookings',
+                onAction: _navigateBookings,
+              ),
             ),
             SliverList(
               delegate: SliverChildBuilderDelegate(
