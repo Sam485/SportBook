@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
@@ -122,35 +123,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const Spacer(),
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppTheme.kCard,
-            border: Border.all(color: AppTheme.kBorder),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              const Icon(
-                Icons.notifications_outlined,
-                color: Colors.white,
-                size: 22,
-              ),
-              Positioned(
-                top: 11,
-                right: 11,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.kAccent,
-                    shape: BoxShape.circle,
+        InkWell(
+          onTap: () => Navigator.pushNamed(context, AppRoutes.notification),
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.kCard,
+              border: Border.all(color: AppTheme.kBorder),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                Positioned(
+                  top: 11,
+                  right: 11,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.kAccent,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
