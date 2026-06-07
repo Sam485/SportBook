@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
-import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
+import 'package:sportbook/routes/app_routes.dart';
 
 class BookedCard extends StatefulWidget {
   final SportBooking booking;
@@ -57,7 +57,6 @@ class _BookedCardState extends State<BookedCard> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: call your cancel booking service here
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text(
@@ -74,26 +73,30 @@ class _BookedCardState extends State<BookedCard> {
   Widget build(BuildContext context) {
     final countdown = _timeUntilStart();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Container(
-        width: double.infinity,
-        decoration: AppTheme.cardDecoration(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ownerRow(),
-              const SizedBox(height: 10),
-              _divider(),
-              const SizedBox(height: 10),
-              _bookingDetails(),
-              const SizedBox(height: 10),
-              _divider(),
-              const SizedBox(height: 10),
-              _bottomRow(countdown),
-            ],
+    return InkWell(
+      onTap: () =>
+          Navigator.pushNamed(context, AppRoutes.bookedDetailed, arguments: b),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Container(
+          width: double.infinity,
+          decoration: AppTheme.cardDecoration(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ownerRow(),
+                const SizedBox(height: 10),
+                _divider(),
+                const SizedBox(height: 10),
+                _bookingDetails(),
+                const SizedBox(height: 10),
+                _divider(),
+                const SizedBox(height: 10),
+                _bottomRow(countdown),
+              ],
+            ),
           ),
         ),
       ),
@@ -102,148 +105,125 @@ class _BookedCardState extends State<BookedCard> {
 
   // ── Owner / Club Row ───────────────────────────────────────────────────────
   Widget _ownerRow() {
-    return InkWell(
-      onTap: () => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => DraggableScrollableSheet(
-          initialChildSize: 0.80,
-          minChildSize: 0.5,
-          maxChildSize: 0.85,
-          builder: (context, scrollController) => Container(
-            decoration: BoxDecoration(
-              color: AppTheme.kBg,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              border: Border.all(color: AppTheme.kBorder),
+    return Row(
+      children: [
+        // Avatar circle with initials
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: b.ownerColor.withOpacity(0.2),
+            border: Border.all(color: b.ownerColor, width: 2),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            b.ownerInitials,
+            style: TextStyle(
+              color: b.ownerColor,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
             ),
-            child: Expanded(child: BookedDetailed(booking: b)),
           ),
         ),
-      ),
-      //Navigator.pushNamed(context, AppRoutes.bookedDetailed, arguments: b),
-      child: Row(
-        children: [
-          // Avatar circle with initials
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: b.ownerColor.withOpacity(0.2),
-              border: Border.all(color: b.ownerColor, width: 2),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              b.ownerInitials,
-              style: TextStyle(
-                color: b.ownerColor,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Booking title
+              Text(
+                b.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Booking title
-                Text(
-                  b.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+              const SizedBox(height: 2),
+              // Owner name
+              Text(
+                b.ownerName,
+                style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              // Open / close time
+              Row(
+                children: [
+                  const Icon(
+                    Icons.lock_open_outlined,
+                    color: AppTheme.kAccent,
+                    size: 14,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                // Owner name
-                Text(
-                  b.ownerName,
-                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
-                ),
-                const SizedBox(height: 6),
-                // Open / close time
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.lock_open_outlined,
+                  const SizedBox(width: 3),
+                  Text(
+                    b.openTime,
+                    style: const TextStyle(
                       color: AppTheme.kAccent,
-                      size: 14,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      b.openTime,
-                      style: const TextStyle(
-                        color: AppTheme.kAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 3,
-                      height: 3,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.kTextSub,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.lock_outline,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 3,
+                    height: 3,
+                    decoration: const BoxDecoration(
                       color: AppTheme.kTextSub,
-                      size: 14,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      b.closeTime,
-                      style: const TextStyle(
-                        color: AppTheme.kTextSub,
-                        fontSize: 13,
-                      ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.lock_outline,
+                    color: AppTheme.kTextSub,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    b.closeTime,
+                    style: const TextStyle(
+                      color: AppTheme.kTextSub,
+                      fontSize: 13,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
+        ),
 
-          // Sport emoji badges
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: b.sportTypes
-                .map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: b.ownerColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        s,
-                        style: TextStyle(
-                          color: b.ownerColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
+        // Sport emoji badges
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: b.sportTypes
+              .map(
+                (s) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: b.ownerColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      s,
+                      style: TextStyle(
+                        color: b.ownerColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
     );
   }
 
