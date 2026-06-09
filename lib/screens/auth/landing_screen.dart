@@ -16,28 +16,28 @@ class _LandingScreenState extends State<LandingScreen> {
   List<Map<String, dynamic>> bannerUrl = [
     {
       'imageUrl':
-          'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=1200&fit=crop', // Soccer stadium aerial
+          'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=1200&fit=crop',
       'title': 'Book Your\nGame Today!',
       'description':
           'Find courts, book slots, and connect with players near you — all in one place.',
     },
     {
       'imageUrl':
-          'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=1200&fit=crop', // Basketball
+          'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=1200&fit=crop',
       'title': 'Find Courts\nInstantly',
       'description':
           'Discover available basketball courts, check real-time slot availability and reserve in seconds.',
     },
     {
       'imageUrl':
-          'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&h=1200&fit=crop', // Tennis court top-down
+          'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&h=1200&fit=crop',
       'title': 'Meet & Play\nWith Others',
       'description':
           'Join local games, challenge nearby players, and grow your sports community.',
     },
     {
       'imageUrl':
-          'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=1200&fit=crop', // Athletics track
+          'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=1200&fit=crop',
       'title': 'Track Every\nPerformance',
       'description':
           'Log your sessions, monitor progress, and push your personal best every time you play.',
@@ -46,16 +46,16 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E1A),
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: Column(
         children: [
-          // Carousel takes most of the screen
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.65,
             child: _carousel(),
           ),
-          // Bottom section: description + dots + buttons
           _buildBottomSection(),
         ],
       ),
@@ -63,6 +63,8 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Widget _carousel() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return CarouselSlider(
       options: CarouselOptions(
         height: double.infinity,
@@ -90,17 +92,21 @@ class _LandingScreenState extends State<LandingScreen> {
                   slide['imageUrl'],
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    color: AppTheme.kCardAlt,
-                    child: const Icon(
+                    color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                    child: Icon(
                       Icons.image_not_supported,
-                      color: AppTheme.kTextSub,
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                       size: 36,
                     ),
                   ),
                   loadingBuilder: (_, child, progress) => progress == null
                       ? child
                       : Container(
-                          color: AppTheme.kCardAlt,
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
                           child: const Center(
                             child: CircularProgressIndicator(
                               color: AppTheme.kAccent,
@@ -117,17 +123,14 @@ class _LandingScreenState extends State<LandingScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0x66000000), // subtle dark at top
+                        Color(0x66000000),
                         Colors.transparent,
-                        Color(0xCC0A0E1A), // strong dark at bottom
+                        Color(0xCC0A0E1A),
                       ],
                       stops: [0.0, 0.4, 1.0],
                     ),
                   ),
                 ),
-
-                // Three sport image strips (decorative overlay like the design)
-                // Removed for simplicity — the full-bleed image carries the visual weight
 
                 // Title at the bottom of the image
                 Positioned(
@@ -161,8 +164,10 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Widget _buildBottomSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: const Color(0xFF0A0E1A),
+      color: isDark ? const Color(0xFF0A0E1A) : AppTheme.kLightCard,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -171,9 +176,9 @@ class _LandingScreenState extends State<LandingScreen> {
           // Description
           Text(
             bannerUrl[_page]['description'],
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Color(0xFFADB5C7),
+              color: isDark ? const Color(0xFFADB5C7) : AppTheme.kLightTextSub,
               height: 1.5,
             ),
           ),
@@ -190,7 +195,9 @@ class _LandingScreenState extends State<LandingScreen> {
                 width: isActive ? 22 : 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: isActive ? AppTheme.kAccent : const Color(0xFF2E3548),
+                  color: isActive
+                      ? AppTheme.kAccent
+                      : (isDark ? const Color(0xFF2E3548) : Colors.grey[400]),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -218,8 +225,27 @@ class _LandingScreenState extends State<LandingScreen> {
             height: 52,
             child: OutlinedButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
-              style: AppTheme.outlineButtonStyle(),
-              child: const Text('Login', style: AppTheme.tsButtonLabel),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isDark ? Colors.white : AppTheme.kLightText,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF2E3548)
+                      : AppTheme.kLightBorder,
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                'Login',
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
             ),
           ),
         ],

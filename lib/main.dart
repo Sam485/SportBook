@@ -37,7 +37,7 @@ class SportMateApp extends StatelessWidget {
             theme: AppTheme.light, // ← LIGHT theme (default)
             darkTheme: AppTheme.dark, // ← DARK theme
             themeMode: themeProvider.themeMode, // Controls which theme to use
-            initialRoute: AppRoutes.home,
+            initialRoute: AppRoutes.landing,
             onGenerateRoute: AppRoutes.onGenerateRoute,
           );
         },

@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/providers/theme_provider.dart';
 import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 
 class EditProfileScreen extends StatefulWidget {
