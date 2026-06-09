@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -53,6 +54,7 @@ class _BookedCardState extends State<BookedCard> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
+              // Add actual cancellation logic here
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text(
@@ -61,6 +63,193 @@ class _BookedCardState extends State<BookedCard> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showQrDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.kAccent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.qr_code,
+                      color: AppTheme.kAccent,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Entry Pass',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppTheme.kLightText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // QR Code
+              Container(
+                width: 200,
+                height: 200,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: QrImageView(
+                  data:
+                      'BOOKING:${b.id}\nTITLE:${b.title}\nVENUE:${b.venue}\nDATE:${b.formattedBookingDate}',
+                  version: QrVersions.auto,
+                  size: 168,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Booking Details
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      b.title,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppTheme.kLightText,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      b.venue,
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${b.formattedBookingDate} • ${b.openTime} - ${b.closeTime}',
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kAccent
+                            : AppTheme.kLightTextSub,
+                        fontSize: 11,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Instruction
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.kAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppTheme.kAccent, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Show this QR code at the venue entrance',
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white70
+                              : AppTheme.kLightTextSub,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.kAccent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -201,7 +390,7 @@ class _BookedCardState extends State<BookedCard> {
 
   Widget _qrButton(bool isDark) {
     return InkWell(
-      onTap: () {},
+      onTap: _showQrDialog,
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -212,6 +401,7 @@ class _BookedCardState extends State<BookedCard> {
           child: Icon(
             Icons.qr_code,
             color: isDark ? AppTheme.kAccent : AppTheme.kLightText,
+            size: 24,
           ),
         ),
       ),
