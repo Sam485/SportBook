@@ -11,12 +11,10 @@ class StepPayment extends StatefulWidget {
   const StepPayment({super.key, required this.onConfirm});
 
   @override
-  State<StepPayment> createState() => StepPaymentState(); // ✅ public
+  State<StepPayment> createState() => StepPaymentState();
 }
 
-class StepPaymentState
-    extends
-        State<StepPayment> // ✅ public, no underscore
+class StepPaymentState extends State<StepPayment>
     with TickerProviderStateMixin {
   PaymentMethod? _selected;
 
@@ -77,7 +75,6 @@ class StepPaymentState
     _detailAnim.forward(from: 0);
   }
 
-  // ✅ Public method called by booking_flow_screen via GlobalKey
   void handleConfirm() {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,37 +97,42 @@ class StepPaymentState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = context.watch<BookingProvider>();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
-        const Text(
+        Text(
           'Payment Method',
           style: TextStyle(
-            color: Colors.white,
+            color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           "Choose how you'd like to pay",
-          style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+          style: TextStyle(
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 24),
-        _BookingSummaryCard(p: p),
+        _BookingSummaryCard(p: p, isDark: isDark),
         const SizedBox(height: 28),
         _UserInfoForm(
           formKey: _formKey,
           nameController: _nameController,
           phoneController: _phoneController,
+          isDark: isDark,
         ),
         const SizedBox(height: 28),
-        const Text(
+        Text(
           'SELECT PAYMENT',
           style: TextStyle(
-            color: AppTheme.kTextSub,
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.4,
@@ -147,6 +149,7 @@ class StepPaymentState
           badge: 'Instant',
           badgeColor: const Color(0xFF4CAF50),
           accentColor: const Color(0xFF0072CE),
+          isDark: isDark,
         ),
         const SizedBox(height: 12),
         if (_selected != null)
@@ -157,8 +160,8 @@ class StepPaymentState
               child: Column(
                 children: [
                   _selected == PaymentMethod.khqr
-                      ? _KhqrDetail(totalPrice: p.totalPrice)
-                      : _CashDetail(totalPrice: p.totalPrice),
+                      ? _KhqrDetail(totalPrice: p.totalPrice, isDark: isDark)
+                      : _CashDetail(totalPrice: p.totalPrice, isDark: isDark),
                 ],
               ),
             ),
@@ -173,11 +176,13 @@ class _UserInfoForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController nameController;
   final TextEditingController phoneController;
+  final bool isDark;
 
   const _UserInfoForm({
     required this.formKey,
     required this.nameController,
     required this.phoneController,
+    required this.isDark,
   });
 
   @override
@@ -185,19 +190,21 @@ class _UserInfoForm extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.kCardAlt,
+        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
       ),
       child: Form(
         key: formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'CONTACT INFORMATION',
               style: TextStyle(
-                color: AppTheme.kTextSub,
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.4,
@@ -206,20 +213,28 @@ class _UserInfoForm extends StatelessWidget {
             const SizedBox(height: 16),
             TextFormField(
               controller: nameController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+              ),
               decoration: InputDecoration(
                 labelText: 'Full Name',
-                labelStyle: const TextStyle(color: AppTheme.kTextSub),
+                labelStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
                 hintText: 'Enter your full name',
-                hintStyle: const TextStyle(color: AppTheme.kTextSub),
-                prefixIcon: const Icon(
+                hintStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
+                prefixIcon: Icon(
                   Icons.person_outline_rounded,
-                  color: AppTheme.kTextSub,
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   size: 20,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.kBorder),
+                  borderSide: BorderSide(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -240,7 +255,9 @@ class _UserInfoForm extends StatelessWidget {
                   ),
                 ),
                 filled: true,
-                fillColor: const Color(0xFF0D0D1A),
+                fillColor: isDark
+                    ? const Color(0xFF0D0D1A)
+                    : AppTheme.kLightCard,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -259,21 +276,29 @@ class _UserInfoForm extends StatelessWidget {
             const SizedBox(height: 16),
             TextFormField(
               controller: phoneController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+              ),
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 labelText: 'Phone Number',
-                labelStyle: const TextStyle(color: AppTheme.kTextSub),
+                labelStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
                 hintText: 'Enter your phone number',
-                hintStyle: const TextStyle(color: AppTheme.kTextSub),
-                prefixIcon: const Icon(
+                hintStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
+                prefixIcon: Icon(
                   Icons.phone_android_rounded,
-                  color: AppTheme.kTextSub,
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   size: 20,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.kBorder),
+                  borderSide: BorderSide(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -294,7 +319,9 @@ class _UserInfoForm extends StatelessWidget {
                   ),
                 ),
                 filled: true,
-                fillColor: const Color(0xFF0D0D1A),
+                fillColor: isDark
+                    ? const Color(0xFF0D0D1A)
+                    : AppTheme.kLightCard,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -321,7 +348,9 @@ class _UserInfoForm extends StatelessWidget {
 // ── Booking Summary Card ──────────────────────────────────────────────────────
 class _BookingSummaryCard extends StatelessWidget {
   final BookingProvider p;
-  const _BookingSummaryCard({required this.p});
+  final bool isDark;
+
+  const _BookingSummaryCard({required this.p, required this.isDark});
 
   static String _fmtH(int h) {
     final period = h >= 12 ? 'PM' : 'AM';
@@ -357,9 +386,11 @@ class _BookingSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.kCardAlt,
+        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
       ),
       child: Column(
         children: [
@@ -367,36 +398,43 @@ class _BookingSummaryCard extends StatelessWidget {
             icon: Icons.sports_rounded,
             label: 'Sport',
             value: p.selectedSport ?? '—',
+            isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.grid_view_rounded,
             label: 'Court',
             value: p.target?.name ?? '—',
+            isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.calendar_today_rounded,
             label: 'Date',
             value: dateStr,
+            isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.access_time_rounded,
             label: 'Time',
             value: timeStr,
+            isDark: isDark,
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Color(0xFF2A2A3A), thickness: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(
+              color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
+              thickness: 1,
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Total Amount',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
@@ -421,27 +459,37 @@ class _SummaryRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final bool isDark;
+
   const _SummaryRow({
     required this.icon,
     required this.label,
     required this.value,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: AppTheme.kTextSub, size: 15),
+        Icon(
+          icon,
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+          size: 15,
+        ),
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+          style: TextStyle(
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            fontSize: 13,
+          ),
         ),
         const Spacer(),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -462,6 +510,7 @@ class _PaymentCard extends StatelessWidget {
   final String badge;
   final Color badgeColor;
   final Color accentColor;
+  final bool isDark;
 
   const _PaymentCard({
     required this.selected,
@@ -473,6 +522,7 @@ class _PaymentCard extends StatelessWidget {
     required this.badge,
     required this.badgeColor,
     required this.accentColor,
+    required this.isDark,
   });
 
   @override
@@ -483,10 +533,14 @@ class _PaymentCard extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? accentColor.withOpacity(0.08) : AppTheme.kCardAlt,
+          color: selected
+              ? accentColor.withOpacity(0.08)
+              : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected ? accentColor : AppTheme.kBorder,
+            color: selected
+                ? accentColor
+                : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
             width: selected ? 1.8 : 1,
           ),
         ),
@@ -499,12 +553,14 @@ class _PaymentCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? accentColor.withOpacity(0.15)
-                    : const Color(0xFF1E1E2E),
+                    : (isDark
+                          ? const Color(0xFF1E1E2E)
+                          : AppTheme.kLightCardAlt),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: selected
                       ? accentColor.withOpacity(0.4)
-                      : AppTheme.kBorder,
+                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 ),
               ),
               child: Center(child: icon),
@@ -519,7 +575,9 @@ class _PaymentCard extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          color: selected ? Colors.white : Colors.white70,
+                          color: selected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : AppTheme.kLightText),
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                         ),
@@ -552,8 +610,10 @@ class _PaymentCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: AppTheme.kTextSub,
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                       fontSize: 11.5,
                     ),
                   ),
@@ -569,7 +629,9 @@ class _PaymentCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: selected ? accentColor : Colors.transparent,
                 border: Border.all(
-                  color: selected ? accentColor : AppTheme.kBorder,
+                  color: selected
+                      ? accentColor
+                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                   width: 2,
                 ),
               ),
@@ -587,14 +649,16 @@ class _PaymentCard extends StatelessWidget {
 // ── KHQR Detail Panel ─────────────────────────────────────────────────────────
 class _KhqrDetail extends StatelessWidget {
   final double totalPrice;
-  const _KhqrDetail({required this.totalPrice});
+  final bool isDark;
+
+  const _KhqrDetail({required this.totalPrice, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1828),
+        color: isDark ? const Color(0xFF0A1828) : AppTheme.kLightCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF0072CE).withOpacity(0.35)),
       ),
@@ -615,20 +679,25 @@ class _KhqrDetail extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'KHQR Payment',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
                     'Scan with your banking app',
-                    style: TextStyle(color: AppTheme.kTextSub, fontSize: 11),
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
@@ -644,7 +713,7 @@ class _KhqrDetail extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: CustomPaint(painter: _MockQrPainter()),
+              child: CustomPaint(painter: _MockQrPainter(isDark: isDark)),
             ),
           ),
           const SizedBox(height: 16),
@@ -667,10 +736,10 @@ class _KhqrDetail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Supported Banks & Wallets',
             style: TextStyle(
-              color: AppTheme.kTextSub,
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -697,14 +766,22 @@ class _KhqrDetail extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A2E),
+                          color: isDark
+                              ? const Color(0xFF1A1A2E)
+                              : AppTheme.kLightCardAlt,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.kBorder),
+                          border: Border.all(
+                            color: isDark
+                                ? AppTheme.kBorder
+                                : AppTheme.kLightBorder,
+                          ),
                         ),
                         child: Text(
                           b,
-                          style: const TextStyle(
-                            color: Colors.white60,
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white60
+                                : AppTheme.kLightTextSub,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -717,18 +794,25 @@ class _KhqrDetail extends StatelessWidget {
           _InstructionRow(
             step: '1',
             text: 'Open your banking app and tap "Scan QR"',
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
-          _InstructionRow(step: '2', text: 'Scan the KHQR code above'),
+          _InstructionRow(
+            step: '2',
+            text: 'Scan the KHQR code above',
+            isDark: isDark,
+          ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '3',
             text: 'Confirm the amount and complete the transfer',
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '4',
             text: 'Tap "Confirm & View QR Code" to finalize your booking',
+            isDark: isDark,
           ),
         ],
       ),
@@ -739,14 +823,16 @@ class _KhqrDetail extends StatelessWidget {
 // ── Cash Detail Panel ─────────────────────────────────────────────────────────
 class _CashDetail extends StatelessWidget {
   final double totalPrice;
-  const _CashDetail({required this.totalPrice});
+  final bool isDark;
+
+  const _CashDetail({required this.totalPrice, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A120A),
+        color: isDark ? const Color(0xFF1A120A) : AppTheme.kLightCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.35)),
       ),
@@ -767,20 +853,25 @@ class _CashDetail extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Cash Payment',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
                     'Pay at the venue counter',
-                    style: TextStyle(color: AppTheme.kTextSub, fontSize: 11),
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
@@ -799,10 +890,10 @@ class _CashDetail extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Text(
+                Text(
                   'Amount Due at Venue',
                   style: TextStyle(
-                    color: AppTheme.kTextSub,
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -817,10 +908,10 @@ class _CashDetail extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'USD',
                   style: TextStyle(
-                    color: AppTheme.kTextSub,
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -836,15 +927,15 @@ class _CashDetail extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.orange.withOpacity(0.25)),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
+                const Icon(
                   Icons.info_outline_rounded,
                   color: Colors.orange,
                   size: 15,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Please arrive 10 minutes early to complete payment at the front desk before your session.',
@@ -862,21 +953,25 @@ class _CashDetail extends StatelessWidget {
           _InstructionRow(
             step: '1',
             text: 'Tap "Confirm Booking" to reserve your court',
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '2',
             text: 'Arrive at the venue before your session',
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '3',
             text: 'Show your booking confirmation at the counter',
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '4',
             text: 'Pay the amount in cash and enjoy your game!',
+            isDark: isDark,
           ),
         ],
       ),
@@ -888,7 +983,13 @@ class _CashDetail extends StatelessWidget {
 class _InstructionRow extends StatelessWidget {
   final String step;
   final String text;
-  const _InstructionRow({required this.step, required this.text});
+  final bool isDark;
+
+  const _InstructionRow({
+    required this.step,
+    required this.text,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -918,8 +1019,8 @@ class _InstructionRow extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              color: Colors.white60,
+            style: TextStyle(
+              color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
               fontSize: 12,
               height: 1.5,
             ),
@@ -944,10 +1045,14 @@ class _KhqrIcon extends StatelessWidget {
 
 // ── Mock QR Painter ───────────────────────────────────────────────────────────
 class _MockQrPainter extends CustomPainter {
+  final bool isDark;
+
+  _MockQrPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF1A1A2E)
+      ..color = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE0E0E0)
       ..style = PaintingStyle.fill;
 
     final cellSize = size.width / 21;

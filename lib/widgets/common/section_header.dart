@@ -12,20 +12,37 @@ class SectionHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.actionLabel = 'View All',
-    this.onAction,
+    this.onAction, required bool isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: AppTheme.tsTitle),
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppTheme.kLightText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
           GestureDetector(
             onTap: onAction,
-            child: Text(actionLabel, style: AppTheme.tsAccent),
+            child: Text(
+              actionLabel,
+              style: const TextStyle(
+                color: AppTheme.kAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -48,6 +65,8 @@ class CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 48,
       child: ListView.builder(
@@ -64,29 +83,42 @@ class CategoryChips extends StatelessWidget {
               margin: const EdgeInsets.only(right: 10),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: sel ? AppTheme.kAccent : AppTheme.kCard,
+                color: sel
+                    ? AppTheme.kAccent
+                    : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                    color: sel ? AppTheme.kAccent : AppTheme.kBorder),
+                  color: sel
+                      ? AppTheme.kAccent
+                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
+                ),
                 boxShadow: sel
-                    ? [BoxShadow(
-                        color: AppTheme.kAccent.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3))]
+                    ? [
+                        BoxShadow(
+                          color: AppTheme.kAccent.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
                     : null,
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(cat.emoji, style: const TextStyle(fontSize: 15)),
-                const SizedBox(width: 6),
-                Text(cat.name,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(cat.emoji, style: const TextStyle(fontSize: 15)),
+                  const SizedBox(width: 6),
+                  Text(
+                    cat.name,
                     style: TextStyle(
                       color: sel
                           ? const Color(0xFF0A1828)
-                          : Colors.white60,
+                          : (isDark ? Colors.white60 : AppTheme.kLightTextSub),
                       fontSize: 13,
                       fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
-                    )),
-              ]),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

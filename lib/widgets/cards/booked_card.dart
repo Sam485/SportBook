@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -14,45 +15,40 @@ class BookedCard extends StatefulWidget {
 class _BookedCardState extends State<BookedCard> {
   SportBooking get b => widget.booking;
 
-  /// Returns how long until the booking starts.
-  /// Returns null if the start time can't be parsed or is already past.
-  Duration? _timeUntilStart() {
-    final start = b.bookingStartHour;
-    final date = b.bookingDate;
-    if (start == null || date == null) return null;
-
-    final now = DateTime.now();
-    final bookingStart = DateTime(date.year, date.month, date.day, start, 0);
-    final diff = bookingStart.difference(now);
-    return diff.isNegative ? null : diff;
-  }
-
-  String _formatCountdown(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    if (h > 0 && m > 0) return '${h}h ${m}m';
-    if (h > 0) return '${h}h';
-    return '${m}m';
-  }
-
   void _onCancel() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.kCard,
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Cancel Booking',
-          style: AppTheme.tsTitle.copyWith(fontSize: 18),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         content: Text(
           'Are you sure you want to cancel "${b.title}"?',
-          style: AppTheme.tsBody,
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 13,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Keep', style: AppTheme.tsAccent),
+            child: Text(
+              'Keep',
+              style: TextStyle(
+                color: AppTheme.kAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -71,7 +67,7 @@ class _BookedCardState extends State<BookedCard> {
 
   @override
   Widget build(BuildContext context) {
-    final countdown = _timeUntilStart();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
       onTap: () =>
@@ -80,21 +76,17 @@ class _BookedCardState extends State<BookedCard> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Container(
           width: double.infinity,
-          decoration: AppTheme.cardDecoration(),
+          decoration: AppTheme.cardDecorationAdaptive(context),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                _ownerRow(),
-                const SizedBox(height: 10),
-                _divider(),
-                const SizedBox(height: 10),
-                _bookingDetails(),
-                const SizedBox(height: 10),
-                _divider(),
-                const SizedBox(height: 10),
-                _bottomRow(countdown),
+                _ownerImage(),
+                const SizedBox(width: 10),
+                _bookingBody(isDark),
+                const SizedBox(width: 10),
+                _qrButton(isDark),
               ],
             ),
           ),
@@ -103,229 +95,126 @@ class _BookedCardState extends State<BookedCard> {
     );
   }
 
-  // ── Owner / Club Row ───────────────────────────────────────────────────────
-  Widget _ownerRow() {
-    return Row(
-      children: [
-        // Avatar circle with initials
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: b.ownerColor.withOpacity(0.2),
-            border: Border.all(color: b.ownerColor, width: 2),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            b.ownerInitials,
+  Widget _ownerImage() {
+    return Container(
+      width: 100,
+      height: 50 * (MediaQuery.of(context).size.height / 300),
+      decoration: BoxDecoration(
+        shape: BoxShape.rectangle,
+        color: b.ownerColor.withOpacity(0.2),
+        border: Border.all(color: b.ownerColor, width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        b.ownerInitials,
+        style: TextStyle(
+          color: b.ownerColor,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _bookingBody(bool isDark) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Booking title
+          Text(
+            b.title,
             style: TextStyle(
-              color: b.ownerColor,
-              fontSize: 18,
+              color: isDark ? Colors.white : AppTheme.kLightText,
+              fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Booking title
-              Text(
-                b.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              // Owner name
-              Text(
-                b.ownerName,
-                style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
-              ),
-              const SizedBox(height: 6),
-              // Open / close time
-              Row(
-                children: [
-                  const Icon(
-                    Icons.lock_open_outlined,
-                    color: AppTheme.kAccent,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    b.openTime,
-                    style: const TextStyle(
-                      color: AppTheme.kAccent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 3,
-                    height: 3,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.kTextSub,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.lock_outline,
-                    color: AppTheme.kTextSub,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    b.closeTime,
-                    style: const TextStyle(
-                      color: AppTheme.kTextSub,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          const SizedBox(height: 2),
+          _badget(b.sportTypes[0], b.ownerColor),
+          const SizedBox(height: 6),
+          // Open / close time
+          _detailRow(
+            Icons.calendar_today_outlined,
+            AppTheme.kAccent,
+            'Booked on  Apr 24',
+            isDark,
           ),
-        ),
-
-        // Sport emoji badges
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: b.sportTypes
-              .map(
-                (s) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: b.ownerColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      s,
-                      style: TextStyle(
-                        color: b.ownerColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+          const SizedBox(height: 8),
+          _detailRow(
+            Icons.timer_outlined,
+            AppTheme.kAccent,
+            '${b.openTime}  –  ${b.closeTime}',
+            isDark,
+          ),
+          const SizedBox(height: 8),
+          _detailRow(
+            Icons.location_on_outlined,
+            isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            b.venue,
+            isDark,
+          ),
+          const SizedBox(height: 8),
+          _badget('\$ 12.00', AppTheme.kAccent),
+        ],
+      ),
     );
   }
 
-  // ── Booking Details ────────────────────────────────────────────────────────
-  Widget _bookingDetails() {
-    return Column(
-      children: [
-        _detailRow(
-          Icons.calendar_today_outlined,
-          AppTheme.kAccent,
-          'Booked on  Apr 24',
-        ),
-        const SizedBox(height: 8),
-        _detailRow(
-          Icons.timer_outlined,
-          AppTheme.kAccent,
-          '${b.openTime}  –  ${b.closeTime}',
-        ),
-        const SizedBox(height: 8),
-        _detailRow(Icons.location_on_outlined, AppTheme.kTextSub, b.venue),
-      ],
-    );
-  }
-
-  Widget _detailRow(IconData icon, Color iconColor, String text) {
+  Widget _detailRow(IconData icon, Color iconColor, String text, bool isDark) {
     return Row(
       children: [
         Icon(icon, color: iconColor, size: 16),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(text, style: AppTheme.tsBody.copyWith(fontSize: 13)),
-        ),
-      ],
-    );
-  }
-
-  // ── Bottom Row: countdown + cancel ─────────────────────────────────────────
-  Widget _bottomRow(Duration? countdown) {
-    return Row(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              countdown != null ? 'Upcoming' : 'In Progress',
-              style: AppTheme.tsBody.copyWith(fontSize: 13),
-            ),
-            const SizedBox(height: 2),
-            countdown != null
-                ? Text(
-                    _formatCountdown(countdown),
-                    style: AppTheme.tsLabel.copyWith(fontSize: 22),
-                  )
-                : const Text(
-                    '🟢 Now',
-                    style: TextStyle(
-                      color: Colors.greenAccent,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-          ],
-        ),
-        const Spacer(),
-        if (countdown != null)
-          ElevatedButton(
-            onPressed: _onCancel,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withOpacity(0.15),
-              foregroundColor: Colors.redAccent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: const BorderSide(color: Colors.redAccent, width: 1),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-            ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.greenAccent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.greenAccent, width: 1),
-            ),
-            child: const Text(
-              'Active',
-              style: TextStyle(
-                color: Colors.greenAccent,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+              fontSize: 13,
             ),
           ),
+        ),
       ],
     );
   }
 
-  Widget _divider() => Divider(thickness: 0.4, color: AppTheme.kTextSub);
+  Widget _badget(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _qrButton(bool isDark) {
+    return InkWell(
+      onTap: () {},
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(
+            Icons.qr_code,
+            color: isDark ? AppTheme.kAccent : AppTheme.kLightText,
+          ),
+        ),
+      ),
+    );
+  }
 }

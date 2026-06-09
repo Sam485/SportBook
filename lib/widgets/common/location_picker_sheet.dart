@@ -25,11 +25,9 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
     });
 
     try {
-      // 1. Check current status BEFORE requesting
       PermissionStatus status = await Permission.location.status;
 
       if (status.isPermanentlyDenied) {
-        // Already permanently denied — must go to Settings
         setState(() {
           _isPermanentlyDenied = true;
           _errorMsg = 'Location permission is permanently denied.';
@@ -38,11 +36,9 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
         return;
       }
 
-      // 2. Not permanently denied — request it (covers first-time & denied-but-askable)
       status = await Permission.location.request();
 
       if (status.isDenied) {
-        // User tapped "Deny" — can still ask again next time
         setState(() {
           _isPermanentlyDenied = false;
           _errorMsg = 'Permission denied. Tap the button to try again.';
@@ -52,7 +48,6 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
       }
 
       if (status.isPermanentlyDenied) {
-        // User tapped "Never ask again"
         setState(() {
           _isPermanentlyDenied = true;
           _errorMsg =
@@ -62,7 +57,6 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
         return;
       }
 
-      // 3. Permission granted — check if GPS service is on
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
@@ -72,14 +66,12 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
         return;
       }
 
-      // 4. Get position
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
         ),
       );
 
-      // 5. Reverse geocode
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
@@ -114,11 +106,12 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.kCard,
+        color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottom),
@@ -131,39 +124,42 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.kBorder,
+                color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Select location',
             style: TextStyle(
-              color: Colors.white,
+              color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Use your current location or type a city name.',
-            style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+            style: TextStyle(
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 20),
 
-          // ── GPS button — label adapts to state
+          // ── GPS button ──
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _isLocating ? null : _useCurrentLocation,
               icon: _isLocating
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF0A1828),
+                        color: isDark ? const Color(0xFF0A1828) : Colors.white,
                       ),
                     )
                   : Icon(
@@ -171,6 +167,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                           ? Icons.settings_rounded
                           : Icons.my_location_rounded,
                       size: 18,
+                      color: isDark ? const Color(0xFF0A1828) : Colors.white,
                     ),
               label: Text(
                 _isLocating
@@ -178,10 +175,15 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                     : _isPermanentlyDenied
                     ? 'Open settings'
                     : 'Use current location',
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF0A1828) : Colors.white,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.kAccent,
-                foregroundColor: const Color(0xFF0A1828),
+                foregroundColor: isDark
+                    ? const Color(0xFF0A1828)
+                    : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -217,7 +219,6 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                           fontSize: 12,
                         ),
                       ),
-                      // Only show "Open Settings" link when permanently denied
                       if (_isPermanentlyDenied) ...[
                         const SizedBox(height: 4),
                         GestureDetector(
@@ -244,26 +245,37 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
             child: Row(
               children: [
                 Expanded(
-                  child: Divider(color: AppTheme.kBorder, thickness: 0.5),
+                  child: Divider(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                    thickness: 0.5,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     'or',
-                    style: TextStyle(color: AppTheme.kTextSub, fontSize: 12),
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 Expanded(
-                  child: Divider(color: AppTheme.kBorder, thickness: 0.5),
+                  child: Divider(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                    thickness: 0.5,
+                  ),
                 ),
               ],
             ),
           ),
 
-          const Text(
+          Text(
             'Enter city manually',
             style: TextStyle(
-              color: Colors.white70,
+              color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -274,22 +286,29 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
               Expanded(
                 child: TextField(
                   controller: _searchCtrl,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                    fontSize: 14,
+                  ),
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _confirmManual(),
                   decoration: InputDecoration(
                     hintText: 'e.g. London, Bangkok...',
                     hintStyle: TextStyle(
-                      color: AppTheme.kTextSub,
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                       fontSize: 13,
                     ),
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       Icons.search_rounded,
-                      color: AppTheme.kTextSub,
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                       size: 20,
                     ),
                     filled: true,
-                    fillColor: AppTheme.kBg,
+                    fillColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -308,9 +327,9 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                     color: AppTheme.kAccent,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_forward_rounded,
-                    color: Color(0xFF0A1828),
+                    color: isDark ? const Color(0xFF0A1828) : Colors.white,
                     size: 20,
                   ),
                 ),

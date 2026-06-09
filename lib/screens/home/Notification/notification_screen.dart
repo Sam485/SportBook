@@ -130,19 +130,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text('Notifications', style: AppTheme.tsTitle),
+        title: Text(
+          'Notifications',
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all),
+            icon: Icon(
+              Icons.done_all,
+              color: isDark ? Colors.white : AppTheme.kLightText,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -156,10 +175,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Category Sliver
-            SliverToBoxAdapter(child: _category()),
-
-            // Notifications List Sliver
+            SliverToBoxAdapter(child: _category(isDark)),
             SliverPadding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               sliver: _filteredNotifications.isEmpty
@@ -171,13 +187,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             Icon(
                               Icons.notifications_none,
                               size: 80,
-                              color: Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'No notifications in ${_selectedCat.toLowerCase()}',
                               style: TextStyle(
-                                color: Colors.grey[400],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                                 fontSize: 16,
                               ),
                             ),
@@ -187,7 +207,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     )
                   : SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
-                        return _notificationCard(_filteredNotifications[index]);
+                        return _notificationCard(
+                          _filteredNotifications[index],
+                          isDark,
+                        );
                       }, childCount: _filteredNotifications.length),
                     ),
             ),
@@ -197,7 +220,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _category() {
+  Widget _category(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: SizedBox(
@@ -219,10 +242,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: sel ? AppTheme.kAccent : AppTheme.kCard,
+                  color: sel
+                      ? AppTheme.kAccent
+                      : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: sel ? AppTheme.kAccent : AppTheme.kBorder,
+                    color: sel
+                        ? AppTheme.kAccent
+                        : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                   ),
                   boxShadow: sel
                       ? [
@@ -240,7 +267,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     Text(
                       cat,
                       style: TextStyle(
-                        color: sel ? const Color(0xFF0A1828) : Colors.white60,
+                        color: sel
+                            ? const Color(0xFF0A1828)
+                            : (isDark
+                                  ? Colors.white60
+                                  : AppTheme.kLightTextSub),
                         fontSize: 13,
                         fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
                       ),
@@ -255,7 +286,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _notificationCard(NotificationItem notification) {
+  Widget _notificationCard(NotificationItem notification, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
@@ -266,7 +297,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         },
         child: Container(
           width: double.infinity,
-          decoration: AppTheme.cardDecoration(),
+          decoration: AppTheme.cardDecorationAdaptive(context),
           child: ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
@@ -282,7 +313,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             title: Text(
               notification.title,
-              style: AppTheme.tsTitle.copyWith(fontSize: 15),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,14 +326,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 const SizedBox(height: 4),
                 Text(
                   notification.description,
-                  style: AppTheme.tsBody.copyWith(fontSize: 13),
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                    fontSize: 13,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   notification.datetime,
-                  style: AppTheme.tsSub.copyWith(fontSize: 11),
+                  style: TextStyle(
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),

@@ -17,7 +17,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  // ── Date helpers ────────────────────────────────────────────────────────────
   static DateTime get _startOfWeek {
     final now = DateTime.now();
     final sub = (now.weekday - DateTime.monday) % 7;
@@ -45,7 +44,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   ];
   static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  // ── Time helpers ────────────────────────────────────────────────────────────
   static String _fmtH(int h) {
     final p = h >= 12 ? 'PM' : 'AM';
     final hr = h % 12 == 0 ? 12 : h % 12;
@@ -65,7 +63,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
-    // Auto-select today's date after the first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoSelectTodayDate();
     });
@@ -77,146 +74,25 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     super.dispose();
   }
 
-  // Auto-select today's date when screen loads
   void _autoSelectTodayDate() {
     final p = context.read<BookingProvider>();
     final today = DateTime.now();
 
-    // Only auto-select if no date is already selected
     if (p.selectedDate == null) {
       p.selectDate(today);
-      // Trigger animation for time section
       _animController.forward(from: 0);
     }
   }
 
   void _onDateSelected(BookingProvider p, DateTime date) {
     p.selectDate(date);
-    // Reset time selection when date changes
     p.clearTimeSelection();
-    // Trigger animation for time section
     _animController.forward(from: 0);
   }
 
-  // Check if the selected time range is already booked
-  // bool _isTimeRangeBooked(
-  //   BookingProvider p,
-  //   int court,
-  //   DateTime date,
-  //   String sport,
-  //   int startHour,
-  //   int endHour,
-  // ) {
-  //   final bookedRanges = p.bookedRanges(court, date, sport);
-  //   for (final range in bookedRanges) {
-  //     // Check if the selected range overlaps with any booked range
-  //     if (startHour < range[1] && endHour > range[0]) {
-  //       return true;
-  //     }
-  //   }
-  //   return false;
-  // }
-
-  // Show alert dialog for already booked time
-  // void _showTimeBookedAlert(BuildContext context, int startHour, int endHour) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Row(
-  //           children: const [
-  //             Icon(Icons.event_busy_rounded, color: Colors.redAccent, size: 28),
-  //             SizedBox(width: 12),
-  //             Text(
-  //               'Time Already Booked',
-  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //             ),
-  //           ],
-  //         ),
-  //         content: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             const Text(
-  //               'The selected time slot is no longer available.',
-  //               style: TextStyle(fontSize: 14),
-  //             ),
-  //             const SizedBox(height: 12),
-  //             Container(
-  //               padding: const EdgeInsets.all(12),
-  //               decoration: BoxDecoration(
-  //                 color: Colors.redAccent.withOpacity(0.1),
-  //                 borderRadius: BorderRadius.circular(8),
-  //                 border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-  //               ),
-  //               child: Row(
-  //                 children: [
-  //                   const Icon(
-  //                     Icons.access_time_rounded,
-  //                     color: Colors.redAccent,
-  //                     size: 18,
-  //                   ),
-  //                   const SizedBox(width: 8),
-  //                   Text(
-  //                     '${_fmtH(startHour)} - ${_fmtH(endHour)}',
-  //                     style: const TextStyle(
-  //                       color: Colors.redAccent,
-  //                       fontSize: 16,
-  //                       fontWeight: FontWeight.bold,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             const SizedBox(height: 12),
-  //             const Text(
-  //               'Please select a different time slot.',
-  //               style: TextStyle(fontSize: 13, color: Colors.white70),
-  //             ),
-  //           ],
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.of(context).pop();
-  //             },
-  //             child: const Text('OK', style: TextStyle(fontSize: 16)),
-  //           ),
-  //         ],
-  //         shape: RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.circular(20),
-  //         ),
-  //         backgroundColor: const Color(0xFF1A1A2E),
-  //         elevation: 24,
-  //       );
-  //     },
-  //   );
-  // }
-
-  // Handle confirm with validation
-  // void _handleConfirm(BookingProvider p) {
-  //   if (!p.canConfirm) return;
-
-  //   final sport = p.selectedSport ?? '';
-  //   final court = p.selectedCourt ?? 0;
-  //   final date = p.selectedDate!;
-  //   final startHour = p.startHour!;
-  //   final endHour = p.endHour!;
-
-  //   // Check if the selected time is already booked
-  //   if (_isTimeRangeBooked(p, court, date, sport, startHour, endHour)) {
-  //     _showTimeBookedAlert(context, startHour, endHour);
-  //     // Clear the invalid time selection
-  //     p.clearTimeSelection();
-  //     return;
-  //   }
-
-  //   // If validation passes, proceed with confirmation
-  //   widget.onConfirm();
-  // }
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = context.watch<BookingProvider>();
     final weekDates = _weekDates;
     final dateSelected = p.selectedDate != null;
@@ -225,7 +101,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     final court = p.selectedCourt ?? 0;
     final date = p.selectedDate ?? DateTime.now();
 
-    // Compute blocked ranges
     final bookedRanges = dateSelected
         ? p.bookedRanges(court, date, sport)
         : <List<int>>[];
@@ -237,25 +112,27 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Select Date',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   'Choose a date for your booking',
-                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+                  style: TextStyle(
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
-            // Calendar picker for future dates
             GestureDetector(
               onTap: () async {
                 final DateTime? picked = await showDatePicker(
@@ -266,13 +143,19 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   builder: (context, child) {
                     return Theme(
                       data: Theme.of(context).copyWith(
-                        colorScheme: const ColorScheme.dark(
+                        colorScheme: ColorScheme.dark(
                           primary: AppTheme.kAccent,
                           onPrimary: Colors.black,
-                          surface: Color(0xFF1A1A2E),
-                          onSurface: Colors.white,
+                          surface: isDark
+                              ? const Color(0xFF1A1A2E)
+                              : AppTheme.kLightCard,
+                          onSurface: isDark
+                              ? Colors.white
+                              : AppTheme.kLightText,
                         ),
-                        dialogBackgroundColor: const Color(0xFF1A1A2E),
+                        dialogBackgroundColor: isDark
+                            ? const Color(0xFF1A1A2E)
+                            : AppTheme.kLightCard,
                       ),
                       child: child!,
                     );
@@ -286,9 +169,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.kCardAlt,
+                  color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.kBorder),
+                  border: Border.all(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
                 ),
                 child: const Icon(
                   Icons.calendar_today,
@@ -305,7 +190,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         Container(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
-            color: AppTheme.kCardAlt,
+            color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -313,8 +198,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
             children: [
               Text(
                 'Week of ${_months[weekDates.first.month - 1]} ${weekDates.first.day}, ${weekDates.first.year}',
-                style: const TextStyle(
-                  color: AppTheme.kTextSub,
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -370,8 +255,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       : isToday
                       ? AppTheme.kAccent.withOpacity(0.15)
                       : isPast
-                      ? AppTheme.kCardAlt.withOpacity(0.5)
-                      : AppTheme.kCardAlt,
+                      ? (isDark
+                            ? AppTheme.kCardAlt.withOpacity(0.5)
+                            : AppTheme.kLightCardAlt.withOpacity(0.5))
+                      : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: sel
@@ -380,7 +267,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         ? AppTheme.kAccent.withOpacity(0.5)
                         : isPast
                         ? Colors.grey.withOpacity(0.3)
-                        : AppTheme.kBorder,
+                        : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                     width: sel ? 1.5 : 1,
                   ),
                 ),
@@ -396,7 +283,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             ? AppTheme.kAccent.withOpacity(0.7)
                             : isPast
                             ? Colors.grey.withOpacity(0.5)
-                            : AppTheme.kTextSub,
+                            : (isDark
+                                  ? AppTheme.kTextSub
+                                  : AppTheme.kLightTextSub),
                         fontSize: 8.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -411,7 +300,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             ? AppTheme.kAccent
                             : isPast
                             ? Colors.grey.withOpacity(0.5)
-                            : Colors.white,
+                            : (isDark ? Colors.white : AppTheme.kLightText),
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
@@ -423,7 +312,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             ? const Color(0xFF0A1828).withOpacity(0.7)
                             : isPast
                             ? Colors.grey.withOpacity(0.5)
-                            : AppTheme.kTextSub,
+                            : (isDark
+                                  ? AppTheme.kTextSub
+                                  : AppTheme.kLightTextSub),
                         fontSize: 8,
                       ),
                     ),
@@ -454,7 +345,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
           },
         ),
 
-        // ── Section: Time (animated reveal after date pick) ─────────────────
+        // ── Section: Time ─────────────────────────────────────────────────
         if (dateSelected) ...[
           FadeTransition(
             opacity: _fadeAnim,
@@ -465,11 +356,15 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                 children: [
                   const SizedBox(height: 8),
 
-                  // Divider with label
                   Row(
                     children: [
                       Expanded(
-                        child: Divider(color: AppTheme.kBorder, thickness: 1),
+                        child: Divider(
+                          color: isDark
+                              ? AppTheme.kBorder
+                              : AppTheme.kLightBorder,
+                          thickness: 1,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Container(
@@ -478,9 +373,15 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.kCardAlt,
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.kBorder),
+                          border: Border.all(
+                            color: isDark
+                                ? AppTheme.kBorder
+                                : AppTheme.kLightBorder,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -490,10 +391,12 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                               size: 14,
                             ),
                             const SizedBox(width: 6),
-                            const Text(
+                            Text(
                               'Select Time',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppTheme.kLightText,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -503,14 +406,18 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Divider(color: AppTheme.kBorder, thickness: 1),
+                        child: Divider(
+                          color: isDark
+                              ? AppTheme.kBorder
+                              : AppTheme.kLightBorder,
+                          thickness: 1,
+                        ),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Selected date chip
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -546,12 +453,13 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
 
                   const SizedBox(height: 20),
 
-                  // Already booked indicator
                   if (bookedRanges.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.kCardAlt,
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -613,17 +521,18 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     const SizedBox(height: 16),
                   ],
 
-                  // ── FROM chips ───────────────────────────────────────────
                   _sectionLabel(
                     'FROM',
                     Icons.play_arrow_rounded,
                     const Color(0xFF4CAF50),
+                    isDark,
                   ),
                   const SizedBox(height: 10),
                   _horizontalChips(
                     hours: _fromHours(p, court, date, sport),
                     selected: p.startHour,
                     selColor: const Color(0xFF4CAF50),
+                    isDark: isDark,
                     onTap: (h) {
                       p.selectStartHour(h);
                       p.clearEndHour();
@@ -631,20 +540,24 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   ),
                   const SizedBox(height: 20),
 
-                  // ── TO chips ─────────────────────────────────────────────
-                  _sectionLabel('TO', Icons.stop_rounded, Colors.redAccent),
+                  _sectionLabel(
+                    'TO',
+                    Icons.stop_rounded,
+                    Colors.redAccent,
+                    isDark,
+                  ),
                   const SizedBox(height: 10),
                   _horizontalChips(
                     hours: _toHours(p, court, date, sport),
                     selected: p.endHour,
                     selColor: Colors.redAccent,
+                    isDark: isDark,
                     emptyMessage: p.startHour == null
                         ? 'Pick a start time first'
                         : 'No available end times',
                     onTap: (h) => p.selectEndHour(h),
                   ),
 
-                  // ── Live summary with confirm button ─────────────────────────
                   if (p.canConfirm) ...[
                     const SizedBox(height: 20),
                     Container(
@@ -681,7 +594,12 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                 ),
                                 Text(
                                   '${p.durationHours} hour${p.durationHours != 1 ? 's' : ''}',
-                                  style: AppTheme.tsSub,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? AppTheme.kTextSub
+                                        : AppTheme.kLightTextSub,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ],
                             ),
@@ -691,22 +609,28 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             children: [
                               Text(
                                 '\$${p.totalPrice.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppTheme.kLightText,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               Text(
                                 '\$${p.target?.pricePerHour.toStringAsFixed(0) ?? '0'}/hr',
-                                style: AppTheme.tsSub,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppTheme.kTextSub
+                                      : AppTheme.kLightTextSub,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16),
                   ],
                 ],
@@ -718,7 +642,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     );
   }
 
-  // ── From slots: whole hours 0–22, exclude booked ────────────────────────
   List<int> _fromHours(
     BookingProvider p,
     int court,
@@ -733,7 +656,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     }).toList();
   }
 
-  // ── To slots: whole hours after startHour, no conflict ──────────────────
   List<int> _toHours(
     BookingProvider p,
     int court,
@@ -747,8 +669,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     }).toList();
   }
 
-  // ── Section label ────────────────────────────────────────────────────────
-  Widget _sectionLabel(String label, IconData icon, Color color) {
+  Widget _sectionLabel(String label, IconData icon, Color color, bool isDark) {
     return Row(
       children: [
         Container(
@@ -774,11 +695,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     );
   }
 
-  // ── Horizontal scrollable chips ──────────────────────────────────────────
   Widget _horizontalChips({
     required List<int> hours,
     required int? selected,
     required Color selColor,
+    required bool isDark,
     required ValueChanged<int> onTap,
     String emptyMessage = 'No available times',
   }) {
@@ -787,7 +708,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
           emptyMessage,
-          style: const TextStyle(color: AppTheme.kTextSub, fontSize: 12.5),
+          style: TextStyle(
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            fontSize: 12.5,
+          ),
         ),
       );
     }
@@ -808,17 +732,23 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: sel ? selColor : AppTheme.kCardAlt,
+                color: sel
+                    ? selColor
+                    : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: sel ? selColor : AppTheme.kBorder,
+                  color: sel
+                      ? selColor
+                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                   width: sel ? 1.5 : 1,
                 ),
               ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: sel ? Colors.white : Colors.white60,
+                  color: sel
+                      ? Colors.white
+                      : (isDark ? Colors.white60 : AppTheme.kLightTextSub),
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),

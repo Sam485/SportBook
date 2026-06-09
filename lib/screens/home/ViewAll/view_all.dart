@@ -37,24 +37,36 @@ class _ViewAllState extends State<ViewAll> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final filtered = _filtered;
 
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: AppBar(
-        backgroundColor: AppTheme.kBg,
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(widget.title, style: AppTheme.tsTitle),
+        title: Text(
+          widget.title,
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _categories()),
+            SliverToBoxAdapter(child: _categories(isDark)),
             if (filtered.isEmpty)
               SliverFillRemaining(
                 child: Center(
@@ -62,8 +74,10 @@ class _ViewAllState extends State<ViewAll> {
                     _isClubs
                         ? 'No clubs for this sport'
                         : 'No bookings for this sport',
-                    style: const TextStyle(
-                      color: AppTheme.kTextSub,
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                       fontSize: 14,
                     ),
                   ),
@@ -95,7 +109,7 @@ class _ViewAllState extends State<ViewAll> {
     );
   }
 
-  Widget _categories() => Padding(
+  Widget _categories(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: SizedBox(
       height: 48,
@@ -113,10 +127,14 @@ class _ViewAllState extends State<ViewAll> {
               margin: const EdgeInsets.only(right: 10),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: sel ? AppTheme.kAccent : AppTheme.kCard,
+                color: sel
+                    ? AppTheme.kAccent
+                    : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: sel ? AppTheme.kAccent : AppTheme.kBorder,
+                  color: sel
+                      ? AppTheme.kAccent
+                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 ),
                 boxShadow: sel
                     ? [
@@ -136,7 +154,9 @@ class _ViewAllState extends State<ViewAll> {
                   Text(
                     cat.name,
                     style: TextStyle(
-                      color: sel ? const Color(0xFF0A1828) : Colors.white60,
+                      color: sel
+                          ? const Color(0xFF0A1828)
+                          : (isDark ? Colors.white60 : AppTheme.kLightTextSub),
                       fontSize: 13,
                       fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
                     ),

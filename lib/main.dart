@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme.dart';
 import 'providers/booking_provider.dart';
+import 'providers/theme_provider.dart';
 import 'routes/app_routes.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -22,13 +25,22 @@ class SportMateApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => BookingProvider())],
-      child: MaterialApp(
-        title: 'SportMate',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
-        initialRoute: AppRoutes.home,
-        onGenerateRoute: AppRoutes.onGenerateRoute,
+      providers: [
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'SportMate',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light, // ← LIGHT theme (default)
+            darkTheme: AppTheme.dark, // ← DARK theme
+            themeMode: themeProvider.themeMode, // Controls which theme to use
+            initialRoute: AppRoutes.home,
+            onGenerateRoute: AppRoutes.onGenerateRoute,
+          );
+        },
       ),
     );
   }

@@ -11,13 +11,14 @@ import '../../widgets/common/location_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedCat = 'all';
-  String _locationLabel = 'New York'; // display name
+  String _locationLabel = 'New York';
 
   List<SportClub> get _clubs => DataService.filteredClubs(_selectedCat);
   List<SportBooking> get _bookings =>
@@ -37,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
   }
 
-  // ── Location picker ───────────────────────────────────────────────────────
   void _openLocationPicker() async {
     final result = await showModalBottomSheet<String>(
       context: context,
@@ -52,26 +52,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: CustomScrollView(
           physics: const ClampingScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(child: _header()),
+            SliverToBoxAdapter(child: _header(isDark)),
             SliverToBoxAdapter(child: _banner()),
-            SliverToBoxAdapter(child: _categories()),
+            SliverToBoxAdapter(child: _categories(isDark)),
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Clubs Nearby',
                 onAction: _navigateViewAll,
+                isDark: isDark,
               ),
             ),
-            SliverToBoxAdapter(child: _clubsList()),
+            SliverToBoxAdapter(child: _clubsList(isDark)),
             SliverToBoxAdapter(
               child: SectionHeader(
                 title: 'Upcoming Bookings',
                 onAction: _navigateBookings,
+                isDark: isDark,
               ),
             ),
             SliverList(
@@ -87,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _header() => Padding(
+  Widget _header(bool isDark) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
     child: Row(
       children: [
@@ -106,9 +110,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           padding: const EdgeInsets.all(2),
           child: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.kCard,
+              color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
             ),
             child: const Icon(
               Icons.person_rounded,
@@ -121,17 +125,16 @@ class _HomeScreenState extends State<HomeScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Hello, Jane 👋',
               style: TextStyle(
-                color: Colors.white,
+                color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
               ),
             ),
             const SizedBox(height: 2),
-            // ✅ Tapping this now opens the location picker
             InkWell(
               onTap: _openLocationPicker,
               borderRadius: BorderRadius.circular(8),
@@ -169,15 +172,17 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.kCard,
-              border: Border.all(color: AppTheme.kBorder),
+              color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+              border: Border.all(
+                color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.notifications_outlined,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppTheme.kLightText,
                   size: 22,
                 ),
                 Positioned(
@@ -205,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
     child: const BannerCarousel(),
   );
 
-  Widget _categories() => Padding(
+  Widget _categories(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: SizedBox(
       height: 48,
@@ -223,10 +228,14 @@ class _HomeScreenState extends State<HomeScreen> {
               margin: const EdgeInsets.only(right: 10),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: sel ? AppTheme.kAccent : AppTheme.kCard,
+                color: sel
+                    ? AppTheme.kAccent
+                    : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: sel ? AppTheme.kAccent : AppTheme.kBorder,
+                  color: sel
+                      ? AppTheme.kAccent
+                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 ),
                 boxShadow: sel
                     ? [
@@ -246,7 +255,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     cat.name,
                     style: TextStyle(
-                      color: sel ? const Color(0xFF0A1828) : Colors.white60,
+                      color: sel
+                          ? const Color(0xFF0A1828)
+                          : (isDark ? Colors.white60 : AppTheme.kLightTextSub),
                       fontSize: 13,
                       fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
                     ),
@@ -260,18 +271,21 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 
-  Widget _clubsList() {
+  Widget _clubsList(bool isDark) {
     final clubs = _clubs;
     if (clubs.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         child: Container(
           padding: const EdgeInsets.all(20),
-          decoration: AppTheme.cardDecoration(),
-          child: const Center(
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Center(
             child: Text(
               'No clubs for this sport',
-              style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
             ),
           ),
         ),

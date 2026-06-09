@@ -21,7 +21,6 @@ class PaymentSuccessPage extends StatefulWidget {
 
 class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with TickerProviderStateMixin {
-  // ── Animation controllers ─────────────────────────────────────────────────
   late AnimationController _checkController;
   late AnimationController _rippleController;
   late AnimationController _contentController;
@@ -42,7 +41,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     super.initState();
     HapticFeedback.heavyImpact();
 
-    // Check icon pop
     _checkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -70,7 +68,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       ),
     );
 
-    // Ripple rings
     _rippleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -94,7 +91,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       ),
     );
 
-    // Content slide up
     _contentController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -108,7 +104,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           CurvedAnimation(parent: _contentController, curve: Curves.easeOut),
         );
 
-    // Buttons entrance
     _buttonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -122,7 +117,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           CurvedAnimation(parent: _buttonController, curve: Curves.easeOut),
         );
 
-    // Sequence the animations
     _checkController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _rippleController.forward();
@@ -146,10 +140,11 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = context.watch<BookingProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -157,7 +152,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             children: [
               const Spacer(flex: 2),
 
-              // ── Success animation ──────────────────────────────────────────
               _SuccessAnimation(
                 checkScale: _checkScale,
                 checkOpacity: _checkOpacity,
@@ -165,21 +159,21 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 ripple2: _ripple2,
                 ripple3: _ripple3,
                 rippleController: _rippleController,
+                isDark: isDark,
               ),
 
               const SizedBox(height: 36),
 
-              // ── Title + subtitle ───────────────────────────────────────────
               FadeTransition(
                 opacity: _contentFade,
                 child: SlideTransition(
                   position: _contentSlide,
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         'Payment Successful!',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: isDark ? Colors.white : AppTheme.kLightText,
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.3,
@@ -190,7 +184,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       Text(
                         'Your court has been reserved.\nSee you on the court!',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: (isDark ? Colors.white : AppTheme.kLightText)
+                              .withOpacity(0.5),
                           fontSize: 14,
                           height: 1.6,
                         ),
@@ -198,8 +193,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Booking summary pill card ──────────────────────────
-                      _BookingPillCard(p: p),
+                      _BookingPillCard(p: p, isDark: isDark),
                     ],
                   ),
                 ),
@@ -207,14 +201,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
               const Spacer(flex: 3),
 
-              // ── Buttons ────────────────────────────────────────────────────
               FadeTransition(
                 opacity: _buttonFade,
                 child: SlideTransition(
                   position: _buttonSlide,
                   child: Column(
                     children: [
-                      // Primary: View Booking
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -224,8 +216,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               Navigator.pushNamed(
                                 context,
                                 AppRoutes.bookedDetailed,
-                                arguments:
-                                    booking, // ✅ pass SportBooking, not provider
+                                arguments: booking,
                               );
                             }
                           },
@@ -257,15 +248,18 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 12),
 
-                      // Secondary: Return Home
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: widget.onGoHome,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white70,
+                            foregroundColor: isDark
+                                ? Colors.white70
+                                : AppTheme.kLightText,
                             side: BorderSide(
-                              color: Colors.white.withOpacity(0.15),
+                              color:
+                                  (isDark ? Colors.white : AppTheme.kLightText)
+                                      .withOpacity(0.15),
                               width: 1.5,
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -273,17 +267,26 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.home_rounded, size: 18),
-                              SizedBox(width: 8),
+                              Icon(
+                                Icons.home_rounded,
+                                size: 18,
+                                color: isDark
+                                    ? Colors.white70
+                                    : AppTheme.kLightText,
+                              ),
+                              const SizedBox(width: 8),
                               Text(
                                 'Return to Home',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.2,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : AppTheme.kLightText,
                                 ),
                               ),
                             ],
@@ -303,7 +306,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   }
 }
 
-// ── Success animation: check + ripple rings ───────────────────────────────────
 class _SuccessAnimation extends StatelessWidget {
   final Animation<double> checkScale;
   final Animation<double> checkOpacity;
@@ -311,6 +313,7 @@ class _SuccessAnimation extends StatelessWidget {
   final Animation<double> ripple2;
   final Animation<double> ripple3;
   final AnimationController rippleController;
+  final bool isDark;
 
   const _SuccessAnimation({
     required this.checkScale,
@@ -319,6 +322,7 @@ class _SuccessAnimation extends StatelessWidget {
     required this.ripple2,
     required this.ripple3,
     required this.rippleController,
+    required this.isDark,
   });
 
   @override
@@ -332,21 +336,18 @@ class _SuccessAnimation extends StatelessWidget {
           return Stack(
             alignment: Alignment.center,
             children: [
-              // Ripple ring 3 (outermost)
               _RippleRing(
                 progress: ripple3.value,
                 maxRadius: 80,
                 color: AppTheme.kAccent,
                 strokeWidth: 1.2,
               ),
-              // Ripple ring 2
               _RippleRing(
                 progress: ripple2.value,
                 maxRadius: 68,
                 color: AppTheme.kAccent,
                 strokeWidth: 1.8,
               ),
-              // Ripple ring 1 (innermost)
               _RippleRing(
                 progress: ripple1.value,
                 maxRadius: 56,
@@ -354,7 +355,6 @@ class _SuccessAnimation extends StatelessWidget {
                 strokeWidth: 2.5,
               ),
 
-              // Glow circle
               Container(
                 width: 90,
                 height: 90,
@@ -364,7 +364,6 @@ class _SuccessAnimation extends StatelessWidget {
                 ),
               ),
 
-              // Main circle
               Container(
                 width: 80,
                 height: 80,
@@ -381,7 +380,6 @@ class _SuccessAnimation extends StatelessWidget {
                 ),
               ),
 
-              // Check icon
               AnimatedBuilder(
                 animation: checkScale,
                 builder: (_, __) => Opacity(
@@ -433,10 +431,11 @@ class _RippleRing extends StatelessWidget {
   }
 }
 
-// ── Booking pill summary card ─────────────────────────────────────────────────
 class _BookingPillCard extends StatelessWidget {
   final BookingProvider p;
-  const _BookingPillCard({required this.p});
+  final bool isDark;
+
+  const _BookingPillCard({required this.p, required this.isDark});
 
   static String _fmtH(int h) {
     final period = h >= 12 ? 'PM' : 'AM';
@@ -482,13 +481,14 @@ class _BookingPillCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.kCardAlt,
+        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
       ),
       child: Column(
         children: [
-          // Confirmation ID row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
@@ -519,43 +519,46 @@ class _BookingPillCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
 
-          // Details grid
           _DetailRow(
             icon: Icons.sports_rounded,
             label: p.selectedSport ?? '—',
             sub: 'Sport',
+            isDark: isDark,
           ),
-          const _CardDivider(),
+          _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.grid_view_rounded,
             label: p.target?.name ?? '—',
             sub: 'Court',
+            isDark: isDark,
           ),
-          const _CardDivider(),
+          _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.calendar_month_rounded,
             label: dateStr,
             sub: 'Date',
+            isDark: isDark,
           ),
-          const _CardDivider(),
+          _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.access_time_filled_rounded,
             label: timeStr,
             sub: 'Time',
+            isDark: isDark,
           ),
-          const _CardDivider(),
+          _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.payments_rounded,
             label: '\$${p.totalPrice.toStringAsFixed(2)}',
             sub: 'Total Paid',
             valueColor: AppTheme.kAccent,
+            isDark: isDark,
           ),
         ],
       ),
     );
   }
 
-  // Generate a simple pseudo booking ID from current time
   String _generateId() {
     final now = DateTime.now();
     return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
@@ -567,12 +570,14 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String sub;
   final Color? valueColor;
+  final bool isDark;
 
   const _DetailRow({
     required this.icon,
     required this.label,
     required this.sub,
     this.valueColor,
+    required this.isDark,
   });
 
   @override
@@ -595,7 +600,8 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: valueColor ?? Colors.white,
+                color:
+                    valueColor ?? (isDark ? Colors.white : AppTheme.kLightText),
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -603,8 +609,8 @@ class _DetailRow extends StatelessWidget {
           ),
           Text(
             sub,
-            style: const TextStyle(
-              color: AppTheme.kTextSub,
+            style: TextStyle(
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
@@ -616,10 +622,16 @@ class _DetailRow extends StatelessWidget {
 }
 
 class _CardDivider extends StatelessWidget {
-  const _CardDivider();
+  final bool isDark;
+
+  const _CardDivider({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(color: Color(0xFF2A2A3A), thickness: 1, height: 0);
+    return Divider(
+      color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300],
+      thickness: 1,
+      height: 0,
+    );
   }
 }

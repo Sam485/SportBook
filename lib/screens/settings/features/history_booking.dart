@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 
@@ -9,49 +10,64 @@ class HistoryBookingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.kBg,
-      appBar: AppBar(
-        backgroundColor: AppTheme.kBg,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('History Bookings', style: AppTheme.tsTitle),
-        centerTitle: true,
-      ),
-      body: historyBookings.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.history, size: 80, color: Colors.grey[600]),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No booking history',
-                    style: TextStyle(color: AppTheme.kTextSub, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your past bookings will appear here',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: historyBookings.length,
-              itemBuilder: (context, index) {
-                final booking = historyBookings[index];
-                return _historyCard(booking, context);
-              },
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Consumer(
+      builder: (context, value, child) => Scaffold(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        appBar: AppBar(
+          backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: isDark ? Colors.white : Colors.black,
             ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'History Bookings',
+            style: AppTheme.tsTitleAdaptive(context),
+          ),
+          centerTitle: true,
+        ),
+        body: historyBookings.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, size: 80, color: Colors.grey[600]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No booking history',
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your past bookings will appear here',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: historyBookings.length,
+                itemBuilder: (context, index) {
+                  final booking = historyBookings[index];
+                  return _historyCard(booking, context);
+                },
+              ),
+      ),
     );
   }
 
   Widget _historyCard(SportBooking booking, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: AppTheme.cardDecoration(),
@@ -95,7 +111,7 @@ class HistoryBookingsScreen extends StatelessWidget {
                           ),
                           Text(
                             booking.venue,
-                            style: AppTheme.tsBody,
+                            style: AppTheme.tsBodyAdaptive(context),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -121,21 +137,31 @@ class HistoryBookingsScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today,
                       size: 14,
-                      color: AppTheme.kTextSub,
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                     ),
                     const SizedBox(width: 4),
-                    Text(booking.formattedBookingDate, style: AppTheme.tsSub),
+                    Text(
+                      booking.formattedBookingDate,
+                      style: AppTheme.tsSubAdaptive(context),
+                    ),
                     const SizedBox(width: 12),
-                    const Icon(
+                    Icon(
                       Icons.access_time,
                       size: 14,
-                      color: AppTheme.kTextSub,
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
                     ),
                     const SizedBox(width: 4),
-                    Text(booking.formattedTimeRange, style: AppTheme.tsSub),
+                    Text(
+                      booking.formattedTimeRange,
+                      style: AppTheme.tsSubAdaptive(context),
+                    ),
                   ],
                 ),
               ],

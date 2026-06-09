@@ -14,10 +14,8 @@ class BookingsScreen extends StatefulWidget {
 
 class _BookingsScreenState extends State<BookingsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCat = 'all';
 
-  List<SportBooking> get _bookings =>
-      DataService.filteredBookings(_selectedCat);
+  List<SportBooking> get _bookings => DataService.filteredBookings('all');
 
   @override
   void dispose() {
@@ -27,17 +25,24 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: widget.isView
           ? AppBar(
-              backgroundColor: AppTheme.kBg,
+              backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
-              title: Text('My Bookings', style: AppTheme.tsTitle),
+              title: Text(
+                'My Bookings',
+                style: AppTheme.tsTitleAdaptive(context),
+              ),
               centerTitle: true,
             )
           : null,
@@ -60,6 +65,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _searchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -69,18 +75,25 @@ class _BookingsScreenState extends State<BookingsScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
           Expanded(
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
               decoration: AppTheme.textFieldDecoration(Icons.search, 'Search')
                   .copyWith(
                     labelText: 'Search',
-                    labelStyle: const TextStyle(color: AppTheme.kTextSub),
+                    labelStyle: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                    ),
                   ),
               onChanged: (value) {
                 // Implement search functionality
