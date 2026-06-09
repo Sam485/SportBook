@@ -12,12 +12,13 @@ class BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final unique = booking.sportTypes.toSet().toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
       child: Container(
-        decoration: AppTheme.cardDecoration(radius: 22),
+        decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -49,7 +50,11 @@ class BookingCard extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          _avatar(booking.ownerInitials, booking.ownerColor),
+                          _avatar(
+                            booking.ownerInitials,
+                            booking.ownerColor,
+                            isDark,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
@@ -57,8 +62,10 @@ class BookingCard extends StatelessWidget {
                               children: [
                                 Text(
                                   booking.title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : AppTheme.kLightText,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.2,
@@ -66,20 +73,29 @@ class BookingCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                _timeRow(booking.openTime, booking.closeTime),
+                                _timeRow(
+                                  booking.openTime,
+                                  booking.closeTime,
+                                  isDark,
+                                ),
                               ],
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.keyboard_arrow_right_rounded,
-                            color: AppTheme.kTextSub,
+                            color: isDark
+                                ? AppTheme.kTextSub
+                                : AppTheme.kLightTextSub,
                             size: 18,
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Container(height: 1, color: AppTheme.kBorder),
+                    Container(
+                      height: 1,
+                      color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                    ),
                     const SizedBox(height: 12),
 
                     // Venue
@@ -94,7 +110,12 @@ class BookingCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             booking.venue,
-                            style: AppTheme.tsBody,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppTheme.kLightTextSub,
+                              fontSize: 13,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -119,7 +140,9 @@ class BookingCard extends StatelessWidget {
                           child: Wrap(
                             spacing: 6,
                             runSpacing: 6,
-                            children: unique.map((s) => _sportTag(s)).toList(),
+                            children: unique
+                                .map((s) => _sportTag(s, isDark))
+                                .toList(),
                           ),
                         ),
                       ],
@@ -134,7 +157,7 @@ class BookingCard extends StatelessWidget {
     );
   }
 
-  Widget _avatar(String initials, Color color) => Container(
+  Widget _avatar(String initials, Color color, bool isDark) => Container(
     width: 38,
     height: 38,
     decoration: BoxDecoration(
@@ -145,15 +168,15 @@ class BookingCard extends StatelessWidget {
     alignment: Alignment.center,
     child: Text(
       initials,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: isDark ? Colors.white : AppTheme.kLightText,
         fontSize: 12,
         fontWeight: FontWeight.w800,
       ),
     ),
   );
 
-  Widget _timeRow(String open, String close) => Row(
+  Widget _timeRow(String open, String close, bool isDark) => Row(
     children: [
       const Icon(Icons.lock_open_outlined, color: AppTheme.kAccent, size: 12),
       const SizedBox(width: 3),
@@ -169,8 +192,8 @@ class BookingCard extends StatelessWidget {
       Container(
         width: 3,
         height: 3,
-        decoration: const BoxDecoration(
-          color: AppTheme.kTextSub,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           shape: BoxShape.circle,
         ),
       ),
@@ -179,12 +202,15 @@ class BookingCard extends StatelessWidget {
       const SizedBox(width: 3),
       Text(
         close,
-        style: const TextStyle(color: AppTheme.kTextSub, fontSize: 11.5),
+        style: TextStyle(
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+          fontSize: 11.5,
+        ),
       ),
     ],
   );
 
-  Widget _sportTag(String s) => Container(
+  Widget _sportTag(String sport, bool isDark) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     decoration: BoxDecoration(
       color: AppTheme.kAccent.withOpacity(0.10),
@@ -192,7 +218,7 @@ class BookingCard extends StatelessWidget {
       border: Border.all(color: AppTheme.kAccent.withOpacity(0.35)),
     ),
     child: Text(
-      '${DataService.emojiFor(s)} $s',
+      '${DataService.emojiFor(sport)} $sport',
       style: const TextStyle(
         color: AppTheme.kAccent,
         fontSize: 11,

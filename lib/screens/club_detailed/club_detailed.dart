@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/providers/booking_provider.dart';
+import 'package:sportbook/providers/theme_provider.dart';
 import 'package:sportbook/screens/booking_flow/booking_flow_screen.dart';
 import 'package:sportbook/services/data_service.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
@@ -20,7 +21,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
   int _page = 0;
   bool _saved = false;
 
-  // ── Open/close helper ──────────────────────────────────────────────────────
   bool get _isOpen {
     final now = TimeOfDay.now();
     final nowM = now.hour * 60 + now.minute;
@@ -44,41 +44,43 @@ class _ClubDetailedState extends State<ClubDetailed> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Stack(
           children: [
             CustomScrollView(
               physics: const ClampingScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(child: _header()),
-                SliverToBoxAdapter(child: _infoSection()),
-                SliverToBoxAdapter(child: _divider('Facilities')),
-                SliverToBoxAdapter(child: _facilities()),
-                SliverToBoxAdapter(child: _divider('Sports Available')),
-                SliverToBoxAdapter(child: _sportsGrid()),
-                SliverToBoxAdapter(child: _divider('Pricing')),
-                SliverToBoxAdapter(child: _pricing()),
-                SliverToBoxAdapter(child: _divider('Location')),
-                SliverToBoxAdapter(child: _location()),
-                SliverToBoxAdapter(child: _divider('About')),
-                SliverToBoxAdapter(child: _about()),
-                SliverToBoxAdapter(child: _divider('You Might Also Like')),
+                SliverToBoxAdapter(child: _header(isDark)),
+                SliverToBoxAdapter(child: _infoSection(isDark)),
+                SliverToBoxAdapter(child: _divider('Facilities', isDark)),
+                SliverToBoxAdapter(child: _facilities(isDark)),
+                SliverToBoxAdapter(child: _divider('Sports Available', isDark)),
+                SliverToBoxAdapter(child: _sportsGrid(isDark)),
+                SliverToBoxAdapter(child: _divider('Pricing', isDark)),
+                SliverToBoxAdapter(child: _pricing(isDark)),
+                SliverToBoxAdapter(child: _divider('Location', isDark)),
+                SliverToBoxAdapter(child: _location(isDark)),
+                SliverToBoxAdapter(child: _divider('About', isDark)),
+                SliverToBoxAdapter(child: _about(isDark)),
+                SliverToBoxAdapter(
+                  child: _divider('You Might Also Like', isDark),
+                ),
                 SliverToBoxAdapter(child: _suggestions()),
-                // Bottom padding so content clears the nav bar
                 const SliverToBoxAdapter(child: SizedBox(height: 80)),
               ],
             ),
-            _bottomNav(),
+            _bottomNav(isDark),
           ],
         ),
       ),
     );
   }
 
-  // ── Header carousel ────────────────────────────────────────────────────────
-  Widget _header() => SizedBox(
+  Widget _header(bool isDark) => SizedBox(
     height: 260,
     width: double.infinity,
     child: Stack(
@@ -95,27 +97,28 @@ class _ClubDetailedState extends State<ClubDetailed> {
               onPageChanged: (i, _) => setState(() => _page = i),
             ),
             items: widget.target.imageUrls
-                .map((url) => _netImage(url))
+                .map((url) => _netImage(url, isDark))
                 .toList(),
           )
         else
-          _netImage(widget.target.imageUrls.first),
+          _netImage(widget.target.imageUrls.first, isDark),
 
-        // Gradient overlay so text reads well
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, AppTheme.kBg.withOpacity(0.85)],
+                colors: [
+                  Colors.transparent,
+                  (isDark ? AppTheme.kBg : AppTheme.kLightBg).withOpacity(0.85),
+                ],
                 stops: const [0.55, 1.0],
               ),
             ),
           ),
         ),
 
-        // Dot indicators
         if (widget.target.imageUrls.length > 1)
           Positioned(
             bottom: 12,
@@ -133,7 +136,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
                   decoration: BoxDecoration(
                     color: i == _page
                         ? AppTheme.kAccent
-                        : Colors.white.withOpacity(0.35),
+                        : (isDark
+                              ? Colors.white.withOpacity(0.35)
+                              : Colors.black.withOpacity(0.35)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -141,7 +146,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
             ),
           ),
 
-        // Back button
         Positioned(
           left: 12,
           top: 10,
@@ -164,7 +168,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
         ),
 
-        // Save button
         Positioned(
           right: 12,
           top: 10,
@@ -190,23 +193,23 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  Widget _netImage(String url) => Image.network(
+  Widget _netImage(String url, bool isDark) => Image.network(
     url,
     width: double.infinity,
     height: 260,
     fit: BoxFit.cover,
     errorBuilder: (_, __, ___) => Container(
-      color: AppTheme.kCardAlt,
-      child: const Icon(
+      color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+      child: Icon(
         Icons.image_not_supported,
-        color: AppTheme.kTextSub,
+        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         size: 36,
       ),
     ),
     loadingBuilder: (_, child, p) => p == null
         ? child
         : Container(
-            color: AppTheme.kCardAlt,
+            color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
             child: const Center(
               child: CircularProgressIndicator(
                 color: AppTheme.kAccent,
@@ -216,21 +219,19 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
   );
 
-  // ── Info section ───────────────────────────────────────────────────────────
-  Widget _infoSection() => Padding(
+  Widget _infoSection(bool isDark) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Name + badge
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
                 widget.target.name,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.3,
@@ -243,7 +244,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
         ),
         const SizedBox(height: 10),
 
-        // Hours row
         Row(
           children: [
             const Icon(
@@ -252,25 +252,38 @@ class _ClubDetailedState extends State<ClubDetailed> {
               size: 13,
             ),
             const SizedBox(width: 4),
-            Text(widget.target.openTime, style: AppTheme.tsAccent),
+            Text(
+              widget.target.openTime,
+              style: const TextStyle(
+                color: AppTheme.kAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Text(
                 '–',
-                style: TextStyle(color: Colors.white.withOpacity(0.4)),
+                style: TextStyle(
+                  color: (isDark ? Colors.white : AppTheme.kLightText)
+                      .withOpacity(0.4),
+                ),
               ),
             ),
             const Icon(Icons.lock_rounded, color: AppTheme.kTextSub, size: 13),
             const SizedBox(width: 4),
             Text(
               widget.target.closeTime,
-              style: AppTheme.tsAccent.copyWith(color: AppTheme.kTextSub),
+              style: const TextStyle(
+                color: AppTheme.kTextSub,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
 
-        // Stats row (courts, rating, price)
         Row(
           children: [
             _statPill(
@@ -316,8 +329,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── Section divider ────────────────────────────────────────────────────────
-  Widget _divider(String title) => Padding(
+  Widget _divider(String title, bool isDark) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 24, 20, 14),
     child: Row(
       children: [
@@ -332,20 +344,24 @@ class _ClubDetailedState extends State<ClubDetailed> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 15,
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Divider(color: AppTheme.kBorder, thickness: 1)),
+        Expanded(
+          child: Divider(
+            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+            thickness: 1,
+          ),
+        ),
       ],
     ),
   );
 
-  // ── Facilities ─────────────────────────────────────────────────────────────
-  Widget _facilities() {
+  Widget _facilities(bool isDark) {
     final items = [
       (Icons.local_parking_rounded, 'Parking'),
       (Icons.shower_rounded, 'Showers'),
@@ -361,17 +377,19 @@ class _ClubDetailedState extends State<ClubDetailed> {
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
-        children: items.map((f) => _facilityChip(f.$1, f.$2)).toList(),
+        children: items.map((f) => _facilityChip(f.$1, f.$2, isDark)).toList(),
       ),
     );
   }
 
-  Widget _facilityChip(IconData icon, String label) => Container(
+  Widget _facilityChip(IconData icon, String label, bool isDark) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     decoration: BoxDecoration(
-      color: AppTheme.kCardAlt,
+      color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: AppTheme.kBorder),
+      border: Border.all(
+        color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+      ),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -380,8 +398,8 @@ class _ClubDetailedState extends State<ClubDetailed> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white70,
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -390,8 +408,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── Sports grid ────────────────────────────────────────────────────────────
-  Widget _sportsGrid() => Padding(
+  Widget _sportsGrid(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
     child: Wrap(
       spacing: 8,
@@ -419,15 +436,16 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── Pricing ────────────────────────────────────────────────────────────────
-  Widget _pricing() => Padding(
+  Widget _pricing(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.kCardAlt,
+        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
       ),
       child: Column(
         children: [
@@ -435,25 +453,34 @@ class _ClubDetailedState extends State<ClubDetailed> {
             'Peak Hours (6–9 AM, 5–9 PM)',
             '\$${(widget.target.pricePerHour * 1.25).toStringAsFixed(0)}/hr',
             const Color(0xFFF59E0B),
+            isDark,
           ),
-          const Divider(color: Color(0xFF2A2A3A), height: 20),
+          Divider(
+            color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
+            height: 20,
+          ),
           _priceRow(
             'Off-Peak Hours',
             '\$${widget.target.pricePerHour.toStringAsFixed(0)}/hr',
             const Color(0xFF4CAF50),
+            isDark,
           ),
-          const Divider(color: Color(0xFF2A2A3A), height: 20),
+          Divider(
+            color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
+            height: 20,
+          ),
           _priceRow(
             'Weekend Surcharge',
             '+\$${(widget.target.pricePerHour * 0.2).toStringAsFixed(0)}/hr',
             Colors.redAccent,
+            isDark,
           ),
         ],
       ),
     ),
   );
 
-  Widget _priceRow(String label, String value, Color color) => Row(
+  Widget _priceRow(String label, String value, Color color, bool isDark) => Row(
     children: [
       Container(
         width: 8,
@@ -464,7 +491,10 @@ class _ClubDetailedState extends State<ClubDetailed> {
       Expanded(
         child: Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12.5),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 12.5,
+          ),
         ),
       ),
       Text(
@@ -478,15 +508,16 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ],
   );
 
-  // ── Location ───────────────────────────────────────────────────────────────
-  Widget _location() => Padding(
+  Widget _location(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.kCardAlt,
+        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,8 +533,8 @@ class _ClubDetailedState extends State<ClubDetailed> {
               Expanded(
                 child: Text(
                   widget.target.venue,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -512,18 +543,16 @@ class _ClubDetailedState extends State<ClubDetailed> {
             ],
           ),
           const SizedBox(height: 12),
-          // Map placeholder
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
               height: 130,
-              color: const Color(0xFF1A1A2E),
+              color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE0E0E0),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Fake map grid lines
                   CustomPaint(
-                    painter: _MapGridPainter(),
+                    painter: _MapGridPainter(isDark: isDark),
                     size: const Size(double.infinity, 130),
                   ),
                   Container(
@@ -571,15 +600,16 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── About ──────────────────────────────────────────────────────────────────
-  Widget _about() => Padding(
+  Widget _about(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.kCardAlt,
+        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
       ),
       child: Text(
         '${widget.target.name} is a premium sports facility offering world-class courts '
@@ -588,8 +618,8 @@ class _ClubDetailedState extends State<ClubDetailed> {
         'an exceptional experience every visit.\n\n'
         'We pride ourselves on maintaining top-tier court surfaces, state-of-the-art '
         'equipment, and a welcoming community atmosphere.',
-        style: const TextStyle(
-          color: Colors.white60,
+        style: TextStyle(
+          color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
           fontSize: 13,
           height: 1.65,
         ),
@@ -597,10 +627,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── Suggestions ────────────────────────────────────────────────────────────
   Widget _suggestions() {
-    // Show other clubs that share at least one sport, excluding the current one.
-    // Fall back to any other club if no sport overlap found.
     final currentId = widget.target.id;
     final currentSports = widget.target.sports.toSet();
 
@@ -613,7 +640,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
         .take(3)
         .toList();
 
-    // Fallback: just show other clubs
     if (suggestions.isEmpty) {
       suggestions = DataService.clubs
           .where((c) => c.id != currentId)
@@ -623,7 +649,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
 
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
-    // SportClub → SportBooking adapter so BookingCard can render it
     SportBooking clubToBooking(SportClub c) => SportBooking(
       id: c.id,
       title: c.name,
@@ -646,27 +671,30 @@ class _ClubDetailedState extends State<ClubDetailed> {
     );
   }
 
-  // ── Bottom nav ─────────────────────────────────────────────────────────────
-  Widget _bottomNav() => Positioned(
+  Widget _bottomNav(bool isDark) => Positioned(
     bottom: 0,
     left: 0,
     right: 0,
     child: Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
       decoration: BoxDecoration(
-        color: AppTheme.kBg.withOpacity(0.95),
-        border: Border(top: BorderSide(color: AppTheme.kBorder, width: 1)),
+        color: (isDark ? AppTheme.kBg : AppTheme.kLightBg).withOpacity(0.95),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+            width: 1,
+          ),
+        ),
       ),
       child: Row(
         children: [
-          // Chat icon
           _navIconBtn(
             icon: Icons.chat_bubble_outline_rounded,
             label: 'Chat',
             onTap: () {},
+            isDark: isDark,
           ),
           const SizedBox(width: 10),
-          // Save icon
           _navIconBtn(
             icon: _saved
                 ? Icons.favorite_rounded
@@ -674,9 +702,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
             label: _saved ? 'Saved' : 'Save',
             color: _saved ? Colors.redAccent : null,
             onTap: () => setState(() => _saved = !_saved),
+            isDark: isDark,
           ),
           const SizedBox(width: 14),
-          // Book Now
           Expanded(
             child: ElevatedButton(
               onPressed: () => _showBookingSheet(context),
@@ -705,17 +733,22 @@ class _ClubDetailedState extends State<ClubDetailed> {
     required String label,
     required VoidCallback onTap,
     Color? color,
+    required bool isDark,
   }) => GestureDetector(
     onTap: onTap,
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color ?? Colors.white70, size: 22),
+        Icon(
+          icon,
+          color: color ?? (isDark ? Colors.white70 : AppTheme.kLightTextSub),
+          size: 22,
+        ),
         const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
-            color: color ?? Colors.white54,
+            color: color ?? (isDark ? Colors.white54 : AppTheme.kLightTextSub),
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),
@@ -724,7 +757,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── Open/close badge ───────────────────────────────────────────────────────
   Widget _openCloseBadge() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
@@ -760,9 +792,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  // ── Booking bottom sheet ───────────────────────────────────────────────────
   void _showBookingSheet(BuildContext context) {
-    // Set the target on the provider before showing the sheet
     context.read<BookingProvider>().setTarget(widget.target);
 
     showModalBottomSheet(
@@ -773,77 +803,97 @@ class _ClubDetailedState extends State<ClubDetailed> {
         initialChildSize: 0.92,
         minChildSize: 0.5,
         maxChildSize: 0.95,
-        builder: (ctx, scrollController) => Container(
-          decoration: BoxDecoration(
-            color: AppTheme.kBg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: AppTheme.kBorder),
-          ),
-          child: Column(
-            children: [
-              // Drag handle
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
+        builder: (ctx, scrollController) => Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                border: Border.all(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.grey[400],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Book Court',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppTheme.kCardAlt,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppTheme.kBorder),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Book Court',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppTheme.kLightText,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white60,
-                          size: 16,
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppTheme.kCardAlt
+                                  : AppTheme.kLightCardAlt,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppTheme.kBorder
+                                    : AppTheme.kLightBorder,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: isDark
+                                  ? Colors.white60
+                                  : AppTheme.kLightTextSub,
+                              size: 16,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Divider(
+                    color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
+                    height: 1,
+                  ),
+                  Expanded(child: BookingFlowScreen(target: widget.target)),
+                ],
               ),
-              const Divider(color: Color(0xFF2A2A3A), height: 1),
-              // The booking flow
-              Expanded(child: BookingFlowScreen(target: widget.target)),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-// ── Map grid painter (decorative placeholder) ─────────────────────────────────
 class _MapGridPainter extends CustomPainter {
+  final bool isDark;
+
+  _MapGridPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF2A2A3A)
+      ..color = isDark ? const Color(0xFF2A2A3A) : const Color(0xFFCCCCCC)
       ..strokeWidth = 1;
 
     for (double x = 0; x < size.width; x += 30) {
@@ -853,9 +903,8 @@ class _MapGridPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
-    // A few "road" lines
     final road = Paint()
-      ..color = const Color(0xFF3A3A4A)
+      ..color = isDark ? const Color(0xFF3A3A4A) : const Color(0xFFBBBBBB)
       ..strokeWidth = 5;
     canvas.drawLine(
       Offset(0, size.height * 0.4),

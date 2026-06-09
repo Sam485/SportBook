@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/providers/theme_provider.dart';
+import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String currentName;
@@ -68,54 +71,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  void _showImagePickerDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.kCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: AppTheme.kAccent),
-              title: const Text(
-                'Choose from Gallery',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppTheme.kAccent),
-              title: const Text(
-                'Take a Photo',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _takePhoto();
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
+  Future<void> _showImagePickerDialog() async {
+    final file = await ImagePickerBottomSheet.show(context);
+    if (file != null) setState(() => _selectedImage = file);
   }
 
   void _saveChanges() {
@@ -147,21 +105,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: AppBar(
-        backgroundColor: AppTheme.kBg,
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Edit Profile', style: AppTheme.tsTitle),
+        title: Text(
+          'Edit Profile',
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         centerTitle: true,
         actions: [
           TextButton(
             onPressed: _saveChanges,
-            child: const Text(
+            child: Text(
               'Save',
               style: TextStyle(
                 color: AppTheme.kAccent,
@@ -184,6 +155,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _profileImage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Center(
@@ -214,17 +187,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           width: 120,
                           height: 120,
                           errorBuilder: (_, __, ___) => Container(
-                            color: AppTheme.kCardAlt,
-                            child: const Icon(
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                            child: Icon(
                               Icons.person,
                               size: 50,
-                              color: AppTheme.kTextSub,
+                              color: isDark
+                                  ? AppTheme.kTextSub
+                                  : AppTheme.kLightTextSub,
                             ),
                           ),
                           loadingBuilder: (_, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
-                              color: AppTheme.kCardAlt,
+                              color: isDark
+                                  ? AppTheme.kCardAlt
+                                  : AppTheme.kLightCardAlt,
                               child: const Center(
                                 child: CircularProgressIndicator(
                                   color: AppTheme.kAccent,
@@ -235,11 +214,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           },
                         )
                       : Container(
-                          color: AppTheme.kCardAlt,
-                          child: const Icon(
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
+                          child: Icon(
                             Icons.person,
                             size: 50,
-                            color: AppTheme.kTextSub,
+                            color: isDark
+                                ? AppTheme.kTextSub
+                                : AppTheme.kLightTextSub,
                           ),
                         ),
                 ),
@@ -268,6 +251,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _textFields() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -278,6 +263,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             icon: Icons.person_outline,
             label: 'Full Name',
             keyboardType: TextInputType.text,
+            isDark: isDark,
           ),
           const SizedBox(height: 16),
 
@@ -287,6 +273,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             icon: Icons.email_outlined,
             label: 'Email Address',
             keyboardType: TextInputType.emailAddress,
+            isDark: isDark,
           ),
           const SizedBox(height: 16),
 
@@ -296,6 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             icon: Icons.location_on_outlined,
             label: 'Location',
             keyboardType: TextInputType.text,
+            isDark: isDark,
           ),
         ],
       ),
@@ -307,23 +295,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required IconData icon,
     required String label,
     required TextInputType keyboardType,
+    required bool isDark,
   }) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(
+        color: isDark ? Colors.white : AppTheme.kLightText,
+        fontSize: 16,
+      ),
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppTheme.kTextSub),
-        prefixIcon: Icon(icon, color: AppTheme.kTextSub),
+        labelStyle: TextStyle(
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.kBorder),
+          borderSide: BorderSide(
+            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.kAccent),
+          borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
         ),
+        filled: true,
+        fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
       ),
     );
   }

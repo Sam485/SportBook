@@ -59,16 +59,29 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: AppBar(
-        backgroundColor: AppTheme.kBg,
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Password & Security', style: AppTheme.tsTitle),
+        title: Text(
+          'Password & Security',
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -79,7 +92,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             // Security Tips
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: AppTheme.cardDecoration(),
+              decoration: AppTheme.cardDecorationAdaptive(context),
               child: Row(
                 children: [
                   Container(
@@ -95,17 +108,23 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Security Tips',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: isDark ? Colors.white : AppTheme.kLightText,
                             fontWeight: FontWeight.bold,
+                            fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Use a strong password with letters, numbers, and symbols',
-                          style: AppTheme.tsSub,
+                          style: TextStyle(
+                            color: isDark
+                                ? AppTheme.kTextSub
+                                : AppTheme.kLightTextSub,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -116,10 +135,10 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             const SizedBox(height: 24),
 
             // Change Password Section
-            const Text(
+            Text(
               'CHANGE PASSWORD',
               style: TextStyle(
-                color: AppTheme.kTextSub,
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -127,97 +146,34 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             const SizedBox(height: 16),
 
             // Current Password
-            TextField(
+            _buildPasswordField(
               controller: _currentPasswordController,
-              obscureText: _obscureCurrent,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Current Password',
-                labelStyle: const TextStyle(color: AppTheme.kTextSub),
-                prefixIcon: const Icon(
-                  Icons.lock_outline,
-                  color: AppTheme.kTextSub,
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureCurrent ? Icons.visibility_off : Icons.visibility,
-                    color: AppTheme.kTextSub,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscureCurrent = !_obscureCurrent),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.kBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.kAccent),
-                ),
-              ),
+              label: 'Current Password',
+              obscure: _obscureCurrent,
+              onToggle: () =>
+                  setState(() => _obscureCurrent = !_obscureCurrent),
+              isDark: isDark,
             ),
             const SizedBox(height: 16),
 
             // New Password
-            TextField(
+            _buildPasswordField(
               controller: _newPasswordController,
-              obscureText: _obscureNew,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'New Password',
-                labelStyle: const TextStyle(color: AppTheme.kTextSub),
-                prefixIcon: const Icon(
-                  Icons.lock_outline,
-                  color: AppTheme.kTextSub,
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureNew ? Icons.visibility_off : Icons.visibility,
-                    color: AppTheme.kTextSub,
-                  ),
-                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.kBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.kAccent),
-                ),
-              ),
+              label: 'New Password',
+              obscure: _obscureNew,
+              onToggle: () => setState(() => _obscureNew = !_obscureNew),
+              isDark: isDark,
             ),
             const SizedBox(height: 16),
 
             // Confirm Password
-            TextField(
+            _buildPasswordField(
               controller: _confirmPasswordController,
-              obscureText: _obscureConfirm,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Confirm New Password',
-                labelStyle: const TextStyle(color: AppTheme.kTextSub),
-                prefixIcon: const Icon(
-                  Icons.lock_outline,
-                  color: AppTheme.kTextSub,
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                    color: AppTheme.kTextSub,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.kBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.kAccent),
-                ),
-              ),
+              label: 'Confirm New Password',
+              obscure: _obscureConfirm,
+              onToggle: () =>
+                  setState(() => _obscureConfirm = !_obscureConfirm),
+              isDark: isDark,
             ),
             const SizedBox(height: 24),
 
@@ -237,7 +193,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             // Two-Factor Authentication
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: AppTheme.cardDecoration(),
+              decoration: AppTheme.cardDecorationAdaptive(context),
               child: Row(
                 children: [
                   Container(
@@ -253,17 +209,23 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Two-Factor Authentication',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: isDark ? Colors.white : AppTheme.kLightText,
                             fontWeight: FontWeight.bold,
+                            fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Add an extra layer of security',
-                          style: AppTheme.tsSub,
+                          style: TextStyle(
+                            color: isDark
+                                ? AppTheme.kTextSub
+                                : AppTheme.kLightTextSub,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -271,7 +233,6 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                   Switch(
                     value: false,
                     onChanged: (value) {
-                      // Implement 2FA
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('2FA coming soon')),
                       );
@@ -283,6 +244,52 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required bool obscure,
+    required VoidCallback onToggle,
+    required bool isDark,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: TextStyle(
+        color: isDark ? Colors.white : AppTheme.kLightText,
+        fontSize: 16,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+        ),
+        prefixIcon: Icon(
+          Icons.lock_outline,
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscure ? Icons.visibility_off : Icons.visibility,
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+          ),
+          onPressed: onToggle,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+        ),
+        filled: true,
+        fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
       ),
     );
   }

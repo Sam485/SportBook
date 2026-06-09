@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:provider/provider.dart';
+import 'package:sportbook/providers/theme_provider.dart';
 import '../../core/theme.dart';
 
 class AppBottomNavBar extends StatelessWidget {
@@ -14,38 +16,49 @@ class AppBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0C1E34),
-        border: Border(top: BorderSide(color: AppTheme.kBorder, width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 20,
-            offset: Offset(0, -4),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0C1E34) : AppTheme.kLightCard,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+              width: 1,
+            ),
           ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: GNav(
-            gap: 8,
-            activeColor: const Color(0xFF0A1828),
-            color: Colors.white38,
-            iconSize: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            duration: const Duration(milliseconds: 350),
-            tabBackgroundColor: AppTheme.kAccent,
-            selectedIndex: selectedIndex,
-            onTabChange: onTabChange,
-            tabs: const [
-              GButton(icon: Icons.home_rounded, text: 'Home'),
-              GButton(icon: Icons.search_rounded, text: 'Explore'),
-              GButton(icon: Icons.calendar_month_rounded, text: 'Bookings'),
-              GButton(icon: Icons.settings_rounded, text: 'Settings'),
-            ],
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black38 : Colors.black12,
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: GNav(
+              gap: 8,
+              activeColor: isDark
+                  ? const Color(0xFF0A1828)
+                  : AppTheme.kLightText,
+              color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+              iconSize: 22,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              duration: const Duration(milliseconds: 350),
+              tabBackgroundColor: AppTheme.kAccent, // Keep accent color same
+              selectedIndex: selectedIndex,
+              onTabChange: onTabChange,
+              tabs: const [
+                GButton(icon: Icons.home_rounded, text: 'Home'),
+                GButton(icon: Icons.search_rounded, text: 'Explore'),
+                GButton(icon: Icons.calendar_month_rounded, text: 'Bookings'),
+                GButton(icon: Icons.settings_rounded, text: 'Settings'),
+              ],
+            ),
           ),
         ),
       ),

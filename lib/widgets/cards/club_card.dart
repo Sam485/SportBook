@@ -6,6 +6,7 @@ import '../../routes/app_routes.dart';
 class ClubCard extends StatefulWidget {
   final SportClub club;
   const ClubCard({super.key, required this.club});
+
   @override
   State<ClubCard> createState() => _ClubCardState();
 }
@@ -57,6 +58,7 @@ class _ClubCardState extends State<ClubCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final c = widget.club;
     final urls = c.imageUrls;
 
@@ -64,7 +66,7 @@ class _ClubCardState extends State<ClubCard> {
       width: 260,
       margin: const EdgeInsets.only(right: 14),
       clipBehavior: Clip.hardEdge,
-      decoration: AppTheme.cardDecoration(radius: 22),
+      decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
       child: InkWell(
         onTap: () => Navigator.pushNamed(
           context,
@@ -99,12 +101,17 @@ class _ClubCardState extends State<ClubCard> {
                         itemBuilder: (_, i) => Image.network(
                           urls[i % urls.length],
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              Container(color: AppTheme.kCardAlt),
+                          errorBuilder: (_, __, ___) => Container(
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
                           loadingBuilder: (_, ch, p) => p == null
                               ? ch
                               : Container(
-                                  color: AppTheme.kCardAlt,
+                                  color: isDark
+                                      ? AppTheme.kCardAlt
+                                      : AppTheme.kLightCardAlt,
                                   child: const Center(
                                     child: CircularProgressIndicator(
                                       color: AppTheme.kAccent,
@@ -117,18 +124,27 @@ class _ClubCardState extends State<ClubCard> {
 
                       // Scrim
                       Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.transparent, Color(0xCC0A1828)],
+                            colors: [
+                              Colors.transparent,
+                              isDark
+                                  ? const Color(0xCC0A1828)
+                                  : const Color(0xCCF0F6FF),
+                            ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            stops: [0.4, 1.0],
+                            stops: const [0.4, 1.0],
                           ),
                         ),
                       ),
 
                       // Open/close badge
-                      Positioned(top: 8, left: 10, child: _openCloseBadge()),
+                      Positioned(
+                        top: 8,
+                        left: 10,
+                        child: _openCloseBadge(isDark),
+                      ),
 
                       // Page count badge
                       if (urls.length > 1)
@@ -176,7 +192,9 @@ class _ClubCardState extends State<ClubCard> {
                                 decoration: BoxDecoration(
                                   color: i == _page
                                       ? AppTheme.kAccent
-                                      : Colors.white.withOpacity(0.35),
+                                      : (isDark
+                                            ? Colors.white.withOpacity(0.35)
+                                            : Colors.black.withOpacity(0.35)),
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                               ),
@@ -215,8 +233,10 @@ class _ClubCardState extends State<ClubCard> {
                           alignment: Alignment.center,
                           child: Text(
                             c.initials,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.kLightText,
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                             ),
@@ -229,8 +249,10 @@ class _ClubCardState extends State<ClubCard> {
                             children: [
                               Text(
                                 c.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppTheme.kLightText,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -257,8 +279,10 @@ class _ClubCardState extends State<ClubCard> {
                                   Container(
                                     width: 3,
                                     height: 3,
-                                    decoration: const BoxDecoration(
-                                      color: AppTheme.kTextSub,
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? AppTheme.kTextSub
+                                          : AppTheme.kLightTextSub,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -271,8 +295,10 @@ class _ClubCardState extends State<ClubCard> {
                                   const SizedBox(width: 2),
                                   Text(
                                     c.closeTime,
-                                    style: const TextStyle(
-                                      color: AppTheme.kTextSub,
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? AppTheme.kTextSub
+                                          : AppTheme.kLightTextSub,
                                       fontSize: 10,
                                     ),
                                   ),
@@ -286,7 +312,10 @@ class _ClubCardState extends State<ClubCard> {
                   ),
 
                   const SizedBox(height: 6),
-                  Container(height: 1, color: AppTheme.kBorder),
+                  Container(
+                    height: 1,
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
                   const SizedBox(height: 6),
 
                   // Venue
@@ -301,8 +330,10 @@ class _ClubCardState extends State<ClubCard> {
                       Expanded(
                         child: Text(
                           c.venue,
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : AppTheme.kLightTextSub,
                             fontSize: 11,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -323,8 +354,10 @@ class _ClubCardState extends State<ClubCard> {
                       const SizedBox(width: 4),
                       Text(
                         '${c.distanceKm} km away',
-                        style: const TextStyle(
-                          color: AppTheme.kTextSub,
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.kTextSub
+                              : AppTheme.kLightTextSub,
                           fontSize: 11,
                         ),
                       ),
@@ -372,7 +405,7 @@ class _ClubCardState extends State<ClubCard> {
     );
   }
 
-  Widget _openCloseBadge() {
+  Widget _openCloseBadge(bool isDark) {
     final now = TimeOfDay.now();
     final nowM = now.hour * 60 + now.minute;
 

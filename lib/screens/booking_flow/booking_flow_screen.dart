@@ -20,7 +20,7 @@ class BookingFlowScreen extends StatefulWidget {
 class _BookingFlowScreenState extends State<BookingFlowScreen> {
   late final PageController _page;
   int _step = 0;
-  final _paymentKey = GlobalKey<StepPaymentState>(); // ✅ works now
+  final _paymentKey = GlobalKey<StepPaymentState>();
 
   bool get _skipCategory => widget.target.sports.length == 1;
   int get _totalSteps => _skipCategory ? 3 : 4;
@@ -81,18 +81,16 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       case 2:
         return p.canProceedFromDate;
       case 3:
-        return true; // ✅ StepPayment handles its own validation
+        return true;
       default:
         return false;
     }
   }
 
   void _handleConfirm(BookingProvider p) {
-    // ✅ Delegates to StepPayment: validates form → setUserInfo → confirmBooking
     _paymentKey.currentState?.handleConfirm();
   }
 
-  // Called by StepPayment after validation passes
   void _onPaymentConfirmed(BookingProvider p) {
     if (!p.canConfirm) return;
     p.confirmBooking();
@@ -108,13 +106,19 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Consumer<BookingProvider>(
       builder: (context, provider, _) => Scaffold(
-        backgroundColor: AppTheme.kBg,
-        appBar: _buildAppBar(provider),
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        appBar: _buildAppBar(provider, isDark),
         body: Column(
           children: [
-            _StepIndicator(steps: _stepLabels, currentStep: _step),
+            _StepIndicator(
+              steps: _stepLabels,
+              currentStep: _step,
+              isDark: isDark,
+            ),
             Expanded(
               child: PageView(
                 controller: _page,
@@ -147,6 +151,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               onNext: _next,
               onConfirm: () => _handleConfirm(provider),
               provider: provider,
+              isDark: isDark,
             ),
           ],
         ),
@@ -154,14 +159,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     );
   }
 
-  AppBar _buildAppBar(BookingProvider p) => AppBar(
-    backgroundColor: AppTheme.kBg,
+  AppBar _buildAppBar(BookingProvider p, bool isDark) => AppBar(
+    backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
     elevation: 0,
     leading: IconButton(
       onPressed: _back,
-      icon: const Icon(
+      icon: Icon(
         Icons.arrow_back_ios_new_rounded,
-        color: Colors.white,
+        color: isDark ? Colors.white : AppTheme.kLightText,
         size: 20,
       ),
     ),
@@ -170,8 +175,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       children: [
         Text(
           widget.target.name,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 16,
             fontWeight: FontWeight.w800,
           ),
@@ -179,7 +184,10 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         ),
         Text(
           widget.target.venue,
-          style: const TextStyle(color: AppTheme.kTextSub, fontSize: 11.5),
+          style: TextStyle(
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            fontSize: 11.5,
+          ),
         ),
       ],
     ),
@@ -224,7 +232,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 class _StepIndicator extends StatelessWidget {
   final List<String> steps;
   final int currentStep;
-  const _StepIndicator({required this.steps, required this.currentStep});
+  final bool isDark;
+
+  const _StepIndicator({
+    required this.steps,
+    required this.currentStep,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +252,9 @@ class _StepIndicator extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 height: 2,
-                color: done ? AppTheme.kAccent : AppTheme.kBorder,
+                color: done
+                    ? AppTheme.kAccent
+                    : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
               ),
             );
           }
@@ -258,9 +274,11 @@ class _StepIndicator extends StatelessWidget {
                       ? AppTheme.kAccent
                       : active
                       ? AppTheme.kAccent.withOpacity(0.2)
-                      : AppTheme.kCardAlt,
+                      : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                   border: Border.all(
-                    color: done || active ? AppTheme.kAccent : AppTheme.kBorder,
+                    color: done || active
+                        ? AppTheme.kAccent
+                        : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                     width: 1.5,
                   ),
                 ),
@@ -274,7 +292,11 @@ class _StepIndicator extends StatelessWidget {
                     : Text(
                         '${si + 1}',
                         style: TextStyle(
-                          color: active ? AppTheme.kAccent : Colors.white38,
+                          color: active
+                              ? AppTheme.kAccent
+                              : (isDark
+                                    ? Colors.white38
+                                    : AppTheme.kLightTextSub),
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
@@ -284,7 +306,9 @@ class _StepIndicator extends StatelessWidget {
               Text(
                 steps[si],
                 style: TextStyle(
-                  color: done || active ? Colors.white70 : Colors.white38,
+                  color: done || active
+                      ? (isDark ? Colors.white70 : AppTheme.kLightText)
+                      : (isDark ? Colors.white38 : AppTheme.kLightTextSub),
                   fontSize: 9.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -303,6 +327,7 @@ class _BottomBar extends StatelessWidget {
   final bool canProceed;
   final VoidCallback onBack, onNext, onConfirm;
   final BookingProvider provider;
+  final bool isDark;
 
   const _BottomBar({
     required this.step,
@@ -312,6 +337,7 @@ class _BottomBar extends StatelessWidget {
     required this.onNext,
     required this.onConfirm,
     required this.provider,
+    required this.isDark,
   });
 
   bool get isLastStep => step == totalSteps - 1;
@@ -320,14 +346,18 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 26),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0E2038),
-        border: Border(top: BorderSide(color: AppTheme.kBorder)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0E2038) : AppTheme.kLightCard,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black38,
+            color: isDark ? Colors.black38 : Colors.black12,
             blurRadius: 12,
-            offset: Offset(0, -4),
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -338,8 +368,11 @@ class _BottomBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.kCardAlt,
+                color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                ),
               ),
               child: Row(
                 children: [
@@ -357,8 +390,8 @@ class _BottomBar extends StatelessWidget {
                   if (provider.selectedCourt != null) ...[
                     Text(
                       'Court ${provider.selectedCourt}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -368,8 +401,8 @@ class _BottomBar extends StatelessWidget {
                   if (provider.selectedDate != null) ...[
                     Text(
                       _fmtDate(provider.selectedDate!),
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                         fontSize: 12,
                       ),
                     ),
@@ -388,8 +421,8 @@ class _BottomBar extends StatelessWidget {
                   ),
                   Text(
                     '\$${provider.totalPrice.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -407,14 +440,16 @@ class _BottomBar extends StatelessWidget {
                   height: 52,
                   width: 52,
                   decoration: BoxDecoration(
-                    color: AppTheme.kCardAlt,
+                    color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
                     borderRadius: BorderRadius.circular(26),
-                    border: Border.all(color: AppTheme.kBorder),
+                    border: Border.all(
+                      color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                    ),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white70,
+                    color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                     size: 18,
                   ),
                 ),
@@ -427,7 +462,9 @@ class _BottomBar extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     height: 52,
                     decoration: BoxDecoration(
-                      color: canProceed ? AppTheme.kAccent : AppTheme.kBorder,
+                      color: canProceed
+                          ? AppTheme.kAccent
+                          : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                       borderRadius: BorderRadius.circular(26),
                       boxShadow: canProceed
                           ? [
@@ -448,7 +485,9 @@ class _BottomBar extends StatelessWidget {
                           style: TextStyle(
                             color: canProceed
                                 ? const Color(0xFF0A1828)
-                                : Colors.white38,
+                                : (isDark
+                                      ? Colors.white38
+                                      : AppTheme.kLightTextSub),
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                           ),
@@ -480,14 +519,14 @@ class _BottomBar extends StatelessWidget {
     child: Container(
       width: 3,
       height: 3,
-      decoration: const BoxDecoration(
-        color: AppTheme.kTextSub,
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         shape: BoxShape.circle,
       ),
     ),
   );
 
-  static String _fmtDate(DateTime d) {
+  String _fmtDate(DateTime d) {
     const m = [
       'Jan',
       'Feb',

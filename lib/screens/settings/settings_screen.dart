@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sportbook/screens/settings/features/appearance_selection.dart';
 import 'package:sportbook/screens/settings/features/editing_profile.dart';
 import 'package:sportbook/screens/settings/features/history_booking.dart';
@@ -6,6 +7,7 @@ import 'package:sportbook/screens/settings/features/language_selection.dart';
 import 'package:sportbook/screens/settings/features/password_security.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
+import '../../providers/theme_provider.dart'; // Add this import
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,15 +23,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _userName = 'John Doe';
   String _userEmail = 'johndoe@gmail.com';
   String _userLocation = 'New York, USA';
-  String _userImageUrl =
+  final String _userImageUrl =
       'https://imgs.search.brave.com/EipFQVm-X300u0qBZX5vva8FbVwDEBUGookALc-rjNM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMucGV4ZWxzLmNv/bS9waG90b3MvMTUz/OTM1OTAvcGV4ZWxz/LXBob3RvLTE1Mzkz/NTkwL2ZyZWUtcGhv/dG8tb2YtcGhvdG8t/b2YtYS1zaGlydGxl/c3MtaGFuZHNvbWUt/bWFuLWFnYWluc3Qt/dGhlLXNreS5qcGVn/P2F1dG89Y29tcHJl/c3MmY3M9dGlueXNy/Z2ImZHByPTEmdz01/MDA';
 
-  // Language and theme
+  // Language state (keep this as it's separate from theme)
   String _currentLanguage = 'EN';
-  String _currentTheme = 'dark';
 
-  // Sample history bookings (replace with actual data)
-  List<SportBooking> _historyBookings = [];
+  // Remove this line - we'll get theme from provider instead:
+  // String _currentTheme = 'dark';
+
+  // Sample history bookings
+  final List<SportBooking> _historyBookings = [];
 
   @override
   void initState() {
@@ -71,7 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (result['name'] != null) _userName = result['name'];
         if (result['email'] != null) _userEmail = result['email'];
         if (result['location'] != null) _userLocation = result['location'];
-        // Handle image if needed
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully!')),
@@ -102,17 +105,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAppearanceSelector() async {
+    // Get theme provider
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
     final selectedTheme = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AppearanceSelector(currentTheme: _currentTheme),
+      builder: (context) => AppearanceSelector(
+        currentTheme: themeProvider.currentTheme, // Get from provider
+      ),
     );
 
     if (selectedTheme != null && mounted) {
-      setState(() {
-        _currentTheme = selectedTheme;
-      });
+      // Trigger rebuild to update the UI
+      setState(() {});
     }
   }
 
@@ -120,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.kCard,
+        backgroundColor: AppTheme.card(context),
         title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
         content: const Text(
           'Are you sure you want to sign out?',
@@ -137,7 +144,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // Navigate to login screen
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 '/login',
@@ -154,37 +160,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          scrollBehavior: const ScrollBehavior().copyWith(overscroll: false),
-          slivers: [
-            SliverToBoxAdapter(child: _header()),
-            SliverToBoxAdapter(child: _profileInfo()),
-            SliverToBoxAdapter(
-              child: _singleButton(
-                'account',
-                Icons.history,
-                'History Bookings',
-                'View past sessions',
-                onTap: _navigateToHistory,
+    // Listen to theme provider for changes
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Scaffold(
+          body: SafeArea(
+            child: CustomScrollView(
+              scrollBehavior: const ScrollBehavior().copyWith(
+                overscroll: false,
               ),
+              slivers: [
+                SliverToBoxAdapter(child: _header()),
+                SliverToBoxAdapter(child: _profileInfo()),
+                SliverToBoxAdapter(
+                  child: _singleButton(
+                    'account',
+                    Icons.history,
+                    'History Bookings',
+                    'View past sessions',
+                    onTap: _navigateToHistory,
+                  ),
+                ),
+                SliverToBoxAdapter(child: _multipleButton(themeProvider)),
+                SliverToBoxAdapter(
+                  child: _singleButton(
+                    'security',
+                    Icons.lock_outline,
+                    'Password & Security',
+                    'Last changed 3 months ago',
+                    onTap: _navigateToPasswordSecurity,
+                  ),
+                ),
+                SliverToBoxAdapter(child: _signOutButton()),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
             ),
-            SliverToBoxAdapter(child: _multipleButton()),
-            SliverToBoxAdapter(
-              child: _singleButton(
-                'security',
-                Icons.lock_outline,
-                'Password & Security',
-                'Last changed 3 months ago',
-                onTap: _navigateToPasswordSecurity,
-              ),
-            ),
-            SliverToBoxAdapter(child: _signOutButton()),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -193,13 +206,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Row(
         children: [
-          Text('Settings', style: AppTheme.tsTitle.copyWith(fontSize: 22)),
+          Text('Settings', style: AppTheme.tsTitleAdaptive(context)),
           const Spacer(),
           IconButton(
             onPressed: () {
               // Handle edit profile action
             },
-            icon: const Icon(Icons.settings, color: Colors.white),
+            icon: Icon(Icons.settings, color: AppTheme.textPrimary(context)),
           ),
         ],
       ),
@@ -214,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           width: double.infinity,
           height: 230,
-          decoration: AppTheme.cardDecoration(),
+          decoration: AppTheme.cardDecorationAdaptive(context),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 5),
             child: Column(
@@ -237,17 +250,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 _userImageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
-                                  color: AppTheme.kCardAlt,
-                                  child: const Icon(
+                                  color: AppTheme.cardAlt(context),
+                                  child: Icon(
                                     Icons.person,
                                     size: 36,
-                                    color: AppTheme.kTextSub,
+                                    color: AppTheme.textSub(context),
                                   ),
                                 ),
                                 loadingBuilder: (_, c, p) => p == null
                                     ? c
                                     : Container(
-                                        color: AppTheme.kCardAlt,
+                                        color: AppTheme.cardAlt(context),
                                         child: const Center(
                                           child: CircularProgressIndicator(
                                             color: AppTheme.kAccent,
@@ -257,11 +270,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                               )
                             : Container(
-                                color: AppTheme.kCardAlt,
-                                child: const Icon(
+                                color: AppTheme.cardAlt(context),
+                                child: Icon(
                                   Icons.person,
                                   size: 36,
-                                  color: AppTheme.kTextSub,
+                                  color: AppTheme.textSub(context),
                                 ),
                               ),
                       ),
@@ -272,8 +285,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_userName, style: AppTheme.tsTitle),
-                          Text(_userEmail, style: AppTheme.tsBody),
+                          Text(
+                            _userName,
+                            style: AppTheme.tsTitleAdaptive(context),
+                          ),
+                          Text(
+                            _userEmail,
+                            style: AppTheme.tsBodyAdaptive(context),
+                          ),
                           Row(
                             children: [
                               Icon(
@@ -285,7 +304,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Expanded(
                                 child: Text(
                                   _userLocation,
-                                  style: AppTheme.tsAccent,
+                                  style: const TextStyle(
+                                    color: AppTheme.kAccent,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -294,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.edit, color: AppTheme.kAccent, size: 20),
+                    Icon(Icons.edit, color: AppTheme.kAccent, size: 20),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -303,19 +326,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Expanded(
                       child: Container(
                         height: 60,
-                        decoration: AppTheme.cardDecoration().copyWith(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            bottomLeft: Radius.circular(20),
-                          ),
-                          color: AppTheme.kCardAlt,
-                        ),
+                        decoration: AppTheme.cardDecorationAdaptive(context)
+                            .copyWith(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                bottomLeft: Radius.circular(20),
+                              ),
+                              color: AppTheme.cardAlt(context),
+                            ),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              Text('12', style: AppTheme.tsTitle),
-                              Text('Bookings', style: AppTheme.tsSub),
+                              Text(
+                                '12',
+                                style: AppTheme.tsTitleAdaptive(context),
+                              ),
+                              Text(
+                                'Bookings',
+                                style: AppTheme.tsSubAdaptive(context),
+                              ),
                             ],
                           ),
                         ),
@@ -324,19 +354,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Expanded(
                       child: Container(
                         height: 60,
-                        decoration: AppTheme.cardDecoration().copyWith(
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(20),
-                            bottomRight: Radius.circular(20),
-                          ),
-                          color: AppTheme.kCardAlt,
-                        ),
+                        decoration: AppTheme.cardDecorationAdaptive(context)
+                            .copyWith(
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(20),
+                                bottomRight: Radius.circular(20),
+                              ),
+                              color: AppTheme.cardAlt(context),
+                            ),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              Text('3', style: AppTheme.tsTitle),
-                              Text('Upcoming', style: AppTheme.tsSub),
+                              Text(
+                                '3',
+                                style: AppTheme.tsTitleAdaptive(context),
+                              ),
+                              Text(
+                                'Upcoming',
+                                style: AppTheme.tsSubAdaptive(context),
+                              ),
                             ],
                           ),
                         ),
@@ -383,14 +420,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: AppTheme.tsBody),
+          Text(label.toUpperCase(), style: AppTheme.tsBodyAdaptive(context)),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: onTap,
             child: Container(
               width: double.infinity,
               height: 60,
-              decoration: AppTheme.cardDecoration(),
+              decoration: AppTheme.cardDecorationAdaptive(context),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
@@ -399,10 +436,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 45,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppTheme.kTextSub,
+                        color: AppTheme.textSub(context),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: AppTheme.kBg),
+                      child: Icon(icon, color: AppTheme.bg(context)),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -411,15 +448,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         children: [
                           Text(
                             title,
-                            style: AppTheme.tsLabel.copyWith(fontSize: 14.5),
+                            style: AppTheme.tsLabelAdaptive(
+                              context,
+                            ).copyWith(fontSize: 14.5),
                           ),
-                          Text(subTitle, style: AppTheme.tsSub),
+                          Text(
+                            subTitle,
+                            style: AppTheme.tsSubAdaptive(context),
+                          ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.arrow_forward_ios,
-                      color: AppTheme.kTextSub,
+                      color: AppTheme.textSub(context),
                       size: 16,
                     ),
                   ],
@@ -432,13 +474,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _multipleButton() {
+  Widget _multipleButton(ThemeProvider themeProvider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PREFERENCES', style: AppTheme.tsBody),
+          Text('PREFERENCES', style: AppTheme.tsBodyAdaptive(context)),
           const SizedBox(height: 8),
           Column(
             children: [
@@ -446,7 +489,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Container(
                 width: double.infinity,
                 height: 60,
-                decoration: AppTheme.cardDecoration().copyWith(
+                decoration: AppTheme.cardDecorationAdaptive(context).copyWith(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -460,12 +503,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: 45,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: AppTheme.kTextSub,
+                          color: AppTheme.textSub(context),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.notifications_outlined,
-                          color: AppTheme.kBg,
+                          color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -475,11 +518,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text(
                               'Notifications',
-                              style: AppTheme.tsLabel.copyWith(fontSize: 14.5),
+                              style: AppTheme.tsLabelAdaptive(
+                                context,
+                              ).copyWith(fontSize: 14.5),
                             ),
                             Text(
                               'Booking reminders & alerts',
-                              style: AppTheme.tsSub,
+                              style: AppTheme.tsSubAdaptive(context),
                             ),
                           ],
                         ),
@@ -501,9 +546,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Container(
                   width: double.infinity,
                   height: 60,
-                  decoration: AppTheme.cardDecoration().copyWith(
-                    borderRadius: BorderRadius.circular(0),
-                  ),
+                  decoration: AppTheme.cardDecorationAdaptive(
+                    context,
+                  ).copyWith(borderRadius: BorderRadius.circular(0)),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
@@ -512,12 +557,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           width: 45,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: AppTheme.kTextSub,
+                            color: AppTheme.textSub(context),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.language_outlined,
-                            color: AppTheme.kBg,
+                            color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -527,15 +572,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Text(
                                 'Language',
-                                style: AppTheme.tsLabel.copyWith(
-                                  fontSize: 14.5,
-                                ),
+                                style: AppTheme.tsLabelAdaptive(
+                                  context,
+                                ).copyWith(fontSize: 14.5),
                               ),
                               Text(
                                 _currentLanguage == 'EN'
                                     ? 'English (US)'
                                     : 'Khmer',
-                                style: AppTheme.tsSub,
+                                style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
                           ),
@@ -544,9 +589,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             _badge(_currentLanguage),
                             const SizedBox(width: 10),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_ios,
-                              color: AppTheme.kTextSub,
+                              color: AppTheme.textSub(context),
                               size: 16,
                             ),
                           ],
@@ -562,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Container(
                   width: double.infinity,
                   height: 60,
-                  decoration: AppTheme.cardDecoration().copyWith(
+                  decoration: AppTheme.cardDecorationAdaptive(context).copyWith(
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(12),
                       bottomRight: Radius.circular(12),
@@ -576,12 +621,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           width: 45,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: AppTheme.kTextSub,
+                            color: AppTheme.textSub(context),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.dark_mode_outlined,
-                            color: AppTheme.kBg,
+                            color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -591,17 +636,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Text(
                                 'Appearance',
-                                style: AppTheme.tsLabel.copyWith(
-                                  fontSize: 14.5,
-                                ),
+                                style: AppTheme.tsLabelAdaptive(
+                                  context,
+                                ).copyWith(fontSize: 14.5),
                               ),
                               Text(
-                                _currentTheme == 'dark'
+                                themeProvider.currentTheme == 'dark'
                                     ? 'Dark Mode'
-                                    : (_currentTheme == 'light'
+                                    : (themeProvider.currentTheme == 'light'
                                           ? 'Light Mode'
                                           : 'System Default'),
-                                style: AppTheme.tsSub,
+                                style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
                           ),
@@ -609,16 +654,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           children: [
                             _badge(
-                              _currentTheme == 'dark'
+                              themeProvider.currentTheme == 'dark'
                                   ? 'Dark'
-                                  : (_currentTheme == 'light'
+                                  : (themeProvider.currentTheme == 'light'
                                         ? 'Light'
                                         : 'System'),
                             ),
                             const SizedBox(width: 10),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_ios,
-                              color: AppTheme.kTextSub,
+                              color: AppTheme.textSub(context),
                               size: 16,
                             ),
                           ],
@@ -652,13 +697,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _badge(String data) {
     return Container(
       height: 30,
-      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.kBorder),
+        border: Border.all(color: AppTheme.border(context)),
         borderRadius: BorderRadius.circular(15),
-        color: AppTheme.kBg,
+        color: AppTheme.bg(context),
       ),
-      child: Center(child: Text(data, style: AppTheme.tsBody)),
+      child: Center(child: Text(data, style: AppTheme.tsBodyAdaptive(context))),
     );
   }
 }
