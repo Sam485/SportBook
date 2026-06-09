@@ -5,7 +5,6 @@ import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../providers/booking_provider.dart';
-import '../../providers/theme_provider.dart';
 import 'steps/step_category.dart';
 import 'steps/step_court.dart';
 import 'steps/step_date_time.dart';

@@ -293,7 +293,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _confirmManual(),
                   decoration: InputDecoration(
-                    hintText: 'e.g. London, Bangkok...',
+                    hintText: 'e.g. London, Phnom Penh...',
                     hintStyle: TextStyle(
                       color: isDark
                           ? AppTheme.kTextSub
