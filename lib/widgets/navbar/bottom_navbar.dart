@@ -63,10 +63,7 @@ class AppBottomNavBar extends StatelessWidget {
                   icon: Icons.calendar_month_rounded,
                   text: 'bookings'.tr(context),
                 ),
-                GButton(
-                  icon: Icons.settings_rounded,
-                  text: 'settings'.tr(context),
-                ),
+                GButton(icon: Icons.person_rounded, text: 'user'.tr(context)),
               ],
             ),
           ),

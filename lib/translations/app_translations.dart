@@ -43,6 +43,7 @@ class AppTranslations {
       'bookings': 'Bookings',
       'settings': 'Settings',
       'profile': 'Profile',
+      'user': 'User',
 
       // ---------------------- Location Picker ----------------------------
       'select_location': 'Select location',
@@ -448,6 +449,7 @@ class AppTranslations {
       'bookings': 'ការកក់',
       'settings': 'ការកំណត់',
       'profile': 'ប្រវត្តិរូប',
+      'user': 'អ្នកប្រើប្រាស់',
 
       // ---------------------- Location Picker ----------------------------
       'select_location': 'ជ្រើសរើសទីតាំង',

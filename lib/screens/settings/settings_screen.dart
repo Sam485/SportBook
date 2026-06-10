@@ -700,16 +700,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _signOutButton() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: ElevatedButton(
-        onPressed: _signOut,
-        style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.logout),
-            const SizedBox(width: 8),
-            Text('sign_out'.tr(context)),
-          ],
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: _signOut,
+          style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.logout),
+              const SizedBox(width: 8),
+              Text('sign_out'.tr(context)),
+            ],
+          ),
         ),
       ),
     );
