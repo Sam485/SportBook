@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../services/data_service.dart';
+import '../../../translations/app_translations.dart';
 
 class StepCourt extends StatelessWidget {
   final VoidCallback onNext;
@@ -20,7 +21,7 @@ class StepCourt extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
         Text(
-          isGym ? 'Select Trainer' : 'Select Court',
+          isGym ? 'select_trainer'.tr(context) : 'select_court'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
@@ -30,8 +31,8 @@ class StepCourt extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           isGym
-              ? 'Choose a trainer for your session'
-              : 'Tap a court to select · Tap the expand icon to preview',
+              ? 'choose_trainer_desc'.tr(context)
+              : 'select_court_desc'.tr(context),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
@@ -159,7 +160,11 @@ class StepCourt extends StatelessWidget {
                     top: 8,
                     left: 8,
                     child: GestureDetector(
-                      onTap: () => _openFullImage(ctx, img, 'Court $num'),
+                      onTap: () => _openFullImage(
+                        ctx,
+                        img,
+                        'court_label'.tr(ctx).replaceAll('{number}', '$num'),
+                      ),
                       child: Container(
                         width: 26,
                         height: 26,
@@ -185,7 +190,7 @@ class StepCourt extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Court $num',
+                          'court_label'.tr(ctx).replaceAll('{number}', '$num'),
                           style: TextStyle(
                             color: sel ? AppTheme.kAccent : Colors.white,
                             fontSize: 13,
@@ -197,7 +202,7 @@ class StepCourt extends StatelessWidget {
                         ),
                         if (sport.isNotEmpty)
                           Text(
-                            '${DataService.emojiFor(sport)} $sport',
+                            '${DataService.emojiFor(sport)} ${_getTranslatedSportName(sport, ctx)}',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 10,
@@ -361,6 +366,23 @@ class StepCourt extends StatelessWidget {
           );
         },
       );
+
+  String _getTranslatedSportName(String sport, BuildContext context) {
+    switch (sport.toLowerCase()) {
+      case 'football':
+        return 'sport_football'.tr(context);
+      case 'badminton':
+        return 'sport_badminton'.tr(context);
+      case 'tennis':
+        return 'sport_tennis'.tr(context);
+      case 'basketball':
+        return 'sport_basketball'.tr(context);
+      case 'gym':
+        return 'sport_gym'.tr(context);
+      default:
+        return sport;
+    }
+  }
 
   void _openFullImage(BuildContext ctx, String url, String label) {
     Navigator.of(ctx).push(

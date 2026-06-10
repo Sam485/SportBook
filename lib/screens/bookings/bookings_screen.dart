@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/services/data_service.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booked_card.dart';
 
 class BookingsScreen extends StatefulWidget {
@@ -88,7 +89,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
               style: TextStyle(color: isDark ? Colors.white : Colors.black),
               decoration: AppTheme.textFieldDecoration(Icons.search, 'Search')
                   .copyWith(
-                    labelText: 'Search',
+                    labelText: 'search'.tr(context),
                     labelStyle: TextStyle(
                       color: isDark
                           ? AppTheme.kTextSub

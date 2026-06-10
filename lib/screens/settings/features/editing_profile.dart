@@ -1,9 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/providers/theme_provider.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -82,15 +81,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _locationController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+      ).showSnackBar(SnackBar(content: Text('fill_all_fields'.tr(context))));
       return;
     }
 
     if (!_emailController.text.contains('@') ||
         !_emailController.text.contains('.')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('enter_valid_email'.tr(context))));
       return;
     }
 
@@ -120,7 +119,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Edit Profile',
+          'edit_profile'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
@@ -133,7 +132,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextButton(
             onPressed: _saveChanges,
             child: Text(
-              'Save',
+              'save'.tr(context),
               style: TextStyle(
                 color: AppTheme.kAccent,
                 fontSize: 16,
@@ -261,7 +260,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _buildTextField(
             controller: _nameController,
             icon: Icons.person_outline,
-            label: 'Full Name',
+            label: 'full_name'.tr(context),
             keyboardType: TextInputType.text,
             isDark: isDark,
           ),
@@ -271,7 +270,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _buildTextField(
             controller: _emailController,
             icon: Icons.email_outlined,
-            label: 'Email Address',
+            label: 'email_address'.tr(context),
             keyboardType: TextInputType.emailAddress,
             isDark: isDark,
           ),
@@ -281,7 +280,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _buildTextField(
             controller: _locationController,
             icon: Icons.location_on_outlined,
-            label: 'Location',
+            label: 'location'.tr(context),
             keyboardType: TextInputType.text,
             isDark: isDark,
           ),
@@ -330,6 +329,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _saveButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       child: SizedBox(
@@ -345,9 +346,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             elevation: 2,
           ),
-          child: const Text(
-            'Save Changes',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          child: Text(
+            'save_changes'.tr(context),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.black : Colors.white,
+            ),
           ),
         ),
       ),

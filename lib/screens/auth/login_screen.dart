@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,22 +26,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(child: _header()),
+              SliverToBoxAdapter(child: _header(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 15)),
-              SliverToBoxAdapter(child: _Input()),
+              SliverToBoxAdapter(child: _Input(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 15)),
               SliverToBoxAdapter(child: _confirmButton()),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [_orSignUp()],
+                  children: [_orSignUp(isDark)],
                 ),
               ),
             ],
@@ -50,29 +54,44 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _header() {
+  Widget _header(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         CircleAvatar(
-          backgroundColor: Colors.black,
+          backgroundColor: isDark ? Colors.black : AppTheme.kLightCardAlt,
           maxRadius: 80,
           minRadius: 40,
-          child: const Icon(Icons.person, size: 60, color: Colors.white),
+          child: Icon(
+            Icons.person,
+            size: 60,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
         ),
         const SizedBox(height: 10),
-        Text("Log In", style: AppTheme.tsTitle.copyWith(fontSize: 32)),
+        Text(
+          'login'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         const SizedBox(height: 10),
         Text(
-          "Welcome back! Please Sign in to continue",
-          style: AppTheme.tsBody.copyWith(fontSize: 16),
+          'welcome_back'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 16,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _Input() {
+  Widget _Input(bool isDark) {
     return SizedBox(
       width: double.infinity,
       child: Form(
@@ -80,44 +99,104 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Phone or Username", style: AppTheme.tsLabel),
+            Text(
+              'phone_or_username'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 16,
+              ),
+            ),
             const SizedBox(height: 10),
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Phone number is required';
+                  return 'phone_required'.tr(context);
                 }
                 if (value.length < 9) {
-                  return 'Please enter a valid phone number';
+                  return 'valid_phone_required'.tr(context);
                 }
                 return null;
               },
-              decoration: AppTheme.textFieldDecoration(
-                Icons.phone,
-                'Phone or Username',
+              decoration: InputDecoration(
+                hintText: 'phone_hint'.tr(context),
+                hintStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
+                prefixIcon: Icon(
+                  Icons.phone,
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
                 suffixIcon: null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(
+                    color: AppTheme.kAccent,
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
+                filled: true,
+                fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
               ),
             ),
             const SizedBox(height: 10),
-            Text("Password", style: AppTheme.tsLabel),
+            Text(
+              'password'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 16,
+              ),
+            ),
             const SizedBox(height: 10),
             TextFormField(
               controller: _passwordController,
               obscureText: !_isPasswordVisible,
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Password is required';
+                  return 'password_required'.tr(context);
                 }
                 if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
+                  return 'password_min_length'.tr(context);
                 }
                 return null;
               },
-              decoration: AppTheme.textFieldDecoration(
-                Icons.lock,
-                'Password',
+              decoration: InputDecoration(
+                hintText: 'password_hint'.tr(context),
+                hintStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
+                prefixIcon: Icon(
+                  Icons.lock,
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
                 suffixIcon: IconButton(
                   onPressed: () {
                     setState(() {
@@ -128,7 +207,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isPasswordVisible
                         ? Icons.visibility
                         : Icons.visibility_off,
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   ),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(
+                    color: AppTheme.kAccent,
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
+                filled: true,
+                fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
                 ),
               ),
             ),
@@ -143,17 +253,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       isChecked = value ?? false;
                     });
                   },
+                  activeColor: AppTheme.kAccent,
+                  checkColor: Colors.black,
                 ),
                 const SizedBox(width: 5),
-                const Text('Remember Me'),
+                Text(
+                  'remember_me'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                  ),
+                ),
                 const Spacer(),
                 GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(context, AppRoutes.forget);
                   },
                   child: Text(
-                    'Forget Password?',
-                    style: AppTheme.tsAccent.copyWith(fontSize: 14),
+                    'forgot_password'.tr(context),
+                    style: TextStyle(
+                      color: AppTheme.kAccent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -165,6 +286,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _confirmButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 52,
       width: double.infinity,
@@ -172,7 +295,15 @@ class _LoginScreenState extends State<LoginScreen> {
         onPressed: () {
           _validateAndLogin();
         },
-        child: Text('Login', style: AppTheme.tsButtonLabel),
+        child: Text(
+          'login'.tr(context),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+            color: isDark ? Colors.black : Colors.white,
+          ),
+        ),
         style: AppTheme.elevatedButtonStyle(),
       ),
     );
@@ -184,21 +315,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Widget _orSignUp() {
+  Widget _orSignUp(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("Don't have an account?"),
+          Text(
+            'dont_have_account'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            ),
+          ),
           const SizedBox(width: 5),
           GestureDetector(
             onTap: () {
               Navigator.pushNamed(context, AppRoutes.signUp);
             },
             child: Text(
-              'Sign Up',
-              style: AppTheme.tsAccent.copyWith(fontSize: 14),
+              'sign_up'.tr(context),
+              style: TextStyle(
+                color: AppTheme.kAccent,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

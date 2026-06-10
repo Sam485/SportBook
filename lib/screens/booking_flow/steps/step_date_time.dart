@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
+import '../../../translations/app_translations.dart';
 
 class StepDateAndTime extends StatefulWidget {
   final VoidCallback onConfirm;
@@ -116,7 +117,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Select Date',
+                  'select_date'.tr(context),
                   style: TextStyle(
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 22,
@@ -125,7 +126,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Choose a date for your booking',
+                  'choose_date_desc'.tr(context),
                   style: TextStyle(
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 13,
@@ -197,7 +198,12 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Week of ${_months[weekDates.first.month - 1]} ${weekDates.first.day}, ${weekDates.first.year}',
+                'week_of'
+                    .tr(context)
+                    .replaceAll(
+                      '{date}',
+                      '${_months[weekDates.first.month - 1]} ${weekDates.first.day}, ${weekDates.first.year}',
+                    ),
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 12,
@@ -210,9 +216,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   color: AppTheme.kAccent.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Current Week',
-                  style: TextStyle(
+                child: Text(
+                  'current_week'.tr(context),
+                  style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -275,7 +281,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      _days[d.weekday - 1],
+                      _getTranslatedDay(_days[d.weekday - 1], context),
                       style: TextStyle(
                         color: sel
                             ? const Color(0xFF0A1828)
@@ -306,7 +312,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       ),
                     ),
                     Text(
-                      _months[d.month - 1].substring(0, 3),
+                      _getTranslatedMonth(
+                        _months[d.month - 1],
+                        context,
+                      ).substring(0, 3),
                       style: TextStyle(
                         color: sel
                             ? const Color(0xFF0A1828).withOpacity(0.7)
@@ -392,7 +401,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'Select Time',
+                              'select_time'.tr(context),
                               style: TextStyle(
                                 color: isDark
                                     ? Colors.white
@@ -439,8 +448,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '${_days[p.selectedDate!.weekday - 1]}, '
-                          '${_months[p.selectedDate!.month - 1]} ${p.selectedDate!.day} ${p.selectedDate!.year}',
+                          '${_getTranslatedDay(_days[p.selectedDate!.weekday - 1], context)}, '
+                          '${_getTranslatedMonth(_months[p.selectedDate!.month - 1], context)} ${p.selectedDate!.day} ${p.selectedDate!.year}',
                           style: const TextStyle(
                             color: AppTheme.kAccent,
                             fontSize: 13,
@@ -465,18 +474,20 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.event_busy_rounded,
                                 color: Colors.redAccent,
                                 size: 13,
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Text(
-                                'Already booked on this court',
+                                'already_booked'.tr(context),
                                 style: TextStyle(
-                                  color: Colors.white60,
+                                  color: isDark
+                                      ? Colors.white60
+                                      : AppTheme.kLightTextSub,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -522,7 +533,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   ],
 
                   _sectionLabel(
-                    'FROM',
+                    'from_label'.tr(context).toUpperCase(),
                     Icons.play_arrow_rounded,
                     const Color(0xFF4CAF50),
                     isDark,
@@ -541,7 +552,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   const SizedBox(height: 20),
 
                   _sectionLabel(
-                    'TO',
+                    'to_label'.tr(context).toUpperCase(),
                     Icons.stop_rounded,
                     Colors.redAccent,
                     isDark,
@@ -553,8 +564,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     selColor: Colors.redAccent,
                     isDark: isDark,
                     emptyMessage: p.startHour == null
-                        ? 'Pick a start time first'
-                        : 'No available end times',
+                        ? 'pick_start_time_first'.tr(context)
+                        : 'no_available_end_times'.tr(context),
                     onTap: (h) => p.selectEndHour(h),
                   ),
 
@@ -593,7 +604,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                   ),
                                 ),
                                 Text(
-                                  '${p.durationHours} hour${p.durationHours != 1 ? 's' : ''}',
+                                  '${p.durationHours} ${'hours'.tr(context)}',
                                   style: TextStyle(
                                     color: isDark
                                         ? AppTheme.kTextSub
@@ -640,6 +651,58 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         ],
       ],
     );
+  }
+
+  String _getTranslatedDay(String day, BuildContext context) {
+    switch (day) {
+      case 'Mon':
+        return 'mon'.tr(context);
+      case 'Tue':
+        return 'tue'.tr(context);
+      case 'Wed':
+        return 'wed'.tr(context);
+      case 'Thu':
+        return 'thu'.tr(context);
+      case 'Fri':
+        return 'fri'.tr(context);
+      case 'Sat':
+        return 'sat'.tr(context);
+      case 'Sun':
+        return 'sun'.tr(context);
+      default:
+        return day;
+    }
+  }
+
+  String _getTranslatedMonth(String month, BuildContext context) {
+    switch (month) {
+      case 'Jan':
+        return 'jan'.tr(context);
+      case 'Feb':
+        return 'feb'.tr(context);
+      case 'Mar':
+        return 'mar'.tr(context);
+      case 'Apr':
+        return 'apr'.tr(context);
+      case 'May':
+        return 'may'.tr(context);
+      case 'Jun':
+        return 'jun'.tr(context);
+      case 'Jul':
+        return 'jul'.tr(context);
+      case 'Aug':
+        return 'aug'.tr(context);
+      case 'Sep':
+        return 'sep'.tr(context);
+      case 'Oct':
+        return 'oct'.tr(context);
+      case 'Nov':
+        return 'nov'.tr(context);
+      case 'Dec':
+        return 'dec'.tr(context);
+      default:
+        return month;
+    }
   }
 
   List<int> _fromHours(

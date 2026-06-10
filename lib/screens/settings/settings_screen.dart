@@ -5,9 +5,11 @@ import 'package:sportbook/screens/settings/features/editing_profile.dart';
 import 'package:sportbook/screens/settings/features/history_booking.dart';
 import 'package:sportbook/screens/settings/features/language_selection.dart';
 import 'package:sportbook/screens/settings/features/password_security.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
-import '../../providers/theme_provider.dart'; // Add this import
+import '../../providers/theme_provider.dart';
+import '../../providers/language_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,11 +28,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final String _userImageUrl =
       'https://imgs.search.brave.com/EipFQVm-X300u0qBZX5vva8FbVwDEBUGookALc-rjNM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMucGV4ZWxzLmNv/bS9waG90b3MvMTUz/OTM1OTAvcGV4ZWxz/LXBob3RvLTE1Mzkz/NTkwL2ZyZWUtcGhv/dG8tb2YtcGhvdG8t/b2YtYS1zaGlydGxl/c3MtaGFuZHNvbWUt/bWFuLWFnYWluc3Qt/dGhlLXNreS5qcGVn/P2F1dG89Y29tcHJl/c3MmY3M9dGlueXNy/Z2ImZHByPTEmdz01/MDA';
 
-  // Language state (keep this as it's separate from theme)
-  String _currentLanguage = 'EN';
-
-  // Remove this line - we'll get theme from provider instead:
-  // String _currentTheme = 'dark';
+  // Language state
+  late String _currentLanguage;
 
   // Sample history bookings
   final List<SportBooking> _historyBookings = [];
@@ -39,11 +38,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadSampleHistoryBookings();
+    _loadCurrentLanguage();
   }
 
   void _loadSampleHistoryBookings() {
     // Add sample history bookings - replace with your actual data
-    // _historyBookings = your actual history bookings list
+  }
+
+  void _loadCurrentLanguage() {
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
+    setState(() {
+      _currentLanguage = languageProvider.currentLanguage.toUpperCase();
+    });
   }
 
   // Navigation Methods
@@ -76,9 +85,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (result['email'] != null) _userEmail = result['email'];
         if (result['location'] != null) _userLocation = result['location'];
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('profile_updated'.tr(context))));
     }
   }
 
@@ -99,26 +108,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (selectedLanguage != null && mounted) {
       setState(() {
-        _currentLanguage = selectedLanguage;
+        _currentLanguage = selectedLanguage.toUpperCase();
       });
+      // Rebuild the UI to update all translations
+      setState(() {});
     }
   }
 
   void _showAppearanceSelector() async {
-    // Get theme provider
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     final selectedTheme = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AppearanceSelector(
-        currentTheme: themeProvider.currentTheme, // Get from provider
-      ),
+      builder: (context) =>
+          AppearanceSelector(currentTheme: themeProvider.currentTheme),
     );
 
     if (selectedTheme != null && mounted) {
-      // Trigger rebuild to update the UI
       setState(() {});
     }
   }
@@ -128,17 +136,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.card(context),
-        title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
-        content: const Text(
+        title: Text(
+          'sign_out'.tr(context),
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
           'Are you sure you want to sign out?',
-          style: TextStyle(color: AppTheme.kTextSub),
+          style: const TextStyle(color: AppTheme.kTextSub),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.kTextSub),
+            child: Text(
+              'cancel'.tr(context),
+              style: const TextStyle(color: AppTheme.kTextSub),
             ),
           ),
           ElevatedButton(
@@ -151,7 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
             style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
-            child: const Text('Sign Out'),
+            child: Text('sign_out'.tr(context)),
           ),
         ],
       ),
@@ -160,9 +171,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to theme provider for changes
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
         return Scaffold(
           body: SafeArea(
             child: CustomScrollView(
@@ -171,23 +183,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               slivers: [
                 SliverToBoxAdapter(child: _header()),
-                SliverToBoxAdapter(child: _profileInfo()),
+                SliverToBoxAdapter(child: _profileInfo(isDark)),
                 SliverToBoxAdapter(
                   child: _singleButton(
-                    'account',
+                    'account'.tr(context).toUpperCase(),
                     Icons.history,
-                    'History Bookings',
-                    'View past sessions',
+                    'history_bookings'.tr(context),
+                    'view_past_sessions'.tr(context),
                     onTap: _navigateToHistory,
                   ),
                 ),
                 SliverToBoxAdapter(child: _multipleButton(themeProvider)),
                 SliverToBoxAdapter(
                   child: _singleButton(
-                    'security',
+                    'security'.tr(context).toUpperCase(),
                     Icons.lock_outline,
-                    'Password & Security',
-                    'Last changed 3 months ago',
+                    'password_security'.tr(context),
+                    'last_changed'.tr(context),
                     onTap: _navigateToPasswordSecurity,
                   ),
                 ),
@@ -206,12 +218,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Row(
         children: [
-          Text('Settings', style: AppTheme.tsTitleAdaptive(context)),
+          Text(
+            'settings_title'.tr(context),
+            style: AppTheme.tsTitleAdaptive(context),
+          ),
           const Spacer(),
           IconButton(
-            onPressed: () {
-              // Handle edit profile action
-            },
+            onPressed: () {},
             icon: Icon(Icons.settings, color: AppTheme.textPrimary(context)),
           ),
         ],
@@ -219,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _profileInfo() {
+  Widget _profileInfo(bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
       child: GestureDetector(
@@ -343,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 style: AppTheme.tsTitleAdaptive(context),
                               ),
                               Text(
-                                'Bookings',
+                                'total_bookings'.tr(context),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
@@ -371,7 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 style: AppTheme.tsTitleAdaptive(context),
                               ),
                               Text(
-                                'Upcoming',
+                                'upcoming'.tr(context),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
@@ -390,12 +403,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: AppTheme.elevatedButtonStyle(
                       backgroundColor: AppTheme.kAccent.withOpacity(0.5),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.edit, size: 18),
-                        SizedBox(width: 5),
-                        Text('Edit Profile'),
+                        const Icon(Icons.edit, size: 18),
+                        const SizedBox(width: 5),
+                        Text('edit_profile'.tr(context)),
                       ],
                     ),
                   ),
@@ -420,7 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: AppTheme.tsBodyAdaptive(context)),
+          Text(label, style: AppTheme.tsBodyAdaptive(context)),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: onTap,
@@ -476,12 +489,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _multipleButton(ThemeProvider themeProvider) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PREFERENCES', style: AppTheme.tsBodyAdaptive(context)),
+          Text(
+            'preferences'.tr(context).toUpperCase(),
+            style: AppTheme.tsBodyAdaptive(context),
+          ),
           const SizedBox(height: 8),
           Column(
             children: [
@@ -517,13 +534,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Notifications',
+                              'notifications'.tr(context),
                               style: AppTheme.tsLabelAdaptive(
                                 context,
                               ).copyWith(fontSize: 14.5),
                             ),
                             Text(
-                              'Booking reminders & alerts',
+                              'booking_reminders'.tr(context),
                               style: AppTheme.tsSubAdaptive(context),
                             ),
                           ],
@@ -571,15 +588,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Language',
+                                'language'.tr(context),
                                 style: AppTheme.tsLabelAdaptive(
                                   context,
                                 ).copyWith(fontSize: 14.5),
                               ),
                               Text(
                                 _currentLanguage == 'EN'
-                                    ? 'English (US)'
-                                    : 'Khmer',
+                                    ? 'english'.tr(context)
+                                    : 'khmer'.tr(context),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
@@ -587,7 +604,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         Row(
                           children: [
-                            _badge(_currentLanguage),
+                            _badge(_currentLanguage == 'EN' ? 'EN' : 'KM'),
                             const SizedBox(width: 10),
                             Icon(
                               Icons.arrow_forward_ios,
@@ -635,17 +652,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Appearance',
+                                'appearance'.tr(context),
                                 style: AppTheme.tsLabelAdaptive(
                                   context,
                                 ).copyWith(fontSize: 14.5),
                               ),
                               Text(
                                 themeProvider.currentTheme == 'dark'
-                                    ? 'Dark Mode'
+                                    ? 'dark_mode'.tr(context)
                                     : (themeProvider.currentTheme == 'light'
-                                          ? 'Light Mode'
-                                          : 'System Default'),
+                                          ? 'light_mode'.tr(context)
+                                          : 'system_default'.tr(context)),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
@@ -655,10 +672,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             _badge(
                               themeProvider.currentTheme == 'dark'
-                                  ? 'Dark'
+                                  ? 'dark'.tr(context)
                                   : (themeProvider.currentTheme == 'light'
-                                        ? 'Light'
-                                        : 'System'),
+                                        ? 'light'.tr(context)
+                                        : 'system'.tr(context)),
                             ),
                             const SizedBox(width: 10),
                             Icon(
@@ -686,9 +703,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ElevatedButton(
         onPressed: _signOut,
         style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.logout), SizedBox(width: 8), Text('Sign out')],
+          children: [
+            const Icon(Icons.logout),
+            const SizedBox(width: 8),
+            Text('sign_out'.tr(context)),
+          ],
         ),
       ),
     );

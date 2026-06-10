@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/services/data_service.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 import 'package:sportbook/widgets/common/section_header.dart';
 
@@ -43,7 +44,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             SliverToBoxAdapter(child: _searchBar(context)),
             SliverToBoxAdapter(child: _categories(context)),
             SliverToBoxAdapter(
-              child: SectionHeader(title: 'Nearby', isDark: isDark),
+              child: SectionHeader(title: 'nearby'.tr(context), isDark: isDark),
             ),
             _nearByList(context),
           ],
@@ -65,7 +66,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           fontSize: 16,
         ),
         decoration: InputDecoration(
-          hintText: 'Search clubs, sports...',
+          hintText: 'search_hint'.tr(context),
           hintStyle: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
@@ -192,12 +193,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: Center(
             child: Text(
               _query.isEmpty
-                  ? 'No nearby club found!'
-                  : 'No results found for "$_query"',
+                  ? 'no_nearby_clubs'.tr(context)
+                  : 'no_results_for'.tr(context).replaceAll('{query}', _query),
               style: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),

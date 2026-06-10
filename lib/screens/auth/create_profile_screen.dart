@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({super.key});
@@ -29,10 +30,11 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    // Show bottom sheet for source selection
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.kCard,
+      backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -42,19 +44,24 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Container(
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: AppTheme.kTextSub.withOpacity(0.4),
+                  color: (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub)
+                      .withOpacity(0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Text(
-                'Choose Photo',
-                style: AppTheme.tsTitle.copyWith(fontSize: 16),
+                'choose_photo'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -70,7 +77,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     color: AppTheme.kAccent,
                   ),
                 ),
-                title: const Text('Choose from Library'),
+                title: Text(
+                  'choose_from_library'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   await _getImage(ImageSource.gallery);
@@ -89,7 +101,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     color: AppTheme.kAccent,
                   ),
                 ),
-                title: const Text('Take a Photo'),
+                title: Text(
+                  'take_a_photo'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
+                ),
                 onTap: () async {
                   Navigator.pop(context);
                   await _getImage(ImageSource.camera);
@@ -106,9 +123,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     ),
                     child: const Icon(Icons.delete_rounded, color: Colors.red),
                   ),
-                  title: const Text(
-                    'Remove Photo',
-                    style: TextStyle(color: Colors.red),
+                  title: Text(
+                    'remove_photo'.tr(context),
+                    style: const TextStyle(color: Colors.red),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -138,7 +155,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // simulate API
+    await Future.delayed(const Duration(seconds: 2));
     setState(() => _isLoading = false);
     if (mounted) {
       Navigator.pushNamed(context, AppRoutes.home);
@@ -147,25 +164,27 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(child: _header()),
+              SliverToBoxAdapter(child: _header(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 36)),
-              SliverToBoxAdapter(child: _avatarPicker()),
+              SliverToBoxAdapter(child: _avatarPicker(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 36)),
-              SliverToBoxAdapter(child: _form()),
+              SliverToBoxAdapter(child: _form(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
-              SliverToBoxAdapter(child: _submitButton()),
+              SliverToBoxAdapter(child: _submitButton(isDark)),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [_skipRow()],
+                  children: [_skipRow(isDark)],
                 ),
               ),
             ],
@@ -175,40 +194,48 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget _header() {
+  Widget _header(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 24),
         Text(
-          'Create Your Profile',
-          style: AppTheme.tsTitle.copyWith(fontSize: 28),
+          'create_profile_title'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         Text(
-          'Set up your profile so other players\ncan find and connect with you.',
-          style: AppTheme.tsBody.copyWith(fontSize: 15, height: 1.5),
+          'create_profile_desc'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 15,
+            height: 1.5,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _avatarPicker() {
+  Widget _avatarPicker(bool isDark) {
     return Center(
       child: GestureDetector(
         onTap: _pickImage,
         child: Stack(
           alignment: Alignment.bottomRight,
           children: [
-            // Avatar circle
             Container(
               width: 120,
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.kCardAlt,
+                color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
                 border: Border.all(
                   color: AppTheme.kAccent.withOpacity(0.4),
                   width: 2.5,
@@ -231,19 +258,22 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   ? Icon(
                       Icons.person_rounded,
                       size: 56,
-                      color: AppTheme.kTextSub.withOpacity(0.5),
+                      color:
+                          (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub)
+                              .withOpacity(0.5),
                     )
                   : null,
             ),
-
-            // Camera badge
             Container(
               width: 36,
               height: 36,
               decoration: BoxDecoration(
                 color: AppTheme.kAccent,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.kBg, width: 2.5),
+                border: Border.all(
+                  color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+                  width: 2.5,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.kAccent.withOpacity(0.4),
@@ -264,44 +294,90 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget _form() {
+  Widget _form(bool isDark) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Username
-          Text('Username', style: AppTheme.tsLabel),
+          Text(
+            'username'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.white : AppTheme.kLightText,
+              fontSize: 16,
+            ),
+          ),
           const SizedBox(height: 10),
           TextFormField(
             controller: _usernameController,
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.next,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppTheme.kLightText,
+            ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Username is required';
+                return 'username_required'.tr(context);
               }
               if (value.trim().length < 3) {
-                return 'Username must be at least 3 characters';
+                return 'username_min_length'.tr(context);
               }
               if (value.contains(' ')) {
-                return 'Username cannot contain spaces';
+                return 'username_no_spaces'.tr(context);
               }
               return null;
             },
-            decoration: AppTheme.textFieldDecoration(
-              Icons.alternate_email_rounded,
-              'e.g. john_doe',
+            decoration: InputDecoration(
+              hintText: 'username_hint'.tr(context),
+              hintStyle: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+              prefixIcon: Icon(
+                Icons.alternate_email_rounded,
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
               suffixIcon: null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+              filled: true,
+              fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
             ),
           ),
 
           const SizedBox(height: 20),
 
-          // Email (optional)
           Row(
             children: [
-              Text('Email', style: AppTheme.tsLabel),
+              Text(
+                'email'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -310,8 +386,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Optional',
-                  style: AppTheme.tsAccent.copyWith(fontSize: 11),
+                  'optional'.tr(context),
+                  style: const TextStyle(
+                    color: AppTheme.kAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -321,19 +401,54 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
+            style: TextStyle(
+              color: isDark ? Colors.white : AppTheme.kLightText,
+            ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty)
-                return null; // optional
+              if (value == null || value.trim().isEmpty) return null;
               final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
               if (!emailRegex.hasMatch(value.trim())) {
-                return 'Please enter a valid email address';
+                return 'valid_email_required'.tr(context);
               }
               return null;
             },
-            decoration: AppTheme.textFieldDecoration(
-              Icons.email_rounded,
-              'your@email.com',
+            decoration: InputDecoration(
+              hintText: 'email_hint'.tr(context),
+              hintStyle: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+              prefixIcon: Icon(
+                Icons.email_rounded,
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
               suffixIcon: null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+              filled: true,
+              fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
             ),
           ),
         ],
@@ -341,7 +456,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget _submitButton() {
+  Widget _submitButton(bool isDark) {
     return SizedBox(
       height: 52,
       width: double.infinity,
@@ -357,21 +472,30 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   strokeWidth: 2.5,
                 ),
               )
-            : Text('Create Profile', style: AppTheme.tsButtonLabel),
+            : Text(
+                'create_profile'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                  color: isDark ? Colors.black : Colors.white,
+                ),
+              ),
       ),
     );
   }
 
-  Widget _skipRow() {
+  Widget _skipRow(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: GestureDetector(
         onTap: () => Navigator.pushNamed(context, AppRoutes.home),
         child: Text(
-          'Skip for now',
-          style: AppTheme.tsAccent.copyWith(
+          'skip_for_now'.tr(context),
+          style: TextStyle(
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 14,
-            color: AppTheme.kTextSub,
+            fontWeight: FontWeight.w700,
           ),
           textAlign: TextAlign.center,
         ),

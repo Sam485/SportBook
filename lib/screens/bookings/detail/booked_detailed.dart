@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class BookedDetailed extends StatelessWidget {
   final SportBooking booking;
@@ -40,8 +41,6 @@ class BookedDetailed extends StatelessWidget {
   }
 
   Widget _header(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Stack(
       children: [
         // Background Image Container
@@ -117,7 +116,7 @@ class BookedDetailed extends StatelessWidget {
               ),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Share feature coming soon')),
+                  SnackBar(content: Text('share_coming_soon'.tr(context))),
                 );
               },
               padding: const EdgeInsets.all(8),
@@ -254,7 +253,9 @@ class BookedDetailed extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hosted by ${booking.ownerName}',
+                          'hosted_by'
+                              .tr(context)
+                              .replaceAll('{name}', booking.ownerName),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -262,7 +263,7 @@ class BookedDetailed extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Response rate: 98%',
+                          'response_rate'.tr(context),
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.6),
                             fontSize: 11,
@@ -289,7 +290,7 @@ class BookedDetailed extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Payment Summary',
+            'payment_summary'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
@@ -304,11 +305,21 @@ class BookedDetailed extends StatelessWidget {
             decoration: AppTheme.cardDecorationAdaptive(context),
             child: Column(
               children: [
-                _buildPaymentRow(context, 'Field Booking', '\$15.00', false),
+                _buildPaymentRow(
+                  context,
+                  'field_booking'.tr(context),
+                  '\$15.00',
+                  false,
+                ),
                 _divider(context),
-                _buildPaymentRow(context, 'Service Fee', '\$2.50', false),
+                _buildPaymentRow(
+                  context,
+                  'service_fee'.tr(context),
+                  '\$2.50',
+                  false,
+                ),
                 _divider(context),
-                _buildPaymentRow(context, 'Total', '\$17.50', true),
+                _buildPaymentRow(context, 'total'.tr(context), '\$17.50', true),
               ],
             ),
           ),
@@ -326,7 +337,7 @@ class BookedDetailed extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Booking details',
+            'booking_details'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
@@ -341,18 +352,33 @@ class BookedDetailed extends StatelessWidget {
             decoration: AppTheme.cardDecorationAdaptive(context),
             child: Column(
               children: [
-                _buildPaymentRow(context, 'Booking ID', '#SPB-20482', false),
-                _divider(context),
                 _buildPaymentRow(
                   context,
-                  'Status',
-                  _buildStatusBadge('Confirmed', Colors.green),
+                  'booking_id'.tr(context),
+                  '#SPB-20482',
                   false,
                 ),
                 _divider(context),
-                _buildPaymentRow(context, 'Payment method', 'ABA', false),
+                _buildPaymentRow(
+                  context,
+                  'status'.tr(context),
+                  _buildStatusBadge('confirmed'.tr(context), Colors.green),
+                  false,
+                ),
                 _divider(context),
-                _buildPaymentRow(context, 'Booked on', 'Jun 4, 2026', false),
+                _buildPaymentRow(
+                  context,
+                  'payment_method'.tr(context),
+                  'ABA',
+                  false,
+                ),
+                _divider(context),
+                _buildPaymentRow(
+                  context,
+                  'booked_on_date'.tr(context),
+                  'Jun 4, 2026',
+                  false,
+                ),
               ],
             ),
           ),
@@ -388,7 +414,7 @@ class BookedDetailed extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Cancellation policy',
+            'cancellation_policy'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
@@ -407,24 +433,24 @@ class BookedDetailed extends StatelessWidget {
                   context,
                   Icons.check_circle,
                   Colors.green,
-                  'Free cancellation',
-                  'Cancel up to 24 hrs before your slots for a full refund.',
+                  'free_cancellation'.tr(context),
+                  'free_cancellation_desc'.tr(context),
                 ),
                 _divider(context),
                 _buildPolicyRow(
                   context,
                   Icons.warning_amber,
                   Colors.orange,
-                  'Late cancellation',
-                  'Within 24 hrs - 50% of booking cost is charged.',
+                  'late_cancellation'.tr(context),
+                  'late_cancellation_desc'.tr(context),
                 ),
                 _divider(context),
                 _buildPolicyRow(
                   context,
                   Icons.cancel,
                   Colors.red,
-                  'No-show',
-                  'Full charge applies. Contact support if you have an emergency.',
+                  'no_show'.tr(context),
+                  'no_show_desc'.tr(context),
                 ),
               ],
             ),
@@ -443,7 +469,7 @@ class BookedDetailed extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Entry pass',
+            'entry_pass'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
@@ -479,7 +505,7 @@ class BookedDetailed extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Scan at the gate',
+                        'scan_at_gate'.tr(context),
                         style: TextStyle(
                           color: isDark ? Colors.white : AppTheme.kLightText,
                           fontSize: 18,
@@ -489,7 +515,7 @@ class BookedDetailed extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Show this QR code to the staff on arrival. Valid only for your booked slot on Jun 7, 2026',
+                        'qr_instruction_detailed'.tr(context),
                         style: TextStyle(
                           color: isDark
                               ? Colors.white70
@@ -500,7 +526,7 @@ class BookedDetailed extends StatelessWidget {
                       const SizedBox(height: 8),
                       _badge(
                         context,
-                        'Expires in 3 days',
+                        'expires_in_days'.tr(context),
                         const Color.fromARGB(255, 255, 193, 7),
                       ),
                     ],
@@ -515,8 +541,6 @@ class BookedDetailed extends StatelessWidget {
   }
 
   Widget _badge(BuildContext context, String text, Color color) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -645,8 +669,6 @@ class BookedDetailed extends StatelessWidget {
   }
 
   Widget _buttons(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       child: Row(
@@ -664,7 +686,7 @@ class BookedDetailed extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Cancel Booking'),
+              child: Text('cancel_booking'.tr(context)),
             ),
           ),
           const SizedBox(width: 12),
@@ -672,9 +694,7 @@ class BookedDetailed extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Reschedule feature coming soon'),
-                  ),
+                  SnackBar(content: Text('reschedule_coming_soon'.tr(context))),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -685,7 +705,7 @@ class BookedDetailed extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Reschedule'),
+              child: Text('reschedule'.tr(context)),
             ),
           ),
         ],
@@ -701,12 +721,11 @@ class BookedDetailed extends StatelessWidget {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
         title: Text(
-          'Cancel Booking?',
+          'cancel_booking'.tr(context),
           style: TextStyle(color: isDark ? Colors.white : AppTheme.kLightText),
         ),
         content: Text(
-          'Are you sure you want to cancel this booking? '
-          'Cancellation fees may apply.',
+          'cancel_booking_warning'.tr(context),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
@@ -715,7 +734,7 @@ class BookedDetailed extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'No, Keep It',
+              'no_keep_it'.tr(context),
               style: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
@@ -725,14 +744,14 @@ class BookedDetailed extends StatelessWidget {
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Booking cancelled')),
+                SnackBar(content: Text('booking_cancelled'.tr(context))),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Yes, Cancel'),
+            child: Text('yes_cancel'.tr(context)),
           ),
         ],
       ),

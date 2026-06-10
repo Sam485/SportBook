@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
+import '../../../translations/app_translations.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
   final VoidCallback onGoHome;
@@ -171,7 +172,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   child: Column(
                     children: [
                       Text(
-                        'Payment Successful!',
+                        'payment_success_title'.tr(context),
                         style: TextStyle(
                           color: isDark ? Colors.white : AppTheme.kLightText,
                           fontSize: 26,
@@ -182,7 +183,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your court has been reserved.\nSee you on the court!',
+                        'payment_success_desc'.tr(context),
                         style: TextStyle(
                           color: (isDark ? Colors.white : AppTheme.kLightText)
                               .withOpacity(0.5),
@@ -229,14 +230,14 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             ),
                             elevation: 0,
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.receipt_long_rounded, size: 18),
-                              SizedBox(width: 8),
+                              const Icon(Icons.receipt_long_rounded, size: 18),
+                              const SizedBox(width: 8),
                               Text(
-                                'View My Booking',
-                                style: TextStyle(
+                                'view_my_booking'.tr(context),
+                                style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.2,
@@ -279,7 +280,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Return to Home',
+                                'return_to_home'.tr(context),
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
@@ -506,7 +507,7 @@ class _BookingPillCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Booking #${_generateId()}',
+                  '${'booking'.tr(context)} #${_generateId()}',
                   style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 12,
@@ -522,35 +523,35 @@ class _BookingPillCard extends StatelessWidget {
           _DetailRow(
             icon: Icons.sports_rounded,
             label: p.selectedSport ?? '—',
-            sub: 'Sport',
+            sub: 'sport'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.grid_view_rounded,
             label: p.target?.name ?? '—',
-            sub: 'Court',
+            sub: 'court'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.calendar_month_rounded,
             label: dateStr,
-            sub: 'Date',
+            sub: 'date'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.access_time_filled_rounded,
             label: timeStr,
-            sub: 'Time',
+            sub: 'time'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.payments_rounded,
             label: '\$${p.totalPrice.toStringAsFixed(2)}',
-            sub: 'Total Paid',
+            sub: 'total_paid'.tr(context),
             valueColor: AppTheme.kAccent,
             isDark: isDark,
           ),

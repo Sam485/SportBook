@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
-// ignore: must_be_immutable
 class VerifyScreen extends StatefulWidget {
-  bool isSignUp;
-  VerifyScreen({super.key, required this.isSignUp});
+  final bool isSignUp;
+  const VerifyScreen({super.key, required this.isSignUp});
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
@@ -35,7 +35,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
   void initState() {
     super.initState();
     _startTimer();
-    // Auto-focus first field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
     });
@@ -73,7 +72,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     if (value.length == 1 && index < _otpLength - 1) {
       _focusNodes[index + 1].requestFocus();
     }
-    setState(() {}); // rebuild to update button state
+    setState(() {});
   }
 
   void _onKeyEvent(KeyEvent event, int index) {
@@ -101,7 +100,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
   Future<void> _verify() async {
     if (!_isComplete) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // simulate API call
+    await Future.delayed(const Duration(seconds: 2));
     setState(() => _isLoading = false);
     if (mounted) {
       if (widget.isSignUp == true) {
@@ -114,25 +113,27 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.kBg,
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(child: _header()),
+              SliverToBoxAdapter(child: _header(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 36)),
-              SliverToBoxAdapter(child: _otpFields()),
+              SliverToBoxAdapter(child: _otpFields(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
-              SliverToBoxAdapter(child: _resendRow()),
+              SliverToBoxAdapter(child: _resendRow(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
-              SliverToBoxAdapter(child: _verifyButton()),
+              SliverToBoxAdapter(child: _verifyButton(isDark)),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [_backToLogin()],
+                  children: [_backToLogin(isDark)],
                 ),
               ),
             ],
@@ -142,7 +143,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _header() {
+  Widget _header(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -162,24 +163,34 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Verify Your Phone',
-          style: AppTheme.tsTitle.copyWith(fontSize: 28),
+          'verify_phone'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
         Text(
-          'Enter the 6-digit code sent to\nyour registered phone number',
-          style: AppTheme.tsBody.copyWith(fontSize: 15, height: 1.5),
+          'enter_otp'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 15,
+            height: 1.5,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _otpFields() {
+  Widget _otpFields(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(_otpLength, (index) {
+        final hasText = _controllers[index].text.isNotEmpty;
         return SizedBox(
           width: 48,
           height: 58,
@@ -193,30 +204,39 @@ class _VerifyScreenState extends State<VerifyScreen> {
               textAlign: TextAlign.center,
               maxLength: 1,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: AppTheme.tsTitle.copyWith(fontSize: 22),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
               decoration: InputDecoration(
                 counterText: '',
                 contentPadding: EdgeInsets.zero,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: _controllers[index].text.isNotEmpty
+                    color: hasText
                         ? AppTheme.kAccent
-                        : AppTheme.kCardAlt,
+                        : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                     width: 1.5,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.kAccent, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppTheme.kAccent,
+                    width: 2,
+                  ),
                 ),
                 filled: true,
-                fillColor: _controllers[index].text.isNotEmpty
+                fillColor: hasText
                     ? AppTheme.kAccent.withOpacity(0.08)
-                    : AppTheme.kCardAlt.withOpacity(0.4),
+                    : (isDark
+                          ? AppTheme.kCardAlt.withOpacity(0.4)
+                          : AppTheme.kLightCardAlt.withOpacity(0.4)),
               ),
               onChanged: (val) {
-                // Handle paste
                 if (val.length > 1) {
                   _controllers[index].text = val[0];
                   _onPaste(val, index);
@@ -231,38 +251,45 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _resendRow() {
+  Widget _resendRow(bool isDark) {
     final canResend = _secondsLeft == 0;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Didn't receive the code? ",
-          style: AppTheme.tsBody.copyWith(fontSize: 14),
+          'resend_code'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 14,
+          ),
         ),
         canResend
             ? GestureDetector(
                 onTap: _startTimer,
                 child: Text(
-                  'Resend',
-                  style: AppTheme.tsAccent.copyWith(
+                  'resend'.tr(context),
+                  style: const TextStyle(
+                    color: AppTheme.kAccent,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               )
             : Text(
-                'Resend in ${_secondsLeft}s',
-                style: AppTheme.tsAccent.copyWith(
+                'resend_in'
+                    .tr(context)
+                    .replaceAll('{seconds}', '$_secondsLeft'),
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
-                  color: AppTheme.kTextSub,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
       ],
     );
   }
 
-  Widget _verifyButton() {
+  Widget _verifyButton(bool isDark) {
     return SizedBox(
       height: 52,
       width: double.infinity,
@@ -278,23 +305,37 @@ class _VerifyScreenState extends State<VerifyScreen> {
                   strokeWidth: 2.5,
                 ),
               )
-            : Text('Verify OTP', style: AppTheme.tsButtonLabel),
+            : Text(
+                'verify'.tr(context),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                  color: isDark ? Colors.black : Colors.white,
+                ),
+              ),
       ),
     );
   }
 
-  Widget _backToLogin() {
+  Widget _backToLogin(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("Back to "),
+          Text(
+            'back_to'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            ),
+          ),
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Text(
-              'Login',
-              style: AppTheme.tsAccent.copyWith(
+              'login'.tr(context),
+              style: const TextStyle(
+                color: AppTheme.kAccent,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),

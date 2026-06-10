@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
+import '../../../providers/language_provider.dart';
+import '../../../translations/app_translations.dart';
 
 class LanguageSelector extends StatefulWidget {
   final String currentLanguage;
@@ -22,6 +25,10 @@ class _LanguageSelectorState extends State<LanguageSelector> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -44,7 +51,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Select Language',
+              'select_language'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 20,
@@ -53,57 +60,116 @@ class _LanguageSelectorState extends State<LanguageSelector> {
             ),
           ),
           const SizedBox(height: 20),
-          _languageOption('English', 'EN', Icons.language, isDark),
-          _languageOption('Khmer', 'KM', Icons.translate, isDark),
+          _buildLanguageOption(
+            context: context,
+            language: 'English',
+            code: 'en',
+            icon: Icons.language,
+            isDark: isDark,
+            isSelected: _selectedLanguage == 'en',
+            onTap: () async {
+              setState(() => _selectedLanguage = 'en');
+              await languageProvider.setLanguage('en');
+              Navigator.pop(context, 'en');
+            },
+          ),
+          _buildLanguageOption(
+            context: context,
+            language: 'ភាសាខ្មែរ',
+            code: 'km',
+            icon: Icons.translate,
+            isDark: isDark,
+            isSelected: _selectedLanguage == 'km',
+            onTap: () async {
+              setState(() => _selectedLanguage = 'km');
+              await languageProvider.setLanguage('km');
+              Navigator.pop(context, 'km');
+            },
+          ),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _languageOption(
-    String language,
-    String code,
-    IconData icon,
-    bool isDark,
-  ) {
-    final isSelected = _selectedLanguage == code;
-
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
+  Widget _buildLanguageOption({
+    required BuildContext context,
+    required String language,
+    required String code,
+    required IconData icon,
+    required bool isDark,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.kAccent.withOpacity(0.2)
-              : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
-          borderRadius: BorderRadius.circular(10),
+              ? AppTheme.kAccent.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border.all(color: AppTheme.kAccent, width: 1.5)
+              : null,
         ),
-        child: Icon(
-          icon,
-          color: isSelected
-              ? AppTheme.kAccent
-              : (isDark ? Colors.white70 : AppTheme.kLightTextSub),
+        child: Row(
+          children: [
+            Container(
+              width: 45,
+              height: 45,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.kAccent.withOpacity(0.2)
+                    : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected
+                    ? AppTheme.kAccent
+                    : (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    language,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppTheme.kAccent
+                          : (isDark ? Colors.white : AppTheme.kLightText),
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    code == 'en' ? 'English (US)' : 'ភាសាខ្មែរ',
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle, color: AppTheme.kAccent, size: 24),
+          ],
         ),
       ),
-      title: Text(
-        language,
-        style: TextStyle(
-          color: isSelected
-              ? AppTheme.kAccent
-              : (isDark ? Colors.white : AppTheme.kLightText),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      trailing: isSelected
-          ? const Icon(Icons.check_circle, color: AppTheme.kAccent)
-          : null,
-      onTap: () {
-        setState(() {
-          _selectedLanguage = code;
-        });
-        Navigator.pop(context, code);
-      },
     );
   }
 }

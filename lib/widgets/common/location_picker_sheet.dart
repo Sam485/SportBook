@@ -3,6 +3,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme.dart';
+import '../../translations/app_translations.dart';
 
 class LocationPickerSheet extends StatefulWidget {
   const LocationPickerSheet({super.key});
@@ -30,7 +31,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
       if (status.isPermanentlyDenied) {
         setState(() {
           _isPermanentlyDenied = true;
-          _errorMsg = 'Location permission is permanently denied.';
+          _errorMsg = 'location_permission_denied'.tr(context);
           _isLocating = false;
         });
         return;
@@ -41,7 +42,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
       if (status.isDenied) {
         setState(() {
           _isPermanentlyDenied = false;
-          _errorMsg = 'Permission denied. Tap the button to try again.';
+          _errorMsg = 'permission_denied_try_again'.tr(context);
           _isLocating = false;
         });
         return;
@@ -50,8 +51,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
       if (status.isPermanentlyDenied) {
         setState(() {
           _isPermanentlyDenied = true;
-          _errorMsg =
-              'Permission permanently denied. Open settings to allow it.';
+          _errorMsg = 'permission_permanently_denied'.tr(context);
           _isLocating = false;
         });
         return;
@@ -60,7 +60,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
-          _errorMsg = 'Location services are off. Please enable them.';
+          _errorMsg = 'location_services_off'.tr(context);
           _isLocating = false;
         });
         return;
@@ -87,7 +87,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
       if (mounted) Navigator.pop(context, city);
     } catch (e) {
       setState(() {
-        _errorMsg = 'Could not get location. Try again.';
+        _errorMsg = 'could_not_get_location'.tr(context);
         _isLocating = false;
       });
     }
@@ -131,7 +131,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Select location',
+            'select_location'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
@@ -140,7 +140,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Use your current location or type a city name.',
+            'location_description'.tr(context),
             style: TextStyle(
               color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 13,
@@ -171,10 +171,10 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                     ),
               label: Text(
                 _isLocating
-                    ? 'Detecting...'
+                    ? 'detecting_location'.tr(context)
                     : _isPermanentlyDenied
-                    ? 'Open settings'
-                    : 'Use current location',
+                    ? 'open_settings'.tr(context)
+                    : 'use_current_location'.tr(context),
                 style: TextStyle(
                   color: isDark ? const Color(0xFF0A1828) : Colors.white,
                 ),
@@ -223,9 +223,9 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                         const SizedBox(height: 4),
                         GestureDetector(
                           onTap: () => openAppSettings(),
-                          child: const Text(
-                            'Tap here or the button above to open Settings.',
-                            style: TextStyle(
+                          child: Text(
+                            'tap_to_open_settings'.tr(context),
+                            style: const TextStyle(
                               color: Colors.blueAccent,
                               fontSize: 12,
                               decoration: TextDecoration.underline,
@@ -253,7 +253,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'or',
+                    'or'.tr(context),
                     style: TextStyle(
                       color: isDark
                           ? AppTheme.kTextSub
@@ -273,7 +273,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
           ),
 
           Text(
-            'Enter city manually',
+            'enter_city_manually'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
               fontSize: 13,
@@ -293,7 +293,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _confirmManual(),
                   decoration: InputDecoration(
-                    hintText: 'e.g. London, Phnom Penh...',
+                    hintText: 'city_hint'.tr(context),
                     hintStyle: TextStyle(
                       color: isDark
                           ? AppTheme.kTextSub
