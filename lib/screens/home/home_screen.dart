@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
@@ -30,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(
       context,
       AppRoutes.viewAll,
-      arguments: {'title': 'Clubs Nearby', 'data': clubs},
+      arguments: {'title': 'clubs_nearby'.tr(context), 'data': clubs},
     );
   }
 
@@ -65,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(child: _categories(isDark)),
             SliverToBoxAdapter(
               child: SectionHeader(
-                title: 'Clubs Nearby',
+                title: 'clubs_nearby'.tr(context),
                 onAction: _navigateViewAll,
                 isDark: isDark,
               ),
@@ -73,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(child: _clubsList(isDark)),
             SliverToBoxAdapter(
               child: SectionHeader(
-                title: 'Upcoming Bookings',
+                title: 'upcoming_bookings'.tr(context),
                 onAction: _navigateBookings,
                 isDark: isDark,
               ),
@@ -126,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hello, Jane 👋',
+              'hello_message'.tr(context).replaceAll('{name}', 'Jane'),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 17,
@@ -281,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: AppTheme.cardDecorationAdaptive(context),
           child: Center(
             child: Text(
-              'No clubs for this sport',
+              'no_clubs_for_sport'.tr(context),
               style: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 14,

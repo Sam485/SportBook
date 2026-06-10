@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -74,7 +75,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "Sign Up",
+          'sign_up'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 32,
@@ -84,7 +85,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "Create your account to get started",
+          'create_account_desc'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 16,
@@ -104,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Phone",
+              'phone'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -119,15 +120,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Phone number is required';
+                  return 'phone_required'.tr(context);
                 }
                 if (value.length < 9) {
-                  return 'Please enter a valid phone number';
+                  return 'valid_phone_required'.tr(context);
                 }
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Enter your phone number',
+                hintText: 'phone_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -170,7 +171,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "Password",
+              'password'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -185,15 +186,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Password is required';
+                  return 'password_required'.tr(context);
                 }
                 if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
+                  return 'password_min_length'.tr(context);
                 }
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Enter your password',
+                hintText: 'password_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -248,7 +249,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "Confirm Password",
+              'confirm_password'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -263,18 +264,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Password is required';
+                  return 'confirm_password_required'.tr(context);
                 }
                 if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
+                  return 'password_min_length'.tr(context);
                 }
                 if (value != _passwordController.text) {
-                  return "Password doesn't match";
+                  return 'password_mismatch'.tr(context);
                 }
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Confirm your password',
+                hintText: 'confirm_password_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -343,7 +344,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _validateAndLogin();
         },
         child: Text(
-          'Sign Up',
+          'sign_up'.tr(context),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -369,7 +370,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Already have an account?",
+            'already_have_account'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             ),
@@ -380,7 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               Navigator.pushNamed(context, AppRoutes.login);
             },
             child: Text(
-              'Log In',
+              'login'.tr(context),
               style: TextStyle(
                 color: AppTheme.kAccent,
                 fontSize: 14,

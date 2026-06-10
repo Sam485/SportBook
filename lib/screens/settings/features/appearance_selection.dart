@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import '../../../core/theme.dart';
 import '../../../providers/theme_provider.dart';
 
@@ -36,7 +37,7 @@ class AppearanceSelector extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Appearance',
+                  'appearance'.tr(context),
                   style: TextStyle(
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 20,
@@ -46,7 +47,7 @@ class AppearanceSelector extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildThemeOption(
                   context: context,
-                  title: 'Light Mode',
+                  title: 'light_mode'.tr(context),
                   icon: Icons.light_mode,
                   themeValue: 'light',
                   currentTheme: currentTheme,
@@ -57,7 +58,7 @@ class AppearanceSelector extends StatelessWidget {
                 ),
                 _buildThemeOption(
                   context: context,
-                  title: 'Dark Mode',
+                  title: 'dark_mode'.tr(context),
                   icon: Icons.dark_mode,
                   themeValue: 'dark',
                   currentTheme: currentTheme,
@@ -68,7 +69,7 @@ class AppearanceSelector extends StatelessWidget {
                 ),
                 _buildThemeOption(
                   context: context,
-                  title: 'System Default',
+                  title: 'system_default'.tr(context),
                   icon: Icons.settings,
                   themeValue: 'system',
                   currentTheme: currentTheme,

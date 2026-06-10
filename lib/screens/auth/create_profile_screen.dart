@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({super.key});
@@ -54,7 +55,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 ),
               ),
               Text(
-                'Choose Photo',
+                'choose_photo'.tr(context),
                 style: TextStyle(
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
@@ -77,7 +78,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   ),
                 ),
                 title: Text(
-                  'Choose from Library',
+                  'choose_from_library'.tr(context),
                   style: TextStyle(
                     color: isDark ? Colors.white : AppTheme.kLightText,
                   ),
@@ -101,7 +102,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   ),
                 ),
                 title: Text(
-                  'Take a Photo',
+                  'take_a_photo'.tr(context),
                   style: TextStyle(
                     color: isDark ? Colors.white : AppTheme.kLightText,
                   ),
@@ -122,9 +123,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     ),
                     child: const Icon(Icons.delete_rounded, color: Colors.red),
                   ),
-                  title: const Text(
-                    'Remove Photo',
-                    style: TextStyle(color: Colors.red),
+                  title: Text(
+                    'remove_photo'.tr(context),
+                    style: const TextStyle(color: Colors.red),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -199,7 +200,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       children: [
         const SizedBox(height: 24),
         Text(
-          'Create Your Profile',
+          'create_profile_title'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
@@ -210,7 +211,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Set up your profile so other players\ncan find and connect with you.',
+          'create_profile_desc'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 15,
@@ -300,7 +301,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Username',
+            'username'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 16,
@@ -316,18 +317,18 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Username is required';
+                return 'username_required'.tr(context);
               }
               if (value.trim().length < 3) {
-                return 'Username must be at least 3 characters';
+                return 'username_min_length'.tr(context);
               }
               if (value.contains(' ')) {
-                return 'Username cannot contain spaces';
+                return 'username_no_spaces'.tr(context);
               }
               return null;
             },
             decoration: InputDecoration(
-              hintText: 'e.g. john_doe',
+              hintText: 'username_hint'.tr(context),
               hintStyle: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
@@ -371,7 +372,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           Row(
             children: [
               Text(
-                'Email',
+                'email'.tr(context),
                 style: TextStyle(
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
@@ -385,7 +386,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Optional',
+                  'optional'.tr(context),
                   style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 11,
@@ -407,12 +408,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               if (value == null || value.trim().isEmpty) return null;
               final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
               if (!emailRegex.hasMatch(value.trim())) {
-                return 'Please enter a valid email address';
+                return 'valid_email_required'.tr(context);
               }
               return null;
             },
             decoration: InputDecoration(
-              hintText: 'your@email.com',
+              hintText: 'email_hint'.tr(context),
               hintStyle: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
@@ -472,7 +473,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 ),
               )
             : Text(
-                'Create Profile',
+                'create_profile'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -490,7 +491,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       child: GestureDetector(
         onTap: () => Navigator.pushNamed(context, AppRoutes.home),
         child: Text(
-          'Skip for now',
+          'skip_for_now'.tr(context),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 14,

@@ -3,6 +3,7 @@ import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../services/data_service.dart';
 import '../../routes/app_routes.dart';
+import '../../translations/app_translations.dart';
 import '../common/image_carousel.dart';
 
 // ─── Booking Card ─────────────────────────────────────────────────────────────
@@ -141,7 +142,7 @@ class BookingCard extends StatelessWidget {
                             spacing: 6,
                             runSpacing: 6,
                             children: unique
-                                .map((s) => _sportTag(s, isDark))
+                                .map((s) => _sportTag(s, isDark, context))
                                 .toList(),
                           ),
                         ),
@@ -210,20 +211,21 @@ class BookingCard extends StatelessWidget {
     ],
   );
 
-  Widget _sportTag(String sport, bool isDark) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-    decoration: BoxDecoration(
-      color: AppTheme.kAccent.withOpacity(0.10),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: AppTheme.kAccent.withOpacity(0.35)),
-    ),
-    child: Text(
-      '${DataService.emojiFor(sport)} $sport',
-      style: const TextStyle(
-        color: AppTheme.kAccent,
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-  );
+  Widget _sportTag(String sport, bool isDark, BuildContext context) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppTheme.kAccent.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.kAccent.withOpacity(0.35)),
+        ),
+        child: Text(
+          '${DataService.emojiFor(sport)} $sport',
+          style: const TextStyle(
+            color: AppTheme.kAccent,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
 }

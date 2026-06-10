@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/providers/theme_provider.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import '../../core/theme.dart';
 
 class AppBottomNavBar extends StatelessWidget {
@@ -52,11 +53,20 @@ class AppBottomNavBar extends StatelessWidget {
               tabBackgroundColor: AppTheme.kAccent, // Keep accent color same
               selectedIndex: selectedIndex,
               onTabChange: onTabChange,
-              tabs: const [
-                GButton(icon: Icons.home_rounded, text: 'Home'),
-                GButton(icon: Icons.search_rounded, text: 'Explore'),
-                GButton(icon: Icons.calendar_month_rounded, text: 'Bookings'),
-                GButton(icon: Icons.settings_rounded, text: 'Settings'),
+              tabs: [
+                GButton(icon: Icons.home_rounded, text: 'home'.tr(context)),
+                GButton(
+                  icon: Icons.search_rounded,
+                  text: 'explore'.tr(context),
+                ),
+                GButton(
+                  icon: Icons.calendar_month_rounded,
+                  text: 'bookings'.tr(context),
+                ),
+                GButton(
+                  icon: Icons.settings_rounded,
+                  text: 'settings'.tr(context),
+                ),
               ],
             ),
           ),

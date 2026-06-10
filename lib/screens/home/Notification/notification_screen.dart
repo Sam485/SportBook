@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -10,22 +11,22 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   List<String> category = [
-    'All',
-    'Bookings',
-    'Alerts',
-    'Messages',
-    'Promotions',
+    'all',
+    'bookings',
+    'alerts',
+    'messages',
+    'promotions',
   ];
-  String _selectedCat = 'All';
+  String _selectedCat = 'all';
 
-  // Sample notification data
+  // Sample notification data (keep original English text)
   final List<NotificationItem> notifications = [
     NotificationItem(
       icon: Icons.check_circle,
       title: 'Booking Confirmed',
       description: 'Your booking at Victory FC Club has been confirmed.',
       datetime: 'Today - 2 mins ago',
-      category: 'Bookings',
+      category: 'bookings',
       iconColor: Colors.green,
     ),
     NotificationItem(
@@ -33,7 +34,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Match Reminder',
       description: 'Manchester United vs Liverpool starts in 2 hours.',
       datetime: 'Today - 1 hour ago',
-      category: 'Alerts',
+      category: 'alerts',
       iconColor: Colors.orange,
     ),
     NotificationItem(
@@ -41,7 +42,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'New Message from Coach',
       description: 'Practice session rescheduled to 5 PM tomorrow.',
       datetime: 'Yesterday - 8:30 PM',
-      category: 'Messages',
+      category: 'messages',
       iconColor: Colors.blue,
     ),
     NotificationItem(
@@ -49,7 +50,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Weekend Special Offer',
       description: 'Get 20% off on all turf bookings this weekend!',
       datetime: 'Yesterday - 10:15 AM',
-      category: 'Promotions',
+      category: 'promotions',
       iconColor: Colors.purple,
     ),
     NotificationItem(
@@ -58,7 +59,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       description:
           'Your payment of ₹1500 for Victory FC Club has been received.',
       datetime: 'Jan 15, 2026 - 3:30 PM',
-      category: 'Bookings',
+      category: 'bookings',
       iconColor: Colors.green,
     ),
     NotificationItem(
@@ -66,7 +67,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Match Cancelled',
       description: 'Sunday\'s match has been cancelled due to bad weather.',
       datetime: 'Jan 14, 2026 - 9:00 AM',
-      category: 'Alerts',
+      category: 'alerts',
       iconColor: Colors.red,
     ),
     NotificationItem(
@@ -74,7 +75,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Team Invitation',
       description: 'You\'ve been invited to join "Weekend Warriors" team.',
       datetime: 'Jan 13, 2026 - 6:45 PM',
-      category: 'Messages',
+      category: 'messages',
       iconColor: Colors.teal,
     ),
     NotificationItem(
@@ -82,7 +83,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Tournament Alert',
       description: 'Registration for Summer Cup 2026 is now open!',
       datetime: 'Jan 12, 2026 - 2:00 PM',
-      category: 'Alerts',
+      category: 'alerts',
       iconColor: Colors.amber,
     ),
     NotificationItem(
@@ -91,7 +92,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       description:
           'You\'ve completed 10 bookings! Bronze member badge awarded.',
       datetime: 'Jan 10, 2026 - 11:20 AM',
-      category: 'Promotions',
+      category: 'promotions',
       iconColor: Colors.yellow,
     ),
     NotificationItem(
@@ -99,7 +100,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Booking Rescheduled',
       description: 'Your booking has been rescheduled to Jan 20th at 6 PM.',
       datetime: 'Jan 9, 2026 - 4:15 PM',
-      category: 'Bookings',
+      category: 'bookings',
       iconColor: Colors.orange,
     ),
     NotificationItem(
@@ -108,7 +109,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       description:
           'How was your recent match at Victory FC Club? Leave a review!',
       datetime: 'Jan 8, 2026 - 10:00 AM',
-      category: 'Messages',
+      category: 'messages',
       iconColor: Colors.indigo,
     ),
     NotificationItem(
@@ -116,13 +117,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
       title: 'Birthday Special',
       description: 'Happy Birthday! Enjoy a free session on us this week.',
       datetime: 'Jan 5, 2026 - 12:00 PM',
-      category: 'Promotions',
+      category: 'promotions',
       iconColor: Colors.pink,
     ),
   ];
 
   List<NotificationItem> get _filteredNotifications {
-    if (_selectedCat == 'All') {
+    if (_selectedCat == 'all') {
       return notifications;
     }
     return notifications.where((n) => n.category == _selectedCat).toList();
@@ -147,7 +148,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           },
         ),
         title: Text(
-          'Notifications',
+          'notifications'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
@@ -193,7 +194,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No notifications in ${_selectedCat.toLowerCase()}',
+                              'No notifications in ${_getCategoryDisplayName(_selectedCat)}',
                               style: TextStyle(
                                 color: isDark
                                     ? Colors.grey[400]
@@ -220,7 +221,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  String _getCategoryDisplayName(String categoryKey) {
+    switch (categoryKey) {
+      case 'all':
+        return 'all'.tr(context);
+      case 'bookings':
+        return 'bookings'.tr(context);
+      case 'alerts':
+        return 'alerts'.tr(context);
+      case 'messages':
+        return 'messages'.tr(context);
+      case 'promotions':
+        return 'promotions'.tr(context);
+      default:
+        return categoryKey;
+    }
+  }
+
   Widget _category(bool isDark) {
+    final categoryKeys = [
+      'all',
+      'bookings',
+      'alerts',
+      'messages',
+      'promotions',
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: SizedBox(
@@ -228,12 +254,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: category.length,
+          itemCount: categoryKeys.length,
           itemBuilder: (_, i) {
-            final cat = category[i];
-            final sel = _selectedCat == cat;
+            final catKey = categoryKeys[i];
+            final catDisplayName = _getCategoryDisplayName(catKey);
+            final sel = _selectedCat == catKey;
             return GestureDetector(
-              onTap: () => setState(() => _selectedCat = cat),
+              onTap: () => setState(() => _selectedCat = catKey),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.only(right: 10),
@@ -265,7 +292,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      cat,
+                      catDisplayName,
                       style: TextStyle(
                         color: sel
                             ? const Color(0xFF0A1828)

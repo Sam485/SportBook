@@ -5,6 +5,7 @@ import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../providers/booking_provider.dart';
+import '../../translations/app_translations.dart';
 import 'steps/step_category.dart';
 import 'steps/step_court.dart';
 import 'steps/step_date_time.dart';
@@ -25,8 +26,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   bool get _skipCategory => widget.target.sports.length == 1;
   int get _totalSteps => _skipCategory ? 3 : 4;
   List<String> get _stepLabels => _skipCategory
-      ? ['Court', 'Date-Time', 'Payment']
-      : ['Category', 'Court', 'Date', 'Payment'];
+      ? ['court'.tr(context), 'date_time'.tr(context), 'payment'.tr(context)]
+      : [
+          'category'.tr(context),
+          'court'.tr(context),
+          'date'.tr(context),
+          'payment'.tr(context),
+        ];
 
   @override
   void initState() {
@@ -389,7 +395,9 @@ class _BottomBar extends StatelessWidget {
                   ],
                   if (provider.selectedCourt != null) ...[
                     Text(
-                      'Court ${provider.selectedCourt}',
+                      'court_label'
+                          .tr(context)
+                          .replaceAll('{number}', '${provider.selectedCourt}'),
                       style: TextStyle(
                         color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 12,
@@ -400,7 +408,7 @@ class _BottomBar extends StatelessWidget {
                   ],
                   if (provider.selectedDate != null) ...[
                     Text(
-                      _fmtDate(provider.selectedDate!),
+                      _fmtDate(provider.selectedDate!, context),
                       style: TextStyle(
                         color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                         fontSize: 12,
@@ -481,7 +489,9 @@ class _BottomBar extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isLastStep ? 'Confirm Booking' : 'Next',
+                          isLastStep
+                              ? 'confirm_booking'.tr(context)
+                              : 'next'.tr(context),
                           style: TextStyle(
                             color: canProceed
                                 ? const Color(0xFF0A1828)
@@ -526,7 +536,7 @@ class _BottomBar extends StatelessWidget {
     ),
   );
 
-  String _fmtDate(DateTime d) {
+  String _fmtDate(DateTime d, BuildContext context) {
     const m = [
       'Jan',
       'Feb',
@@ -542,6 +552,6 @@ class _BottomBar extends StatelessWidget {
       'Dec',
     ];
     final isToday = DateUtils.isSameDay(d, DateTime.now());
-    return isToday ? 'Today' : '${m[d.month - 1]} ${d.day}';
+    return isToday ? 'today'.tr(context) : '${m[d.month - 1]} ${d.day}';
   }
 }

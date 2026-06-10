@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
+import '../../../translations/app_translations.dart';
 
 enum PaymentMethod { khqr, cash }
 
@@ -78,8 +79,8 @@ class StepPaymentState extends State<StepPayment>
   void handleConfirm() {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a payment method'),
+        SnackBar(
+          content: Text('select_payment_method'.tr(context)),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -104,7 +105,7 @@ class StepPaymentState extends State<StepPayment>
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
         Text(
-          'Payment Method',
+          'payment_method'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
@@ -113,7 +114,7 @@ class StepPaymentState extends State<StepPayment>
         ),
         const SizedBox(height: 4),
         Text(
-          "Choose how you'd like to pay",
+          'choose_payment_desc'.tr(context),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
@@ -130,7 +131,7 @@ class StepPaymentState extends State<StepPayment>
         ),
         const SizedBox(height: 28),
         Text(
-          'SELECT PAYMENT',
+          'select_payment_section'.tr(context),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 11,
@@ -144,9 +145,9 @@ class StepPaymentState extends State<StepPayment>
           animController: _khqrAnim,
           onTap: () => _selectMethod(PaymentMethod.khqr),
           icon: _KhqrIcon(),
-          title: 'KHQR / Bank Transfer',
-          subtitle: 'Scan QR code with any Cambodian banking app',
-          badge: 'Instant',
+          title: 'khqr_title'.tr(context),
+          subtitle: 'khqr_subtitle'.tr(context),
+          badge: 'instant'.tr(context),
           badgeColor: const Color(0xFF4CAF50),
           accentColor: const Color(0xFF0072CE),
           isDark: isDark,
@@ -202,7 +203,7 @@ class _UserInfoForm extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'CONTACT INFORMATION',
+              'contact_info_section'.tr(context),
               style: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 11,
@@ -217,11 +218,11 @@ class _UserInfoForm extends StatelessWidget {
                 color: isDark ? Colors.white : AppTheme.kLightText,
               ),
               decoration: InputDecoration(
-                labelText: 'Full Name',
+                labelText: 'full_name_label'.tr(context),
                 labelStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
-                hintText: 'Enter your full name',
+                hintText: 'full_name_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -265,10 +266,10 @@ class _UserInfoForm extends StatelessWidget {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your full name';
+                  return 'full_name_required'.tr(context);
                 }
                 if (value.trim().length < 2) {
-                  return 'Name must be at least 2 characters';
+                  return 'name_min_length'.tr(context);
                 }
                 return null;
               },
@@ -281,11 +282,11 @@ class _UserInfoForm extends StatelessWidget {
               ),
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                labelText: 'Phone Number',
+                labelText: 'phone_label'.tr(context),
                 labelStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
-                hintText: 'Enter your phone number',
+                hintText: 'phone_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -329,11 +330,11 @@ class _UserInfoForm extends StatelessWidget {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your phone number';
+                  return 'phone_required'.tr(context);
                 }
                 final phoneRegex = RegExp(r'^[0-9+\-\s]{8,15}$');
                 if (!phoneRegex.hasMatch(value.trim())) {
-                  return 'Please enter a valid phone number';
+                  return 'phone_invalid'.tr(context);
                 }
                 return null;
               },
@@ -396,28 +397,28 @@ class _BookingSummaryCard extends StatelessWidget {
         children: [
           _SummaryRow(
             icon: Icons.sports_rounded,
-            label: 'Sport',
+            label: 'sport'.tr(context),
             value: p.selectedSport ?? '—',
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.grid_view_rounded,
-            label: 'Court',
+            label: 'court'.tr(context),
             value: p.target?.name ?? '—',
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.calendar_today_rounded,
-            label: 'Date',
+            label: 'date'.tr(context),
             value: dateStr,
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.access_time_rounded,
-            label: 'Time',
+            label: 'time'.tr(context),
             value: timeStr,
             isDark: isDark,
           ),
@@ -432,7 +433,7 @@ class _BookingSummaryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total Amount',
+                'total_amount'.tr(context),
                 style: TextStyle(
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 14,
@@ -683,7 +684,7 @@ class _KhqrDetail extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'KHQR Payment',
+                    'khqr_title'.tr(context),
                     style: TextStyle(
                       color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 14,
@@ -691,7 +692,7 @@ class _KhqrDetail extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Scan with your banking app',
+                    'khqr_subtitle'.tr(context),
                     style: TextStyle(
                       color: isDark
                           ? AppTheme.kTextSub
@@ -737,7 +738,7 @@ class _KhqrDetail extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Supported Banks & Wallets',
+            'supported_banks'.tr(context),
             style: TextStyle(
               color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 11,
@@ -793,25 +794,25 @@ class _KhqrDetail extends StatelessWidget {
           const SizedBox(height: 16),
           _InstructionRow(
             step: '1',
-            text: 'Open your banking app and tap "Scan QR"',
+            text: 'khqr_step1'.tr(context),
             isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '2',
-            text: 'Scan the KHQR code above',
+            text: 'khqr_step2'.tr(context),
             isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '3',
-            text: 'Confirm the amount and complete the transfer',
+            text: 'khqr_step3'.tr(context),
             isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '4',
-            text: 'Tap "Confirm & View QR Code" to finalize your booking',
+            text: 'khqr_step4'.tr(context),
             isDark: isDark,
           ),
         ],
@@ -857,7 +858,7 @@ class _CashDetail extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Cash Payment',
+                    'cash_title'.tr(context),
                     style: TextStyle(
                       color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 14,
@@ -865,7 +866,7 @@ class _CashDetail extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Pay at the venue counter',
+                    'cash_subtitle'.tr(context),
                     style: TextStyle(
                       color: isDark
                           ? AppTheme.kTextSub
@@ -891,7 +892,7 @@ class _CashDetail extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'Amount Due at Venue',
+                  'amount_due'.tr(context),
                   style: TextStyle(
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 12,
@@ -909,7 +910,7 @@ class _CashDetail extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'USD',
+                  'usd'.tr(context),
                   style: TextStyle(
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 12,
@@ -938,7 +939,7 @@ class _CashDetail extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Please arrive 10 minutes early to complete payment at the front desk before your session.',
+                    'cash_note'.tr(context),
                     style: TextStyle(
                       color: Colors.orange,
                       fontSize: 11.5,
@@ -952,25 +953,25 @@ class _CashDetail extends StatelessWidget {
           const SizedBox(height: 16),
           _InstructionRow(
             step: '1',
-            text: 'Tap "Confirm Booking" to reserve your court',
+            text: 'cash_step1'.tr(context),
             isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '2',
-            text: 'Arrive at the venue before your session',
+            text: 'cash_step2'.tr(context),
             isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '3',
-            text: 'Show your booking confirmation at the counter',
+            text: 'cash_step3'.tr(context),
             isDark: isDark,
           ),
           const SizedBox(height: 8),
           _InstructionRow(
             step: '4',
-            text: 'Pay the amount in cash and enjoy your game!',
+            text: 'cash_step4'.tr(context),
             isDark: isDark,
           ),
         ],

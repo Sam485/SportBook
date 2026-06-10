@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class HistoryBookingsScreen extends StatelessWidget {
   final List<SportBooking> historyBookings;
@@ -11,66 +12,75 @@ class HistoryBookingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Consumer(
-      builder: (context, value, child) => Scaffold(
+
+    return Scaffold(
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+      appBar: AppBar(
         backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-        appBar: AppBar(
-          backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-            onPressed: () => Navigator.pop(context),
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? Colors.white : Colors.black,
           ),
-          title: Text(
-            'History Bookings',
-            style: AppTheme.tsTitleAdaptive(context),
-          ),
-          centerTitle: true,
+          onPressed: () => Navigator.pop(context),
         ),
-        body: historyBookings.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.history, size: 80, color: Colors.grey[600]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No booking history',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppTheme.kTextSub
-                            : AppTheme.kLightTextSub,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Your past bookings will appear here',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: historyBookings.length,
-                itemBuilder: (context, index) {
-                  final booking = historyBookings[index];
-                  return _historyCard(booking, context);
-                },
-              ),
+        title: Text(
+          'history_bookings'.tr(context),
+          style: AppTheme.tsTitleAdaptive(context),
+        ),
+        centerTitle: true,
+      ),
+      body: historyBookings.isEmpty
+          ? _buildEmptyState(context, isDark)
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: historyBookings.length,
+              itemBuilder: (context, index) {
+                final booking = historyBookings[index];
+                return _historyCard(booking, context, isDark);
+              },
+            ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.history,
+            size: 80,
+            color: isDark ? Colors.grey[600] : Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'no_booking_history'.tr(context),
+            style: TextStyle(
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'past_bookings_appear_here'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.grey[600] : Colors.grey[500],
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _historyCard(SportBooking booking, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _historyCard(SportBooking booking, BuildContext context, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: AppTheme.cardDecoration(),
+      decoration: AppTheme.cardDecorationAdaptive(context),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -105,13 +115,25 @@ class HistoryBookingsScreen extends StatelessWidget {
                         children: [
                           Text(
                             booking.title,
-                            style: AppTheme.tsTitle,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.kLightText,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 4),
                           Text(
                             booking.venue,
-                            style: AppTheme.tsBodyAdaptive(context),
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppTheme.kLightTextSub,
+                              fontSize: 13,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -127,9 +149,13 @@ class HistoryBookingsScreen extends StatelessWidget {
                         color: Colors.red.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Completed',
-                        style: TextStyle(color: Colors.red, fontSize: 11),
+                      child: Text(
+                        'completed'.tr(context),
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -147,7 +173,12 @@ class HistoryBookingsScreen extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       booking.formattedBookingDate,
-                      style: AppTheme.tsSubAdaptive(context),
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Icon(
@@ -160,7 +191,12 @@ class HistoryBookingsScreen extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       booking.formattedTimeRange,
-                      style: AppTheme.tsSubAdaptive(context),
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),

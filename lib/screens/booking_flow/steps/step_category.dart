@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../services/data_service.dart';
+import '../../../translations/app_translations.dart';
 
 class StepCategory extends StatelessWidget {
   final VoidCallback onNext;
@@ -19,7 +20,7 @@ class StepCategory extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
         Text(
-          'Select Sport',
+          'select_sport'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
@@ -28,7 +29,9 @@ class StepCategory extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Choose a sport to book at ${p.target?.name ?? ''}',
+          'choose_sport_at'
+              .tr(context)
+              .replaceAll('{name}', p.target?.name ?? ''),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
@@ -100,7 +103,7 @@ class StepCategory extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          sport,
+                          _getTranslatedSportName(sport, context),
                           style: TextStyle(
                             color: sel
                                 ? AppTheme.kAccent
@@ -111,7 +114,7 @@ class StepCategory extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          _subtitle(sport),
+                          _subtitle(sport, context),
                           style: TextStyle(
                             color: isDark
                                 ? AppTheme.kTextSub
@@ -140,20 +143,37 @@ class StepCategory extends StatelessWidget {
     );
   }
 
-  String _subtitle(String sport) {
-    switch (sport) {
-      case 'Football':
-        return 'Book a full-size pitch or mini court';
-      case 'Badminton':
-        return 'Indoor court with synthetic surface';
-      case 'Tennis':
-        return 'Hard court or clay surface';
-      case 'Basketball':
-        return '3v3 or 5v5 full court';
-      case 'Gym':
-        return 'Book a personal trainer session';
+  String _getTranslatedSportName(String sport, BuildContext context) {
+    switch (sport.toLowerCase()) {
+      case 'football':
+        return 'sport_football'.tr(context);
+      case 'badminton':
+        return 'sport_badminton'.tr(context);
+      case 'tennis':
+        return 'sport_tennis'.tr(context);
+      case 'basketball':
+        return 'sport_basketball'.tr(context);
+      case 'gym':
+        return 'sport_gym'.tr(context);
       default:
-        return 'Book your session';
+        return sport;
+    }
+  }
+
+  String _subtitle(String sport, BuildContext context) {
+    switch (sport.toLowerCase()) {
+      case 'football':
+        return 'football_subtitle'.tr(context);
+      case 'badminton':
+        return 'badminton_subtitle'.tr(context);
+      case 'tennis':
+        return 'tennis_subtitle'.tr(context);
+      case 'basketball':
+        return 'basketball_subtitle'.tr(context);
+      case 'gym':
+        return 'gym_subtitle'.tr(context);
+      default:
+        return 'book_your_session'.tr(context);
     }
   }
 }

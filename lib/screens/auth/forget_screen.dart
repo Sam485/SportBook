@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class ForgetScreen extends StatefulWidget {
   const ForgetScreen({super.key});
@@ -67,7 +68,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "Forgot Password?",
+          'forgot_password'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 32,
@@ -77,7 +78,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "Reset your password",
+          'reset_password_desc'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 16,
@@ -97,7 +98,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Phone",
+              'phone'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -112,15 +113,15 @@ class _ForgetScreenState extends State<ForgetScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Phone number is required';
+                  return 'phone_required'.tr(context);
                 }
                 if (value.length < 9) {
-                  return 'Please enter a valid phone number';
+                  return 'valid_phone_required'.tr(context);
                 }
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Enter your phone number',
+                hintText: 'phone_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -177,7 +178,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
           _validateAndLogin();
         },
         child: Text(
-          'Reset Password',
+          'reset_password'.tr(context),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -203,7 +204,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Remembered your password?",
+            'remembered_password'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             ),
@@ -214,7 +215,7 @@ class _ForgetScreenState extends State<ForgetScreen> {
               Navigator.pushNamed(context, AppRoutes.login);
             },
             child: Text(
-              'Log In',
+              'login'.tr(context),
               style: TextStyle(
                 color: AppTheme.kAccent,
                 fontSize: 14,

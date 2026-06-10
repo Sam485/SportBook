@@ -7,6 +7,7 @@ import 'package:sportbook/providers/booking_provider.dart';
 import 'package:sportbook/providers/theme_provider.dart';
 import 'package:sportbook/screens/booking_flow/booking_flow_screen.dart';
 import 'package:sportbook/services/data_service.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 
 class ClubDetailed extends StatefulWidget {
@@ -56,18 +57,28 @@ class _ClubDetailedState extends State<ClubDetailed> {
               slivers: [
                 SliverToBoxAdapter(child: _header(isDark)),
                 SliverToBoxAdapter(child: _infoSection(isDark)),
-                SliverToBoxAdapter(child: _divider('Facilities', isDark)),
+                SliverToBoxAdapter(
+                  child: _divider('facilities'.tr(context), isDark),
+                ),
                 SliverToBoxAdapter(child: _facilities(isDark)),
-                SliverToBoxAdapter(child: _divider('Sports Available', isDark)),
+                SliverToBoxAdapter(
+                  child: _divider('sports_available'.tr(context), isDark),
+                ),
                 SliverToBoxAdapter(child: _sportsGrid(isDark)),
-                SliverToBoxAdapter(child: _divider('Pricing', isDark)),
+                SliverToBoxAdapter(
+                  child: _divider('pricing'.tr(context), isDark),
+                ),
                 SliverToBoxAdapter(child: _pricing(isDark)),
-                SliverToBoxAdapter(child: _divider('Location', isDark)),
+                SliverToBoxAdapter(
+                  child: _divider('location'.tr(context), isDark),
+                ),
                 SliverToBoxAdapter(child: _location(isDark)),
-                SliverToBoxAdapter(child: _divider('About', isDark)),
+                SliverToBoxAdapter(
+                  child: _divider('about'.tr(context), isDark),
+                ),
                 SliverToBoxAdapter(child: _about(isDark)),
                 SliverToBoxAdapter(
-                  child: _divider('You Might Also Like', isDark),
+                  child: _divider('you_might_also_like'.tr(context), isDark),
                 ),
                 SliverToBoxAdapter(child: _suggestions()),
                 const SliverToBoxAdapter(child: SizedBox(height: 80)),
@@ -288,7 +299,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           children: [
             _statPill(
               Icons.grid_view_rounded,
-              '${widget.target.sports.length} Courts',
+              '${widget.target.sports.length} ${'courts'.tr(context)}',
               AppTheme.kAccent,
             ),
             const SizedBox(width: 8),
@@ -363,14 +374,14 @@ class _ClubDetailedState extends State<ClubDetailed> {
 
   Widget _facilities(bool isDark) {
     final items = [
-      (Icons.local_parking_rounded, 'Parking'),
-      (Icons.shower_rounded, 'Showers'),
-      (Icons.emoji_food_beverage_rounded, 'Café'),
-      (Icons.wifi_rounded, 'Free Wi-Fi'),
-      (Icons.ac_unit_rounded, 'Air-Con'),
-      (Icons.sports_rounded, 'Equipment'),
-      (Icons.wc_rounded, 'Restrooms'),
-      (Icons.medical_services_rounded, 'First Aid'),
+      (Icons.local_parking_rounded, 'parking'.tr(context)),
+      (Icons.shower_rounded, 'showers'.tr(context)),
+      (Icons.emoji_food_beverage_rounded, 'cafe'.tr(context)),
+      (Icons.wifi_rounded, 'free_wifi'.tr(context)),
+      (Icons.ac_unit_rounded, 'air_con'.tr(context)),
+      (Icons.sports_rounded, 'equipment'.tr(context)),
+      (Icons.wc_rounded, 'restrooms'.tr(context)),
+      (Icons.medical_services_rounded, 'first_aid'.tr(context)),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -450,7 +461,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
       child: Column(
         children: [
           _priceRow(
-            'Peak Hours (6–9 AM, 5–9 PM)',
+            'peak_hours'.tr(context),
             '\$${(widget.target.pricePerHour * 1.25).toStringAsFixed(0)}/hr',
             const Color(0xFFF59E0B),
             isDark,
@@ -460,7 +471,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             height: 20,
           ),
           _priceRow(
-            'Off-Peak Hours',
+            'off_peak_hours'.tr(context),
             '\$${widget.target.pricePerHour.toStringAsFixed(0)}/hr',
             const Color(0xFF4CAF50),
             isDark,
@@ -470,7 +481,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             height: 20,
           ),
           _priceRow(
-            'Weekend Surcharge',
+            'weekend_surcharge'.tr(context),
             '+\$${(widget.target.pricePerHour * 0.2).toStringAsFixed(0)}/hr',
             Colors.redAccent,
             isDark,
@@ -573,16 +584,16 @@ class _ClubDetailedState extends State<ClubDetailed> {
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
+                      children: [
+                        const Icon(
                           Icons.location_on_rounded,
                           color: Colors.black,
                           size: 14,
                         ),
-                        SizedBox(width: 5),
+                        const SizedBox(width: 5),
                         Text(
-                          'View on Map',
-                          style: TextStyle(
+                          'view_on_map'.tr(context),
+                          style: const TextStyle(
                             color: Colors.black,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -612,12 +623,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         ),
       ),
       child: Text(
-        '${widget.target.name} is a premium sports facility offering world-class courts '
-        'and amenities for athletes of all levels. Whether you\'re a casual player or a '
-        'competitive athlete, our professional-grade facilities and expert staff ensure '
-        'an exceptional experience every visit.\n\n'
-        'We pride ourselves on maintaining top-tier court surfaces, state-of-the-art '
-        'equipment, and a welcoming community atmosphere.',
+        widget.target.name + ' ' + 'about_description'.tr(context),
         style: TextStyle(
           color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
           fontSize: 13,
@@ -690,7 +696,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         children: [
           _navIconBtn(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
+            label: 'chat'.tr(context),
             onTap: () {},
             isDark: isDark,
           ),
@@ -699,7 +705,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             icon: _saved
                 ? Icons.favorite_rounded
                 : Icons.favorite_border_rounded,
-            label: _saved ? 'Saved' : 'Save',
+            label: _saved ? 'saved'.tr(context) : 'save'.tr(context),
             color: _saved ? Colors.redAccent : null,
             onTap: () => setState(() => _saved = !_saved),
             isDark: isDark,
@@ -717,9 +723,12 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'Book Now',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              child: Text(
+                'book_now'.tr(context),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),
@@ -781,7 +790,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         ),
         const SizedBox(width: 4),
         Text(
-          _isOpen ? 'Open Now' : 'Closed',
+          _isOpen ? 'open_now'.tr(context) : 'closed'.tr(context),
           style: TextStyle(
             color: _isOpen ? Colors.greenAccent : Colors.redAccent,
             fontSize: 10,
@@ -834,7 +843,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                     child: Row(
                       children: [
                         Text(
-                          'Book Court',
+                          'book_court'.tr(context),
                           style: TextStyle(
                             color: isDark ? Colors.white : AppTheme.kLightText,
                             fontSize: 18,

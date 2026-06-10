@@ -2,6 +2,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -17,32 +18,33 @@ class _LandingScreenState extends State<LandingScreen> {
     {
       'imageUrl':
           'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=1200&fit=crop',
-      'title': 'Book Your\nGame Today!',
-      'description':
-          'Find courts, book slots, and connect with players near you — all in one place.',
+      'titleKey': 'banner_title_1',
+      'descriptionKey': 'banner_desc_1',
     },
     {
       'imageUrl':
           'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=1200&fit=crop',
-      'title': 'Find Courts\nInstantly',
-      'description':
-          'Discover available basketball courts, check real-time slot availability and reserve in seconds.',
+      'titleKey': 'banner_title_2',
+      'descriptionKey': 'banner_desc_2',
     },
     {
       'imageUrl':
           'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&h=1200&fit=crop',
-      'title': 'Meet & Play\nWith Others',
-      'description':
-          'Join local games, challenge nearby players, and grow your sports community.',
+      'titleKey': 'banner_title_3',
+      'descriptionKey': 'banner_desc_3',
     },
     {
       'imageUrl':
           'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=1200&fit=crop',
-      'title': 'Track Every\nPerformance',
-      'description':
-          'Log your sessions, monitor progress, and push your personal best every time you play.',
+      'titleKey': 'banner_title_4',
+      'descriptionKey': 'banner_desc_4',
     },
   ];
+
+  // Helper method to translate
+  String _tr(String key) {
+    return AppTranslations.translate(key, locale: null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,15 +56,15 @@ class _LandingScreenState extends State<LandingScreen> {
         children: [
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.65,
-            child: _carousel(),
+            child: _carousel(context),
           ),
-          _buildBottomSection(),
+          _buildBottomSection(context),
         ],
       ),
     );
   }
 
-  Widget _carousel() {
+  Widget _carousel(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return CarouselSlider(
@@ -138,7 +140,7 @@ class _LandingScreenState extends State<LandingScreen> {
                   right: 20,
                   bottom: 24,
                   child: Text(
-                    slide['title'],
+                    AppTranslations.translate(slide['titleKey'], locale: null),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 32,
@@ -163,7 +165,7 @@ class _LandingScreenState extends State<LandingScreen> {
     );
   }
 
-  Widget _buildBottomSection() {
+  Widget _buildBottomSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -175,7 +177,10 @@ class _LandingScreenState extends State<LandingScreen> {
         children: [
           // Description
           Text(
-            bannerUrl[_page]['description'],
+            AppTranslations.translate(
+              bannerUrl[_page]['descriptionKey'],
+              locale: null,
+            ),
             style: TextStyle(
               fontSize: 14,
               color: isDark ? const Color(0xFFADB5C7) : AppTheme.kLightTextSub,
@@ -213,7 +218,10 @@ class _LandingScreenState extends State<LandingScreen> {
             child: ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.signUp),
               style: AppTheme.elevatedButtonStyle(),
-              child: const Text('Sign Up', style: AppTheme.tsButtonLabel),
+              child: Text(
+                AppTranslations.translate('sign_up', locale: null),
+                style: AppTheme.tsButtonLabel,
+              ),
             ),
           ),
 
@@ -238,7 +246,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 ),
               ),
               child: Text(
-                'Login',
+                AppTranslations.translate('login', locale: null),
                 style: TextStyle(
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,

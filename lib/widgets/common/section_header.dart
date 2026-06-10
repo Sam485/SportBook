@@ -11,8 +11,9 @@ class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
     required this.title,
-    this.actionLabel = 'View All',
-    this.onAction, required bool isDark,
+    this.actionLabel = 'view_all',
+    this.onAction,
+    required bool isDark,
   });
 
   @override

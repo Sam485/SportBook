@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/models/models.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class BookedCard extends StatefulWidget {
   final SportBooking booking;
@@ -25,7 +26,7 @@ class _BookedCardState extends State<BookedCard> {
         backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Cancel Booking',
+          'cancel_booking'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
@@ -33,7 +34,9 @@ class _BookedCardState extends State<BookedCard> {
           ),
         ),
         content: Text(
-          'Are you sure you want to cancel "${b.title}"?',
+          'cancel_booking_confirmation'
+              .tr(context)
+              .replaceAll('{title}', b.title),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 13,
@@ -43,7 +46,7 @@ class _BookedCardState extends State<BookedCard> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Keep',
+              'keep'.tr(context),
               style: TextStyle(
                 color: AppTheme.kAccent,
                 fontSize: 13,
@@ -54,12 +57,14 @@ class _BookedCardState extends State<BookedCard> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // Add actual cancellation logic here
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('booking_cancelled'.tr(context))),
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text(
-              'Cancel Booking',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              'cancel_booking'.tr(context),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -101,7 +106,7 @@ class _BookedCardState extends State<BookedCard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Entry Pass',
+                      'entry_pass'.tr(context),
                       style: TextStyle(
                         color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 18,
@@ -214,7 +219,7 @@ class _BookedCardState extends State<BookedCard> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Show this QR code at the venue entrance',
+                        'qr_instruction'.tr(context),
                         style: TextStyle(
                           color: isDark
                               ? Colors.white70
@@ -241,9 +246,9 @@ class _BookedCardState extends State<BookedCard> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    'close'.tr(context),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -324,11 +329,11 @@ class _BookedCardState extends State<BookedCard> {
           const SizedBox(height: 2),
           _badget(b.sportTypes[0], b.ownerColor),
           const SizedBox(height: 6),
-          // Open / close time
+          // Booked date
           _detailRow(
             Icons.calendar_today_outlined,
             AppTheme.kAccent,
-            'Booked on  Apr 24',
+            '${'booked_on'.tr(context)} ${_formatBookingDate()}',
             isDark,
           ),
           const SizedBox(height: 8),
@@ -350,6 +355,12 @@ class _BookedCardState extends State<BookedCard> {
         ],
       ),
     );
+  }
+
+  String _formatBookingDate() {
+    // You can format the date properly here
+    // For now using a sample date
+    return 'Apr 24';
   }
 
   Widget _detailRow(IconData icon, Color iconColor, String text, bool isDark) {

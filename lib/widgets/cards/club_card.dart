@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../models/models.dart';
 import '../../routes/app_routes.dart';
+import '../../translations/app_translations.dart';
 
 class ClubCard extends StatefulWidget {
   final SportClub club;
@@ -353,7 +354,7 @@ class _ClubCardState extends State<ClubCard> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${c.distanceKm} km away',
+                        '${c.distanceKm} ${'km_away'.tr(context)}',
                         style: TextStyle(
                           color: isDark
                               ? AppTheme.kTextSub
@@ -384,9 +385,9 @@ class _ClubCardState extends State<ClubCard> {
                               ),
                             ],
                           ),
-                          child: const Text(
-                            'Book',
-                            style: TextStyle(
+                          child: Text(
+                            'book'.tr(context),
+                            style: const TextStyle(
                               color: Color(0xFF0A1828),
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
@@ -451,7 +452,7 @@ class _ClubCardState extends State<ClubCard> {
           ),
           const SizedBox(width: 3),
           Text(
-            isOpen ? 'Open' : 'Closed',
+            isOpen ? 'open'.tr(context) : 'closed'.tr(context),
             style: TextStyle(
               color: isOpen ? Colors.greenAccent : Colors.redAccent,
               fontSize: 9,

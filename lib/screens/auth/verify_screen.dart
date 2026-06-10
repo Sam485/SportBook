@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class VerifyScreen extends StatefulWidget {
   bool isSignUp;
@@ -162,7 +163,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Verify Your Phone',
+          'verify_phone'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
@@ -173,7 +174,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Enter the 6-digit code sent to\nyour registered phone number',
+          'enter_otp'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 15,
@@ -256,7 +257,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Didn't receive the code? ",
+          'resend_code'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
@@ -266,7 +267,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
             ? GestureDetector(
                 onTap: _startTimer,
                 child: Text(
-                  'Resend',
+                  'resend'.tr(context),
                   style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 14,
@@ -275,7 +276,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 ),
               )
             : Text(
-                'Resend in ${_secondsLeft}s',
+                'resend_in'
+                    .tr(context)
+                    .replaceAll('{seconds}', '$_secondsLeft'),
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
@@ -303,7 +306,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 ),
               )
             : Text(
-                'Verify OTP',
+                'verify'.tr(context),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -322,7 +325,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Back to ",
+            'back_to'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             ),
@@ -330,7 +333,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Text(
-              'Login',
+              'login'.tr(context),
               style: const TextStyle(
                 color: AppTheme.kAccent,
                 fontSize: 14,

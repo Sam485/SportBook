@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -69,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "Log In",
+          'login'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 32,
@@ -79,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "Welcome back! Please Sign in to continue",
+          'welcome_back'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 16,
@@ -99,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Phone or Username",
+              'phone_or_username'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -114,15 +115,15 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Phone number is required';
+                  return 'phone_required'.tr(context);
                 }
                 if (value.length < 9) {
-                  return 'Please enter a valid phone number';
+                  return 'valid_phone_required'.tr(context);
                 }
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Enter your phone or username',
+                hintText: 'phone_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -165,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "Password",
+              'password'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -180,15 +181,15 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Password is required';
+                  return 'password_required'.tr(context);
                 }
                 if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
+                  return 'password_min_length'.tr(context);
                 }
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Enter your password',
+                hintText: 'password_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
@@ -257,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  'Remember Me',
+                  'remember_me'.tr(context),
                   style: TextStyle(
                     color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                   ),
@@ -268,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.pushNamed(context, AppRoutes.forget);
                   },
                   child: Text(
-                    'Forget Password?',
+                    'forgot_password'.tr(context),
                     style: TextStyle(
                       color: AppTheme.kAccent,
                       fontSize: 14,
@@ -295,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _validateAndLogin();
         },
         child: Text(
-          'Login',
+          'login'.tr(context),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -321,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Don't have an account?",
+            'dont_have_account'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             ),
@@ -332,7 +333,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Navigator.pushNamed(context, AppRoutes.signUp);
             },
             child: Text(
-              'Sign Up',
+              'sign_up'.tr(context),
               style: TextStyle(
                 color: AppTheme.kAccent,
                 fontSize: 14,

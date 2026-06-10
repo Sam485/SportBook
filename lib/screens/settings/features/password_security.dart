@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class PasswordSecurityScreen extends StatefulWidget {
   const PasswordSecurityScreen({super.key});
@@ -28,25 +29,25 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
   void _changePassword() {
     if (_currentPasswordController.text.isEmpty) {
-      _showError('Please enter current password');
+      _showError('enter_current_password'.tr(context));
       return;
     }
     if (_newPasswordController.text.isEmpty) {
-      _showError('Please enter new password');
+      _showError('enter_new_password'.tr(context));
       return;
     }
     if (_newPasswordController.text.length < 6) {
-      _showError('Password must be at least 6 characters');
+      _showError('password_min_length'.tr(context));
       return;
     }
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showError('Passwords do not match');
+      _showError('passwords_do_not_match'.tr(context));
       return;
     }
 
     // Handle password change
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password changed successfully!')),
+      SnackBar(content: Text('password_changed_success'.tr(context))),
     );
     Navigator.pop(context);
   }
@@ -74,7 +75,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Password & Security',
+          'password_security'.tr(context),
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
@@ -109,7 +110,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Security Tips',
+                          'security_tips'.tr(context),
                           style: TextStyle(
                             color: isDark ? Colors.white : AppTheme.kLightText,
                             fontWeight: FontWeight.bold,
@@ -118,7 +119,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Use a strong password with letters, numbers, and symbols',
+                          'strong_password_tip'.tr(context),
                           style: TextStyle(
                             color: isDark
                                 ? AppTheme.kTextSub
@@ -136,7 +137,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
 
             // Change Password Section
             Text(
-              'CHANGE PASSWORD',
+              'change_password_section'.tr(context).toUpperCase(),
               style: TextStyle(
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 12,
@@ -148,7 +149,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             // Current Password
             _buildPasswordField(
               controller: _currentPasswordController,
-              label: 'Current Password',
+              label: 'current_password'.tr(context),
               obscure: _obscureCurrent,
               onToggle: () =>
                   setState(() => _obscureCurrent = !_obscureCurrent),
@@ -159,7 +160,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             // New Password
             _buildPasswordField(
               controller: _newPasswordController,
-              label: 'New Password',
+              label: 'new_password'.tr(context),
               obscure: _obscureNew,
               onToggle: () => setState(() => _obscureNew = !_obscureNew),
               isDark: isDark,
@@ -169,7 +170,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             // Confirm Password
             _buildPasswordField(
               controller: _confirmPasswordController,
-              label: 'Confirm New Password',
+              label: 'confirm_new_password'.tr(context),
               obscure: _obscureConfirm,
               onToggle: () =>
                   setState(() => _obscureConfirm = !_obscureConfirm),
@@ -184,7 +185,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               child: ElevatedButton(
                 onPressed: _changePassword,
                 style: AppTheme.elevatedButtonStyle(),
-                child: const Text('Change Password'),
+                child: Text('change_password'.tr(context)),
               ),
             ),
 
@@ -210,7 +211,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Two-Factor Authentication',
+                          'two_factor_auth'.tr(context),
                           style: TextStyle(
                             color: isDark ? Colors.white : AppTheme.kLightText,
                             fontWeight: FontWeight.bold,
@@ -219,7 +220,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Add an extra layer of security',
+                          'two_factor_desc'.tr(context),
                           style: TextStyle(
                             color: isDark
                                 ? AppTheme.kTextSub
@@ -234,7 +235,9 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                     value: false,
                     onChanged: (value) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('2FA coming soon')),
+                        SnackBar(
+                          content: Text('two_factor_coming_soon'.tr(context)),
+                        ),
                       );
                     },
                     activeColor: AppTheme.kAccent,
