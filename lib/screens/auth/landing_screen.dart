@@ -41,11 +41,6 @@ class _LandingScreenState extends State<LandingScreen> {
     },
   ];
 
-  // Helper method to translate
-  String _tr(String key) {
-    return AppTranslations.translate(key, locale: null);
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

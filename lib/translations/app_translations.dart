@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/providers/language_provider.dart';
 
+/// Centralized translation management for the SportMate app.
+/// Supports English ('en') and Khmer ('km') languages.
 class AppTranslations {
+  // ============================================================================
+  // Translation Data
+  // ============================================================================
+
   static const Map<String, Map<String, String>> _translations = {
+    // ------------------------------------------------------------------------
+    // English Translations
+    // ------------------------------------------------------------------------
     'en': {
-      // Common
+      // ---------------------- Common UI Elements ----------------------------
       'app_name': 'SportMate',
       'ok': 'OK',
       'cancel': 'Cancel',
@@ -19,21 +28,23 @@ class AppTranslations {
       'book': 'Book',
       'open': 'Open',
       'closed': 'Closed',
+      'view_all': 'View All',
+
+      // ---------------------- Sports Names ----------------------------
       'sport_football': 'Football',
       'sport_basketball': 'Basketball',
       'sport_tennis': 'Tennis',
       'sport_badminton': 'Badminton',
       'sport_gym': 'Gym',
-      'view_all': 'View All',
 
-      // Navigation
+      // ---------------------- Navigation ----------------------------
       'home': 'Home',
       'explore': 'Explore',
       'bookings': 'Bookings',
       'settings': 'Settings',
       'profile': 'Profile',
 
-      //Location Picker
+      // ---------------------- Location Picker ----------------------------
       'select_location': 'Select location',
       'location_description': 'Use your current location or type a city name.',
       'use_current_location': 'Use current location',
@@ -52,26 +63,26 @@ class AppTranslations {
       'enter_city_manually': 'Enter city manually',
       'city_hint': 'e.g. London, Phnom Penh...',
 
-      // Notification Categories
+      // ---------------------- Notification Categories ----------------------------
       'all': 'All',
       'alerts': 'Alerts',
       'messages': 'Messages',
       'promotions': 'Promotions',
 
-      // Home Screen
+      // ---------------------- Home Screen ----------------------------
       'clubs_nearby': 'Clubs Nearby',
       'upcoming_bookings': 'Upcoming Bookings',
       'no_bookings': 'No bookings for this sport',
       'hello_message': 'Hello, {name} 👋',
       'no_clubs_for_sport': 'No clubs for this sport',
 
-      // Explore Screen
+      // ---------------------- Explore Screen ----------------------------
       'nearby': 'Nearby',
       'no_nearby_clubs': 'No nearby club found!',
       'no_results_for': 'No results found for "{query}"',
       'search_hint': 'Search clubs, sports...',
 
-      // Booking
+      // ---------------------- Booking ----------------------------
       'search': 'Search',
       'book_now': 'Book Now',
       'select_sport': 'Select Sport',
@@ -94,7 +105,7 @@ class AppTranslations {
       'reschedule': 'Reschedule',
       'reschedule_coming_soon': 'Reschedule feature coming soon',
 
-      //Booking Flow
+      // ---------------------- Booking Flow ----------------------------
       'court': 'Court',
       'date_time': 'Date-Time',
       'category': 'Category',
@@ -103,7 +114,7 @@ class AppTranslations {
       'court_label': 'Court {number}',
       'today': 'Today',
 
-      // Club Detailed Screen
+      // ---------------------- Club Detailed Screen ----------------------------
       'facilities': 'Facilities',
       'sports_available': 'Sports Available',
       'pricing': 'Pricing',
@@ -130,7 +141,7 @@ class AppTranslations {
       'open_now': 'Open Now',
       'book_court': 'Book Court',
 
-      // Settings
+      // ---------------------- Settings Screen ----------------------------
       'settings_title': 'Settings',
       'account': 'Account',
       'preferences': 'Preferences',
@@ -167,7 +178,7 @@ class AppTranslations {
       'light': 'Light',
       'system': 'System',
 
-      // Step Category
+      // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'Choose a sport to book at {name}',
       'football_subtitle': 'Book a full-size pitch or mini court',
       'badminton_subtitle': 'Indoor court with synthetic surface',
@@ -176,15 +187,14 @@ class AppTranslations {
       'gym_subtitle': 'Book a personal trainer session',
       'book_your_session': 'Book your session',
 
-      // Step Court
+      // ---------------------- Step Court ----------------------------
       'select_trainer': 'Select Trainer',
       'select_court_desc':
           'Tap a court to select · Tap the expand icon to preview',
       'choose_trainer_desc': 'Choose a trainer for your session',
       'pinch_to_zoom': 'Pinch to zoom',
 
-      // Step Date & Time
-      // Step Date & Time
+      // ---------------------- Step Date & Time ----------------------------
       'choose_date_desc': 'Choose a date for your booking',
       'week_of': 'Week of {date}',
       'current_week': 'Current Week',
@@ -195,7 +205,7 @@ class AppTranslations {
       'no_available_end_times': 'No available end times',
       'hours': 'hour(s)',
 
-      // Day translations
+      // ---------------------- Days ----------------------------
       'mon': 'Mon',
       'tue': 'Tue',
       'wed': 'Wed',
@@ -204,7 +214,7 @@ class AppTranslations {
       'sat': 'Sat',
       'sun': 'Sun',
 
-      // Month translations
+      // ---------------------- Months ----------------------------
       'jan': 'Jan',
       'feb': 'Feb',
       'mar': 'Mar',
@@ -218,7 +228,7 @@ class AppTranslations {
       'nov': 'Nov',
       'dec': 'Dec',
 
-      // Step Payment
+      // ---------------------- Step Payment ----------------------------
       'payment_method': 'Payment Method',
       'choose_payment_desc': 'Choose how you\'d like to pay',
       'select_payment_section': 'SELECT PAYMENT',
@@ -253,7 +263,7 @@ class AppTranslations {
       'cash_step3': 'Show your booking confirmation at the counter',
       'cash_step4': 'Pay the amount in cash and enjoy your game!',
 
-      // Payment Success Page
+      // ---------------------- Payment Success Page ----------------------------
       'payment_success_title': 'Payment Successful!',
       'payment_success_desc':
           'Your court has been reserved.\nSee you on the court!',
@@ -262,7 +272,7 @@ class AppTranslations {
       'booking': 'Booking',
       'total_paid': 'Total Paid',
 
-      // Password & Security
+      // ---------------------- Password & Security ----------------------------
       'password_security': 'Password & Security',
       'security_tips': 'Security Tips',
       'strong_password_tip':
@@ -281,7 +291,7 @@ class AppTranslations {
       'passwords_do_not_match': 'Passwords do not match',
       'password_changed_success': 'Password changed successfully!',
 
-      // Booked Detailed Screen
+      // ---------------------- Booked Detailed Screen ----------------------------
       'payment_summary': 'Payment Summary',
       'field_booking': 'Field Booking',
       'service_fee': 'Service Fee',
@@ -311,7 +321,7 @@ class AppTranslations {
       'hosted_by': 'Hosted by {name}',
       'response_rate': 'Response rate: 98%',
 
-      // Auth
+      // ---------------------- Authentication ----------------------------
       'login': 'Login',
       'sign_up': 'Sign Up',
       'phone_or_username': 'Phone or Username',
@@ -326,25 +336,22 @@ class AppTranslations {
       'resend_code': 'Didn\'t receive the code?',
       'resend': 'Resend',
       'verify': 'Verify',
-      // login
       'welcome_back': 'Welcome back! Please Sign in to continue',
       'valid_phone_required': 'Please enter a valid phone number',
       'password_hint': 'Enter your password',
       'password_required': 'Password is required',
-      // Sign Up
       'create_account_desc': 'Create your account to get started',
       'phone': 'Phone',
       'confirm_password_required': 'Please confirm your password',
       'confirm_password_hint': 'Confirm your password',
       'password_mismatch': "Password doesn't match",
-      // Forget
       'reset_password_desc': 'Reset your password',
       'reset_password': 'Reset Password',
       'remembered_password': 'Remembered your password?',
-      // Verify
       'resend_in': 'Resend in {seconds}s',
       'back_to': 'Back to ',
-      // Create Profile Screen
+
+      // ---------------------- Create Profile Screen ----------------------------
       'choose_photo': 'Choose Photo',
       'choose_from_library': 'Choose from Library',
       'take_a_photo': 'Take a Photo',
@@ -364,28 +371,26 @@ class AppTranslations {
       'create_profile': 'Create Profile',
       'skip_for_now': 'Skip for now',
 
-      // Messages
+      // ---------------------- Messages ----------------------------
       'booking_cancelled': 'Booking cancelled successfully',
       'profile_updated': 'Profile updated successfully',
       'password_changed': 'Password changed successfully',
       'all_notifications_read': 'All notifications marked as read',
 
-      // Time
+      // ---------------------- Time ----------------------------
       'tomorrow': 'Tomorrow',
       'yesterday': 'Yesterday',
 
-      // Status
+      // ---------------------- Status ----------------------------
       'confirmed': 'Confirmed',
       'pending': 'Pending',
       'cancelled': 'Cancelled',
 
-      // Landing Screen - Banner Titles
+      // ---------------------- Landing Screen ----------------------------
       'banner_title_1': 'Book Your\nGame Today!',
       'banner_title_2': 'Find Courts\nInstantly',
       'banner_title_3': 'Meet & Play\nWith Others',
       'banner_title_4': 'Track Every\nPerformance',
-
-      // Landing Screen - Banner Descriptions
       'banner_desc_1':
           'Find courts, book slots, and connect with players near you — all in one place.',
       'banner_desc_2':
@@ -395,14 +400,16 @@ class AppTranslations {
       'banner_desc_4':
           'Log your sessions, monitor progress, and push your personal best every time you play.',
     },
+
+    // ------------------------------------------------------------------------
+    // Khmer Translations
+    // ------------------------------------------------------------------------
     'km': {
-      // Landing Screen - Banner Titles
+      // ---------------------- Landing Screen ----------------------------
       'banner_title_1': 'កក់កីឡា\nរបស់អ្នកថ្ងៃនេះ!',
       'banner_title_2': 'ស្វែងរកទីលាន\nភ្លាមៗ',
       'banner_title_3': 'ជួប និងលេង\nជាមួយអ្នកដទៃ',
       'banner_title_4': 'តាមដាន\nការអនុវត្តន៍',
-
-      // Landing Screen - Banner Descriptions
       'banner_desc_1':
           'ស្វែងរកទីលាន កក់ពេលវេលា និងភ្ជាប់ជាមួយអ្នកលេងក្បែរអ្នក — ទាំងអស់នៅកន្លែងតែមួយ។',
       'banner_desc_2':
@@ -412,7 +419,7 @@ class AppTranslations {
       'banner_desc_4':
           'កត់ត្រាវគ្គរបស់អ្នក តាមដានវឌ្ឍនភាព និងបង្កើនសមត្ថភាពផ្ទាល់ខ្លួនរាល់ពេលដែលអ្នកលេង។',
 
-      // Common
+      // ---------------------- Common UI Elements ----------------------------
       'app_name': 'ស្ព័រមិត្ត',
       'ok': 'យល់ព្រម',
       'cancel': 'បោះបង់',
@@ -426,21 +433,23 @@ class AppTranslations {
       'book': 'កក់',
       'open': 'បើក',
       'closed': 'បិទ',
+      'view_all': 'មើលទាំងអស់',
+
+      // ---------------------- Sports Names ----------------------------
       'sport_football': 'Football',
       'sport_basketball': 'Basketball',
       'sport_tennis': 'Tennis',
       'sport_badminton': 'Badminton',
       'sport_gym': 'Gym',
-      'view_all': 'មើលទាំងអស់',
 
-      // Navigation
+      // ---------------------- Navigation ----------------------------
       'home': 'ទំព័រដើម',
       'explore': 'ស្វែងរក',
       'bookings': 'ការកក់',
       'settings': 'ការកំណត់',
       'profile': 'ប្រវត្តិរូប',
 
-      // Location Picker
+      // ---------------------- Location Picker ----------------------------
       'select_location': 'ជ្រើសរើសទីតាំង',
       'location_description':
           'ប្រើទីតាំងបច្ចុប្បន្នរបស់អ្នក ឬបញ្ចូលឈ្មោះទីក្រុង',
@@ -460,26 +469,26 @@ class AppTranslations {
       'enter_city_manually': 'បញ្ចូលទីក្រុងដោយខ្លួនឯង',
       'city_hint': 'ឧទាហរណ៍ ភ្នំពេញ, សៀមរាប...',
 
-      // Notification Categories
+      // ---------------------- Notification Categories ----------------------------
       'all': 'ទាំងអស់',
       'alerts': 'ការជូនដំណឹង',
       'messages': 'សារ',
       'promotions': 'ការផ្សព្វផ្សាយ',
 
-      // Home Screen
+      // ---------------------- Home Screen ----------------------------
       'clubs_nearby': 'ក្លឹបក្បែរអ្នក',
       'upcoming_bookings': 'ការកក់នាពេលខាងមុខ',
       'no_bookings': 'គ្មានការកក់សម្រាប់កីឡានេះ',
       'hello_message': 'សួស្តី, {name} 👋',
       'no_clubs_for_sport': 'គ្មានក្លឹបសម្រាប់កីឡានេះ',
 
-      // Explore Screen
+      // ---------------------- Explore Screen ----------------------------
       'nearby': 'ក្បែរអ្នក',
       'no_nearby_clubs': 'រកមិនឃើញក្លឹបនៅក្បែរអ្នក!',
       'no_results_for': 'រកមិនឃើញលទ្ធផលសម្រាប់ "{query}"',
       'search_hint': 'ស្វែងរកក្លឹប កីឡា...',
 
-      // Booking
+      // ---------------------- Booking ----------------------------
       'search': 'ស្វែងរក',
       'book_now': 'កក់ឥឡូវ',
       'select_sport': 'ជ្រើសរើសកីឡា',
@@ -502,7 +511,7 @@ class AppTranslations {
       'reschedule': 'កំណត់ពេលវេលាឡើងវិញ',
       'reschedule_coming_soon': 'លក្ខណៈពិសេសកំណត់ពេលវេលាឡើងវិញនឹងមកដល់ឆាប់ៗ',
 
-      // Booking Flow
+      // ---------------------- Booking Flow ----------------------------
       'court': 'ទីលាន',
       'date_time': 'កាលបរិច្ឆេទ-ម៉ោង',
       'category': 'ប្រភេទ',
@@ -511,7 +520,7 @@ class AppTranslations {
       'court_label': 'ទីលានលេខ {number}',
       'today': 'ថ្ងៃនេះ',
 
-      // Club Detailed Screen
+      // ---------------------- Club Detailed Screen ----------------------------
       'facilities': 'បរិក្ខារ',
       'sports_available': 'កីឡាដែលអាចលេងបាន',
       'pricing': 'តម្លៃ',
@@ -538,7 +547,7 @@ class AppTranslations {
       'open_now': 'កំពុងបើក',
       'book_court': 'កក់ទីលាន',
 
-      // Settings
+      // ---------------------- Settings Screen ----------------------------
       'settings_title': 'ការកំណត់',
       'account': 'គណនី',
       'preferences': 'ចំណូលចិត្ត',
@@ -575,7 +584,7 @@ class AppTranslations {
       'light': 'ភ្លឺ',
       'system': 'ប្រព័ន្ធ',
 
-      // Step Category
+      // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'ជ្រើសរើសកីឡាដើម្បីកក់នៅ {name}',
       'football_subtitle': 'កក់ទីលានធំ ឬទីលានតូច',
       'badminton_subtitle': 'ទីលានក្នុងផ្ទះជាមួយផ្ទៃសំយោគ',
@@ -584,14 +593,14 @@ class AppTranslations {
       'gym_subtitle': 'កក់វគ្គជាមួយគ្រូបង្វឹកផ្ទាល់ខ្លួន',
       'book_your_session': 'កក់វគ្គរបស់អ្នក',
 
-      // Step Court
+      // ---------------------- Step Court ----------------------------
       'select_trainer': 'ជ្រើសរើសគ្រូបង្វឹក',
       'select_court_desc':
           'ចុចលើទីលានដើម្បីជ្រើសរើស · ចុចរូបតំណាងពង្រីកដើម្បីមើល',
       'choose_trainer_desc': 'ជ្រើសរើសគ្រូបង្វឹកសម្រាប់វគ្គរបស់អ្នក',
       'pinch_to_zoom': 'ច្របាច់ដើម្បីពង្រីក',
 
-      // Step Date & Time
+      // ---------------------- Step Date & Time ----------------------------
       'choose_date_desc': 'ជ្រើសរើសកាលបរិច្ឆេទសម្រាប់ការកក់របស់អ្នក',
       'week_of': 'សប្តាហ៍នៃ {date}',
       'current_week': 'សប្តាហ៍បច្ចុប្បន្ន',
@@ -602,7 +611,7 @@ class AppTranslations {
       'no_available_end_times': 'គ្មានម៉ោងបញ្ចប់ដែលអាចរកបាន',
       'hours': 'ម៉ោង',
 
-      // Day translations
+      // ---------------------- Days ----------------------------
       'mon': 'ចន្ទ',
       'tue': 'អង្គារ',
       'wed': 'ពុធ',
@@ -611,7 +620,7 @@ class AppTranslations {
       'sat': 'សៅរ៍',
       'sun': 'អាទិត្យ',
 
-      // Month translations
+      // ---------------------- Months ----------------------------
       'jan': 'មករា',
       'feb': 'កុម្ភៈ',
       'mar': 'មីនា',
@@ -625,7 +634,7 @@ class AppTranslations {
       'nov': 'វិច្ឆិកា',
       'dec': 'ធ្នូ',
 
-      // Step Payment
+      // ---------------------- Step Payment ----------------------------
       'payment_method': 'វិធីសាស្ត្រទូទាត់',
       'choose_payment_desc': 'ជ្រើសរើសរបៀបដែលអ្នកចង់បង់ប្រាក់',
       'select_payment_section': 'ជ្រើសរើសការទូទាត់',
@@ -660,7 +669,7 @@ class AppTranslations {
       'cash_step3': 'បង្ហាញការបញ្ជាក់ការកក់របស់អ្នកនៅតុទទួលប្រាក់',
       'cash_step4': 'បង់ប្រាក់ជាសាច់ប្រាក់ និងរីករាយជាមួយការប្រកួតរបស់អ្នក!',
 
-      // Payment Success Page
+      // ---------------------- Payment Success Page ----------------------------
       'payment_success_title': 'ការទូទាត់បានជោគជ័យ!',
       'payment_success_desc':
           'ទីលានរបស់អ្នកត្រូវបានកក់រួចរាល់។\nជួបគ្នានៅលើទីលាន!',
@@ -669,7 +678,7 @@ class AppTranslations {
       'booking': 'ការកក់',
       'total_paid': 'បានបង់សរុប',
 
-      // Password & Security
+      // ---------------------- Password & Security ----------------------------
       'password_security': 'ពាក្យសម្ងាត់ និងសុវត្ថិភាព',
       'security_tips': 'គន្លឹះសុវត្ថិភាព',
       'strong_password_tip': 'ប្រើពាក្យសម្ងាត់រឹងមាំដែលមានអក្សរ លេខ និងសញ្ញា',
@@ -687,7 +696,7 @@ class AppTranslations {
       'passwords_do_not_match': 'ពាក្យសម្ងាត់មិនត្រូវគ្នាទេ',
       'password_changed_success': 'បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ!',
 
-      // Booked Detailed Screen
+      // ---------------------- Booked Detailed Screen ----------------------------
       'payment_summary': 'សេចក្តីសង្ខេបការទូទាត់',
       'field_booking': 'ការកក់ទីលាន',
       'service_fee': 'ថ្លៃសេវា',
@@ -715,7 +724,7 @@ class AppTranslations {
       'hosted_by': 'រៀបចំដោយ {name}',
       'response_rate': 'អត្រាឆ្លើយតប: ៩៨%',
 
-      // Auth
+      // ---------------------- Authentication ----------------------------
       'login': 'ចូល',
       'sign_up': 'ចុះឈ្មោះ',
       'phone_or_username': 'លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើ',
@@ -730,25 +739,22 @@ class AppTranslations {
       'resend_code': 'មិនបានទទួលកូដ?',
       'resend': 'ផ្ញើម្តងទៀត',
       'verify': 'ផ្ទៀងផ្ទាត់',
-      // Log In
       'welcome_back': 'សូមស្វាគមន៍មកកាន់! សូមចូលដើម្បីបន្ត',
       'valid_phone_required': 'សូមបញ្ចូលលេខទូរស័ព្ទដែលមានសុពលភាព',
       'password_hint': 'បញ្ចូលពាក្យសម្ងាត់របស់អ្នក',
       'password_required': 'តម្រូវឱ្យបញ្ចូលពាក្យសម្ងាត់',
-      // Sign Up
       'create_account_desc': 'បង្កើតគណនីរបស់អ្នកដើម្បីចាប់ផ្តើម',
       'phone': 'លេខទូរស័ព្ទ',
       'confirm_password_required': 'សូមបញ្ជាក់ពាក្យសម្ងាត់របស់អ្នក',
       'confirm_password_hint': 'បញ្ជាក់ពាក្យសម្ងាត់របស់អ្នក',
       'password_mismatch': 'ពាក្យសម្ងាត់មិនត្រូវគ្នា',
-      // Forget
       'reset_password_desc': 'កំណត់ពាក្យសម្ងាត់របស់អ្នកឡើងវិញ',
       'reset_password': 'កំណត់ពាក្យសម្ងាត់ឡើងវិញ',
       'remembered_password': 'ចងចាំពាក្យសម្ងាត់របស់អ្នក?',
-      // Verify
       'resend_in': 'ផ្ញើម្តងទៀតក្នុងរយៈពេល {seconds} វិនាទី',
       'back_to': 'ត្រឡប់ទៅ ',
-      // Create Profile Screen
+
+      // ---------------------- Create Profile Screen ----------------------------
       'choose_photo': 'ជ្រើសរើសរូបថត',
       'choose_from_library': 'ជ្រើសរើសពីបណ្ណាល័យ',
       'take_a_photo': 'ថតរូប',
@@ -768,29 +774,35 @@ class AppTranslations {
       'create_profile': 'បង្កើតប្រវត្តិរូប',
       'skip_for_now': 'រំលងសម្រាប់ពេលនេះ',
 
-      // Messages
+      // ---------------------- Messages ----------------------------
       'booking_cancelled': 'បានបោះបង់ការកក់ដោយជោគជ័យ',
       'profile_updated': 'បានធ្វើបច្ចុប្បន្នភាពប្រវត្តិរូបដោយជោគជ័យ',
       'password_changed': 'បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ',
       'all_notifications_read': 'បានសម្គាល់ការជូនដំណឹងទាំងអស់ថាបានអាន',
 
-      // Time
+      // ---------------------- Time ----------------------------
       'tomorrow': 'ថ្ងៃស្អែក',
       'yesterday': 'ម្សិលមិញ',
 
-      // Status
+      // ---------------------- Status ----------------------------
       'confirmed': 'បានបញ្ជាក់',
       'pending': 'កំពុងរង់ចាំ',
       'cancelled': 'បានបោះបង់',
     },
   };
 
+  // ============================================================================
+  // Public Methods
+  // ============================================================================
+
+  /// Translates a given key to the specified locale.
+  /// If the translation is not found, falls back to English or returns the key itself.
   static String translate(String key, {String? locale}) {
     final languageCode = locale ?? 'en';
     final translation = _translations[languageCode]?[key];
 
     if (translation == null) {
-      // Fallback to English if translation not found
+      // Log missing translations for debugging
       debugPrint(
         'Missing translation for key: $key in language: $languageCode',
       );
@@ -801,7 +813,13 @@ class AppTranslations {
   }
 }
 
-// Extension for easy access
+// ============================================================================
+// String Extension for Convenient Translation
+// ============================================================================
+
+/// Extension on String to easily translate text using BuildContext.
+///
+/// Usage: 'hello'.tr(context)
 extension StringTranslation on String {
   String tr(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(

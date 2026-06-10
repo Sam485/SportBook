@@ -7,8 +7,8 @@ import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class VerifyScreen extends StatefulWidget {
-  bool isSignUp;
-  VerifyScreen({super.key, required this.isSignUp});
+  final bool isSignUp;
+  const VerifyScreen({super.key, required this.isSignUp});
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
