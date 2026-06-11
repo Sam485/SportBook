@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/models/models.dart';
+import 'package:sportbook/services/data_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -20,107 +22,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   String _selectedCat = 'all';
 
   // Sample notification data (keep original English text)
-  final List<NotificationItem> notifications = [
-    NotificationItem(
-      icon: Icons.check_circle,
-      title: 'Booking Confirmed',
-      description: 'Your booking at Victory FC Club has been confirmed.',
-      datetime: 'Today - 2 mins ago',
-      category: 'bookings',
-      iconColor: Colors.green,
-    ),
-    NotificationItem(
-      icon: Icons.sports_soccer,
-      title: 'Match Reminder',
-      description: 'Manchester United vs Liverpool starts in 2 hours.',
-      datetime: 'Today - 1 hour ago',
-      category: 'alerts',
-      iconColor: Colors.orange,
-    ),
-    NotificationItem(
-      icon: Icons.message,
-      title: 'New Message from Coach',
-      description: 'Practice session rescheduled to 5 PM tomorrow.',
-      datetime: 'Yesterday - 8:30 PM',
-      category: 'messages',
-      iconColor: Colors.blue,
-    ),
-    NotificationItem(
-      icon: Icons.local_offer,
-      title: 'Weekend Special Offer',
-      description: 'Get 20% off on all turf bookings this weekend!',
-      datetime: 'Yesterday - 10:15 AM',
-      category: 'promotions',
-      iconColor: Colors.purple,
-    ),
-    NotificationItem(
-      icon: Icons.event_available,
-      title: 'Payment Successful',
-      description:
-          'Your payment of ₹1500 for Victory FC Club has been received.',
-      datetime: 'Jan 15, 2026 - 3:30 PM',
-      category: 'bookings',
-      iconColor: Colors.green,
-    ),
-    NotificationItem(
-      icon: Icons.warning,
-      title: 'Match Cancelled',
-      description: 'Sunday\'s match has been cancelled due to bad weather.',
-      datetime: 'Jan 14, 2026 - 9:00 AM',
-      category: 'alerts',
-      iconColor: Colors.red,
-    ),
-    NotificationItem(
-      icon: Icons.people,
-      title: 'Team Invitation',
-      description: 'You\'ve been invited to join "Weekend Warriors" team.',
-      datetime: 'Jan 13, 2026 - 6:45 PM',
-      category: 'messages',
-      iconColor: Colors.teal,
-    ),
-    NotificationItem(
-      icon: Icons.emoji_events,
-      title: 'Tournament Alert',
-      description: 'Registration for Summer Cup 2026 is now open!',
-      datetime: 'Jan 12, 2026 - 2:00 PM',
-      category: 'alerts',
-      iconColor: Colors.amber,
-    ),
-    NotificationItem(
-      icon: Icons.star,
-      title: 'Achievement Unlocked',
-      description:
-          'You\'ve completed 10 bookings! Bronze member badge awarded.',
-      datetime: 'Jan 10, 2026 - 11:20 AM',
-      category: 'promotions',
-      iconColor: Colors.yellow,
-    ),
-    NotificationItem(
-      icon: Icons.refresh,
-      title: 'Booking Rescheduled',
-      description: 'Your booking has been rescheduled to Jan 20th at 6 PM.',
-      datetime: 'Jan 9, 2026 - 4:15 PM',
-      category: 'bookings',
-      iconColor: Colors.orange,
-    ),
-    NotificationItem(
-      icon: Icons.feedback,
-      title: 'Rate Your Experience',
-      description:
-          'How was your recent match at Victory FC Club? Leave a review!',
-      datetime: 'Jan 8, 2026 - 10:00 AM',
-      category: 'messages',
-      iconColor: Colors.indigo,
-    ),
-    NotificationItem(
-      icon: Icons.card_giftcard,
-      title: 'Birthday Special',
-      description: 'Happy Birthday! Enjoy a free session on us this week.',
-      datetime: 'Jan 5, 2026 - 12:00 PM',
-      category: 'promotions',
-      iconColor: Colors.pink,
-    ),
-  ];
+  final List<NotificationItem> notifications = DataService.notification;
 
   List<NotificationItem> get _filteredNotifications {
     if (_selectedCat == 'all') {
@@ -390,25 +292,4 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
     );
   }
-}
-
-// Notification Model
-class NotificationItem {
-  final IconData icon;
-  final String title;
-  final String description;
-  final String datetime;
-  final String category;
-  final Color iconColor;
-  bool isRead;
-
-  NotificationItem({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.datetime,
-    required this.category,
-    required this.iconColor,
-    this.isRead = false,
-  });
 }

@@ -48,7 +48,7 @@ class SportMateApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            initialRoute: AppRoutes.landing,
+            initialRoute: AppRoutes.home,
             onGenerateRoute: AppRoutes.onGenerateRoute,
           );
         },

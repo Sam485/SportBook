@@ -242,6 +242,138 @@ class DataService {
           'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&q=80',
     ),
   ];
+  
+  // ── Banner ──────────────────────────────────────────────────────────────
+  static List<NotificationItem> notification =[
+    NotificationItem(
+      icon: Icons.check_circle,
+      title: 'Booking Confirmed',
+      description: 'Your booking at Victory FC Club has been confirmed.',
+      datetime: 'Today - 2 mins ago',
+      category: 'bookings',
+      iconColor: Colors.green,
+    ),
+    NotificationItem(
+      icon: Icons.sports_soccer,
+      title: 'Match Reminder',
+      description: 'Manchester United vs Liverpool starts in 2 hours.',
+      datetime: 'Today - 1 hour ago',
+      category: 'alerts',
+      iconColor: Colors.orange,
+    ),
+    NotificationItem(
+      icon: Icons.message,
+      title: 'New Message from Coach',
+      description: 'Practice session rescheduled to 5 PM tomorrow.',
+      datetime: 'Yesterday - 8:30 PM',
+      category: 'messages',
+      iconColor: Colors.blue,
+    ),
+    NotificationItem(
+      icon: Icons.local_offer,
+      title: 'Weekend Special Offer',
+      description: 'Get 20% off on all turf bookings this weekend!',
+      datetime: 'Yesterday - 10:15 AM',
+      category: 'promotions',
+      iconColor: Colors.purple,
+    ),
+    NotificationItem(
+      icon: Icons.event_available,
+      title: 'Payment Successful',
+      description:
+          'Your payment of ₹1500 for Victory FC Club has been received.',
+      datetime: 'Jan 15, 2026 - 3:30 PM',
+      category: 'bookings',
+      iconColor: Colors.green,
+    ),
+    NotificationItem(
+      icon: Icons.warning,
+      title: 'Match Cancelled',
+      description: 'Sunday\'s match has been cancelled due to bad weather.',
+      datetime: 'Jan 14, 2026 - 9:00 AM',
+      category: 'alerts',
+      iconColor: Colors.red,
+    ),
+    NotificationItem(
+      icon: Icons.people,
+      title: 'Team Invitation',
+      description: 'You\'ve been invited to join "Weekend Warriors" team.',
+      datetime: 'Jan 13, 2026 - 6:45 PM',
+      category: 'messages',
+      iconColor: Colors.teal,
+    ),
+    NotificationItem(
+      icon: Icons.emoji_events,
+      title: 'Tournament Alert',
+      description: 'Registration for Summer Cup 2026 is now open!',
+      datetime: 'Jan 12, 2026 - 2:00 PM',
+      category: 'alerts',
+      iconColor: Colors.amber,
+    ),
+    NotificationItem(
+      icon: Icons.star,
+      title: 'Achievement Unlocked',
+      description:
+          'You\'ve completed 10 bookings! Bronze member badge awarded.',
+      datetime: 'Jan 10, 2026 - 11:20 AM',
+      category: 'promotions',
+      iconColor: Colors.yellow,
+    ),
+    NotificationItem(
+      icon: Icons.refresh,
+      title: 'Booking Rescheduled',
+      description: 'Your booking has been rescheduled to Jan 20th at 6 PM.',
+      datetime: 'Jan 9, 2026 - 4:15 PM',
+      category: 'bookings',
+      iconColor: Colors.orange,
+    ),
+    NotificationItem(
+      icon: Icons.feedback,
+      title: 'Rate Your Experience',
+      description:
+          'How was your recent match at Victory FC Club? Leave a review!',
+      datetime: 'Jan 8, 2026 - 10:00 AM',
+      category: 'messages',
+      iconColor: Colors.indigo,
+    ),
+    NotificationItem(
+      icon: Icons.card_giftcard,
+      title: 'Birthday Special',
+      description: 'Happy Birthday! Enjoy a free session on us this week.',
+      datetime: 'Jan 5, 2026 - 12:00 PM',
+      category: 'promotions',
+      iconColor: Colors.pink,
+    ),
+  ];
+
+  // ── Banner ──────────────────────────────────────────────────────────────
+  static List<BannerSport> bannerSport = [
+    BannerSport(
+      id: 1,
+      name:
+          'https://imgs.search.brave.com/XNAVwFxoVagfWe_ADlCQObgy3cTH3zT9UzAB4tm8k3E/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzdkLzU2/Lzg1LzdkNTY4NWJk/NTBmZjQ2MmRkM2Iw/ZjMxZmM4ZDcwYzli/LmpwZw',
+    ),
+    BannerSport(
+      id: 2,
+      name:
+          'https://imgs.search.brave.com/kNCsOQhi-aUgzvIEIuQOF4iAGo-gg_m7klVqN63-3us/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9taXIt/czMtY2RuLWNmLmJl/aGFuY2UubmV0L3By/b2plY3RzLzQwNC8w/NTBiYzkyNDk2Mjg1/MjMuWTNKdmNDdzRN/akFzTmpReExEVTBP/Q3d4T0RJLnBuZw',
+    ),
+    BannerSport(
+      id: 3,
+      name:
+          'https://imgs.search.brave.com/F4jmStNsufHtqiCRrcW64lC47tIs3Ch9n4rCfoAiBW8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9kM2pt/bjAxcmkxZnpnbC5j/bG91ZGZyb250Lm5l/dC9waG90b2Fka2lu/Zy93ZWJwX3RodW1i/bmFpbC9yZWQtYW5k/LXdoaXRlLWltcHJv/dmUtc3BvcnRzLXNr/aWxsLXNwb3J0cy1i/YW5uZXItdGVtcGxh/dGUtNjVydnNxM2M0/NTQxYTAud2VicA',
+    ),
+    BannerSport(
+      id: 4,
+      name:
+          'https://imgs.search.brave.com/2zEovOYU5ZJCLn92gtNi84eHOXMkd4LL0UXJYhEf2oY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/Z2F0b3JwcmludHMu/Y29tL3dwLWNvbnRl/bnQvdXBsb2Fkcy8y/MDE1LzAzL0Zvb3Ri/YWxsLUZpcmUtU3Bv/cnRzLUJhbm5lci0x/OTIweDk2MC5qcGc',
+    ),
+    BannerSport(
+      id: 5,
+      name:
+          'https://imgs.search.brave.com/GbaPJVSOcJ-W71AvFWGNTnDgbWVmnksL9PZOI5F5pOQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2Y2LzVk/L2QxL2Y2NWRkMWFj/MTNhNzYwYTc2YzQ5/ZmE0ODRmODhkNmMx/LmpwZw',
+    ),
+  ];
 
   // ── Emoji map ──────────────────────────────────────────────────────────────
   static String emojiFor(String sport) {
