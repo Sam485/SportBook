@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme.dart';
 import '../../translations/app_translations.dart';
+import 'map_picker_screen.dart';
 
 class LocationPickerSheet extends StatefulWidget {
   const LocationPickerSheet({super.key});
@@ -17,6 +18,8 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
   bool _isLocating = false;
   String? _errorMsg;
   bool _isPermanentlyDenied = false;
+
+  // ── GPS / Current Location ──────────────────────────────────────────────────
 
   Future<void> _useCurrentLocation() async {
     setState(() {
@@ -93,6 +96,18 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
     }
   }
 
+  // ── Open full-screen map picker ─────────────────────────────────────────────
+
+  Future<void> _openMapPicker() async {
+    // Close the sheet first, then open map as a full-screen route so the
+    // result can bubble back to the HomeScreen via Navigator.
+    Navigator.pop(context, _kOpenMap); // sentinel value
+  }
+
+  static const String _kOpenMap = '__open_map__';
+
+  // ── Manual text entry ───────────────────────────────────────────────────────
+
   void _confirmManual() {
     final text = _searchCtrl.text.trim();
     if (text.isNotEmpty) Navigator.pop(context, text);
@@ -103,6 +118,8 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
     _searchCtrl.dispose();
     super.dispose();
   }
+
+  // ── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +136,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Handle ──
           Center(
             child: Container(
               width: 40,
@@ -130,6 +148,8 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // ── Title ──
           Text(
             'select_location'.tr(context),
             style: TextStyle(
@@ -148,55 +168,42 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
           ),
           const SizedBox(height: 20),
 
-          // ── GPS button ──
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isLocating ? null : _useCurrentLocation,
-              icon: _isLocating
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: isDark ? const Color(0xFF0A1828) : Colors.white,
-                      ),
-                    )
-                  : Icon(
-                      _isPermanentlyDenied
-                          ? Icons.settings_rounded
-                          : Icons.my_location_rounded,
-                      size: 18,
-                      color: isDark ? const Color(0xFF0A1828) : Colors.white,
-                    ),
-              label: Text(
-                _isLocating
-                    ? 'detecting_location'.tr(context)
-                    : _isPermanentlyDenied
-                    ? 'open_settings'.tr(context)
-                    : 'use_current_location'.tr(context),
-                style: TextStyle(
-                  color: isDark ? const Color(0xFF0A1828) : Colors.white,
+          // ── Two primary action buttons ──
+          Row(
+            children: [
+              // Current Location
+              Expanded(
+                child: _ActionTile(
+                  icon: _isLocating
+                      ? null
+                      : (_isPermanentlyDenied
+                            ? Icons.settings_rounded
+                            : Icons.my_location_rounded),
+                  isLoading: _isLocating,
+                  label: _isLocating
+                      ? 'detecting_location'.tr(context)
+                      : _isPermanentlyDenied
+                      ? 'open_settings'.tr(context)
+                      : 'use_current_location'.tr(context),
+                  isDark: isDark,
+                  onTap: _isLocating ? null : _useCurrentLocation,
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.kAccent,
-                foregroundColor: isDark
-                    ? const Color(0xFF0A1828)
-                    : Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 12),
+              // Pin on Map
+              Expanded(
+                child: _ActionTile(
+                  icon: Icons.map_rounded,
+                  label: 'pin_on_map'.tr(context),
+                  isDark: isDark,
+                  onTap: _openMapPicker,
+                  isSecondary: true,
                 ),
               ),
-            ),
+            ],
           ),
 
-          // ── Error + action
+          // ── Error message ──
           if (_errorMsg != null) ...[
             const SizedBox(height: 10),
             Row(
@@ -240,6 +247,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
             ),
           ],
 
+          // ── Divider ──
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Row(
@@ -272,6 +280,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
             ),
           ),
 
+          // ── Manual entry ──
           Text(
             'enter_city_manually'.tr(context),
             style: TextStyle(
@@ -337,6 +346,85 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Helper tile widget ──────────────────────────────────────────────────────
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.label,
+    required this.isDark,
+    this.icon,
+    this.onTap,
+    this.isLoading = false,
+    this.isSecondary = false,
+  });
+
+  final IconData? icon;
+  final String label;
+  final bool isDark;
+  final VoidCallback? onTap;
+  final bool isLoading;
+  final bool isSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isSecondary
+        ? (isDark ? AppTheme.kBg : AppTheme.kLightBg)
+        : AppTheme.kAccent;
+    final fg = isSecondary
+        ? (isDark ? Colors.white : AppTheme.kLightText)
+        : (isDark ? const Color(0xFF0A1828) : Colors.white);
+    final borderColor = isSecondary
+        ? (isDark ? AppTheme.kBorder : AppTheme.kLightBorder)
+        : AppTheme.kAccent;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor, width: 1.2),
+          boxShadow: isSecondary
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppTheme.kAccent.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading)
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+              )
+            else
+              Icon(icon, color: fg, size: 22),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: fg,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

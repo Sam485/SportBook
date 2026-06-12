@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
 import 'package:sportbook/screens/auth/create_profile_screen.dart';
 import 'package:sportbook/screens/auth/forget_screen.dart';
 import 'package:sportbook/screens/auth/landing_screen.dart';
@@ -9,7 +10,7 @@ import 'package:sportbook/screens/bookings/bookings_screen.dart';
 import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 import 'package:sportbook/screens/home/Notification/notification_screen.dart';
 import 'package:sportbook/screens/home/ViewAll/view_all.dart';
-import '../models/models.dart';
+import '../feature/models/models.dart';
 import '../screens/main_screen.dart';
 import '../screens/booking_flow/booking_flow_screen.dart';
 import '../screens/club_detailed/club_detailed.dart';
@@ -53,7 +54,10 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
 
       case createProfile:
-        return MaterialPageRoute(builder: (_) => CreateProfileScreen());
+        final args = settings.arguments as RegisterRequestDto;
+        return MaterialPageRoute(
+          builder: (_) => CreateProfileScreen(user: args),
+        );
 
       case bookedDetailed:
         final target = settings.arguments as SportBooking;
@@ -62,7 +66,7 @@ class AppRoutes {
         );
 
       case verify:
-        final target = settings.arguments as bool;
+        final target = settings.arguments as RegisterRequestDto?;
         return MaterialPageRoute(
           builder: (_) => VerifyScreen(isSignUp: target),
         );

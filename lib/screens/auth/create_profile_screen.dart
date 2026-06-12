@@ -2,12 +2,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
+import 'package:sportbook/feature/user_feature/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class CreateProfileScreen extends StatefulWidget {
-  const CreateProfileScreen({super.key});
+  final RegisterRequestDto user;
+  const CreateProfileScreen({super.key, required this.user});
 
   @override
   State<CreateProfileScreen> createState() => _CreateProfileScreenState();
@@ -21,6 +25,51 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   File? _selectedImage;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
+  final _userRepository = getIt<Userrepository>();
+
+  Future<void> _handleCreateProfile(String username, String? email) async {
+    try {
+      setState(() => _isLoading = true);
+
+      // Create the complete registration object
+      final registerRequest = RegisterRequestDto.fromInput(
+        RegisterRequestDto(
+          email: email!,
+          phone: widget.user.phone,
+          password: widget.user.password,
+          name: username,
+        ),
+      );
+
+      // Call the register API
+      final response = await _userRepository.registerUser(registerRequest);
+
+      print('Registration successful: ${response.user.name}');
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        // Navigate to verify screen with user data
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.verify,
+          arguments: {'isSignUp': true, 'userData': response.user},
+        );
+      }
+    } catch (e) {
+      print('Registration failed: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('registration_failed'.tr(context)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -149,17 +198,17 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
     if (picked != null) {
       setState(() => _selectedImage = File(picked.path));
+      // TODO: Upload image to server if needed
     }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _isLoading = false);
-    if (mounted) {
-      Navigator.pushNamed(context, AppRoutes.home);
-    }
+
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+
+    await _handleCreateProfile(username, email.isEmpty ? '' : email);
   }
 
   @override
@@ -489,7 +538,14 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: GestureDetector(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.home),
+        onTap: () {
+          // Skip profile creation and navigate to verify with the existing user data
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.verify,
+            arguments: {'isSignUp': true, 'userData': widget.user},
+          );
+        },
         child: Text(
           'skip_for_now'.tr(context),
           style: TextStyle(

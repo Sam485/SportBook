@@ -87,7 +87,7 @@ class AppTranslations {
       'search': 'Search',
       'book_now': 'Book Now',
       'select_sport': 'Select Sport',
-      'select_court': 'Select Court',
+      'select_court': 'Select Booking',
       'select_date': 'Select Date',
       'select_time': 'Select Time',
       'payment': 'Payment',
@@ -351,6 +351,22 @@ class AppTranslations {
       'remembered_password': 'Remembered your password?',
       'resend_in': 'Resend in {seconds}s',
       'back_to': 'Back to ',
+      // Add to the Authentication section in English
+      'email_phone_username': 'Email, Phone or Username',
+      'email_phone_username_hint': 'Enter your email, phone or username',
+      'identifier_required': 'Email, phone or username is required',
+      'invalid_email_format':
+          'Please enter a valid email address (e.g., user@example.com)',
+      'invalid_phone_format':
+          'Please enter a valid Cambodian phone number (e.g., 0123456789, 85512345678, +85512345678)',
+      'invalid_phone_length':
+          'Phone number must be 9-10 digits after country code',
+      'username_too_short': 'Username must be at least 3 characters',
+      'username_too_long': 'Username must be less than 30 characters',
+      'invalid_identifier':
+          'Please enter a valid email, phone number, or username (letters, numbers, dots, underscores)',
+      'login_success': 'Login successful!',
+      'login_failed': 'Login failed. Please check your credentials',
 
       // ---------------------- Create Profile Screen ----------------------------
       'choose_photo': 'Choose Photo',
@@ -755,6 +771,23 @@ class AppTranslations {
       'remembered_password': 'ចងចាំពាក្យសម្ងាត់របស់អ្នក?',
       'resend_in': 'ផ្ញើម្តងទៀតក្នុងរយៈពេល {seconds} វិនាទី',
       'back_to': 'ត្រឡប់ទៅ ',
+      // Add to the Authentication section in Khmer
+      'email_phone_username': 'អ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើ',
+      'email_phone_username_hint':
+          'បញ្ចូលអ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើរបស់អ្នក',
+      'identifier_required': 'តម្រូវឱ្យបញ្ចូលអ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើ',
+      'invalid_email_format':
+          'សូមបញ្ចូលអាសយដ្ឋានអ៊ីមែលដែលមានសុពលភាព (ឧទាហរណ៍ user@example.com)',
+      'invalid_phone_format':
+          'សូមបញ្ចូលលេខទូរស័ព្ទកម្ពុជាដែលមានសុពលភាព (ឧទាហរណ៍ ០១២៣៤៥៦៧៨៩, ៨៥៥១២៣៤៥៦៧៨, +៨៥៥១២៣៤៥៦៧៨)',
+      'invalid_phone_length':
+          'លេខទូរស័ព្ទត្រូវតែមាន ៩-១០ ខ្ទង់បន្ទាប់ពីកូដប្រទេស',
+      'username_too_short': 'ឈ្មោះអ្នកប្រើត្រូវតែមានយ៉ាងហោចណាស់ ៣ តួអក្សរ',
+      'username_too_long': 'ឈ្មោះអ្នកប្រើត្រូវតែតិចជាង ៣០ តួអក្សរ',
+      'invalid_identifier':
+          'សូមបញ្ចូលអ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើដែលមានសុពលភាព (អក្សរ លេខ ចំនុច គូសក្រោម)',
+      'login_success': 'ការចូលបានជោគជ័យ!',
+      'login_failed': 'ការចូលបរាជ័យ។ សូមពិនិត្យមើលព័ត៌មានសម្គាល់របស់អ្នក',
 
       // ---------------------- Create Profile Screen ----------------------------
       'choose_photo': 'ជ្រើសរើសរូបថត',

@@ -7,7 +7,7 @@ import 'package:sportbook/screens/settings/features/language_selection.dart';
 import 'package:sportbook/screens/settings/features/password_security.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import '../../core/theme.dart';
-import '../../models/models.dart';
+import '../../feature/models/models.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 

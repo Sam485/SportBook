@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../feature/models/models.dart';
 
 class BookingProvider extends ChangeNotifier {
   // ── Flow state ─────────────────────────────────────────────────────────────

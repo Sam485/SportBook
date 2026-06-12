@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/user_feature/model/login_request_dto.dart';
+import 'package:sportbook/feature/user_feature/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
@@ -13,13 +16,40 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool isChecked = false;
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _identifierController =
+      TextEditingController(); // Renamed for clarity
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  final _userRepository = getIt<Userrepository>();
+  String? _identifierError;
+
+  Future<void> _handleLogin(String input, String password) async {
+    try {
+      final loginRequest = LoginRequestDto.fromInput(input, password);
+      final response = await _userRepository.loginUser(loginRequest);
+      print('Login successful: ${response.user.name}');
+      if (mounted) {
+        Navigator.pop(context);
+      }
+      if (mounted) {
+        Navigator.pushNamed(context, AppRoutes.verify);
+      }
+    } catch (e) {
+      print('Login failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('login_failed'.tr(context)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -100,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'phone_or_username'.tr(context),
+              'email_phone_username'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
@@ -108,30 +138,30 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 10),
             TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
+              controller: _identifierController,
+              keyboardType: TextInputType.text,
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'phone_required'.tr(context);
+              validator: (value) => _validateIdentifier(value, context),
+              onChanged: (value) {
+                // Clear error when user starts typing
+                if (_identifierError != null) {
+                  setState(() {
+                    _identifierError = null;
+                  });
                 }
-                if (value.length < 9) {
-                  return 'valid_phone_required'.tr(context);
-                }
-                return null;
               },
               decoration: InputDecoration(
-                hintText: 'phone_hint'.tr(context),
+                hintText: 'email_phone_username_hint'.tr(context),
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
                 prefixIcon: Icon(
-                  Icons.phone,
+                  Icons.person_outline,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 ),
-                suffixIcon: null,
+                errorText: _identifierError,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -285,6 +315,51 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  String? _validateIdentifier(String? value, BuildContext context) {
+    if (value == null || value.trim().isEmpty) {
+      return 'identifier_required'.tr(context);
+    }
+
+    final trimmedValue = value.trim();
+
+    // Check if it's an email
+    final isEmail = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(trimmedValue);
+
+    // Check if it's a valid phone number (Cambodian format)
+    final isPhoneNumber = RegExp(
+      r'^(\+855|855|0)[0-9]{8,9}$',
+    ).hasMatch(trimmedValue);
+
+    // Check if it's a username (alphanumeric and some special characters, min 3 chars)
+    final isUsername = RegExp(r'^[a-zA-Z0-9._]{3,30}$').hasMatch(trimmedValue);
+
+    if (isEmail) {
+      return null; // Valid email
+    } else if (isPhoneNumber) {
+      return null; // Valid phone number
+    } else if (isUsername) {
+      return null; // Valid username
+    } else {
+      // Provide specific error message based on what the user entered
+      if (trimmedValue.contains('@')) {
+        return 'invalid_email_format'.tr(context);
+      } else if (RegExp(r'^[0-9]+$').hasMatch(trimmedValue)) {
+        if (trimmedValue.length < 9 || trimmedValue.length > 12) {
+          return 'invalid_phone_length'.tr(context);
+        }
+        return 'invalid_phone_format'.tr(context);
+      } else if (trimmedValue.length < 3) {
+        return 'username_too_short'.tr(context);
+      } else if (trimmedValue.length > 30) {
+        return 'username_too_long'.tr(context);
+      } else {
+        return 'invalid_identifier'.tr(context);
+      }
+    }
+  }
+
   Widget _confirmButton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -295,6 +370,7 @@ class _LoginScreenState extends State<LoginScreen> {
         onPressed: () {
           _validateAndLogin();
         },
+        style: AppTheme.elevatedButtonStyle(),
         child: Text(
           'login'.tr(context),
           style: TextStyle(
@@ -304,14 +380,47 @@ class _LoginScreenState extends State<LoginScreen> {
             color: isDark ? Colors.black : Colors.white,
           ),
         ),
-        style: AppTheme.elevatedButtonStyle(),
       ),
     );
   }
 
-  void _validateAndLogin() {
+  void _validateAndLogin() async {
+    // Clear previous errors
+    setState(() {
+      _identifierError = null;
+    });
+
+    // Validate form
     if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, AppRoutes.verify, arguments: false);
+      // Additional validation before login
+      final identifier = _identifierController.text.trim();
+      final password = _passwordController.text.trim();
+
+      if (identifier.isEmpty) {
+        setState(() {
+          _identifierError = 'identifier_required'.tr(context);
+        });
+        return;
+      }
+
+      if (password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('password_required'.tr(context)),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      await _handleLogin(identifier, password);
     }
   }
 

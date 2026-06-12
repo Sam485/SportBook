@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/models/models.dart';
+import 'package:sportbook/feature/models/models.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 

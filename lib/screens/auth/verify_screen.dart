@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class VerifyScreen extends StatefulWidget {
-  final bool isSignUp;
-  const VerifyScreen({super.key, required this.isSignUp});
+  final RegisterRequestDto? isSignUp;
+  const VerifyScreen({super.key, this.isSignUp});
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
@@ -103,8 +104,12 @@ class _VerifyScreenState extends State<VerifyScreen> {
     await Future.delayed(const Duration(seconds: 2));
     setState(() => _isLoading = false);
     if (mounted) {
-      if (widget.isSignUp == true) {
-        Navigator.pushReplacementNamed(context, AppRoutes.createProfile);
+      if (widget.isSignUp != null) {
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.createProfile,
+          arguments: widget.isSignUp,
+        );
       } else {
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }

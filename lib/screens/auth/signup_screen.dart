@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
@@ -20,6 +21,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+
 
   @override
   void dispose() {
@@ -49,7 +51,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 hasScrollBody: false,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [_orSignUp(isDark)],
+                  children: [_orLogin(isDark)],
                 ),
               ),
             ],
@@ -341,8 +343,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          _validateAndLogin();
+          _validateAndSignUp();
         },
+        style: AppTheme.elevatedButtonStyle(),
         child: Text(
           'sign_up'.tr(context),
           style: TextStyle(
@@ -352,18 +355,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
             color: isDark ? Colors.black : Colors.white,
           ),
         ),
-        style: AppTheme.elevatedButtonStyle(),
       ),
     );
   }
 
-  void _validateAndLogin() {
+  void _validateAndSignUp() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushNamed(context, AppRoutes.verify, arguments: true);
+      Navigator.pushNamed(
+        context,
+        AppRoutes.verify,
+        arguments: RegisterRequestDto(
+          name: '',
+          email: '',
+          phone: _phoneController.text,
+          password: _passwordController.text,
+        ),
+      );
     }
   }
 
-  Widget _orSignUp(bool isDark) {
+  Widget _orLogin(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(

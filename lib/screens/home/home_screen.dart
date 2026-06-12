@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
+import 'package:sportbook/widgets/common/map_picker_screen.dart';
 import '../../core/theme.dart';
-import '../../models/models.dart';
-import '../../services/data_service.dart';
+import '../../feature/models/models.dart';
+import '../../feature/services/data_service.dart';
 import '../../widgets/common/section_header.dart';
 import '../../widgets/cards/booking_card.dart';
 import '../../widgets/cards/club_card.dart';
@@ -46,7 +47,19 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => const LocationPickerSheet(),
     );
-    if (result != null && result.isNotEmpty) {
+
+    if (!mounted) return;
+
+    if (result == '__open_map__') {
+      // User chose "Pin on Map" — open the full-screen map picker
+      final city = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(builder: (_) => const MapPickerScreen()),
+      );
+      if (city != null && city.isNotEmpty) {
+        setState(() => _locationLabel = city);
+      }
+    } else if (result != null && result.isNotEmpty) {
       setState(() => _locationLabel = result);
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/models/models.dart';
+import 'package:sportbook/feature/models/models.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class HistoryBookingsScreen extends StatelessWidget {
