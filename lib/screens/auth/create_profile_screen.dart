@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
 import 'package:sportbook/feature/user_feature/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -26,6 +27,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
   final _userRepository = getIt<Userrepository>();
+  TokenService token = TokenService();
 
   Future<void> _handleCreateProfile(String username, String? email) async {
     try {
@@ -40,11 +42,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           name: username,
         ),
       );
-
       // Call the register API
       final response = await _userRepository.registerUser(registerRequest);
-
-      print('Registration successful: ${response.user.name}');
+      await token.saveTokens(response.tokenModel);
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -57,7 +57,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         );
       }
     } catch (e) {
-      print('Registration failed: $e');
       if (mounted) {
         setState(() => _isLoading = false);
 

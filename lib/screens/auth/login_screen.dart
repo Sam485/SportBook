@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/user_feature/model/login_request_dto.dart';
 import 'package:sportbook/feature/user_feature/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -21,21 +22,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   final _userRepository = getIt<Userrepository>();
+  final _tokenService = getIt<TokenService>();
   String? _identifierError;
 
   Future<void> _handleLogin(String input, String password) async {
     try {
       final loginRequest = LoginRequestDto.fromInput(input, password);
       final response = await _userRepository.loginUser(loginRequest);
-      print('Login successful: ${response.user.name}');
+      await _tokenService.saveTokens(response.tokenModel);
+
+      // Dismiss loading dialog before navigation
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Dismiss loading dialog
       }
+
       if (mounted) {
+        Navigator.pop(context); // Go back (if needed)
         Navigator.pushNamed(context, AppRoutes.verify);
       }
     } catch (e) {
-      print('Login failed: $e');
+      // Dismiss loading dialog first
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

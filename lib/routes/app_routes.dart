@@ -10,6 +10,7 @@ import 'package:sportbook/screens/bookings/bookings_screen.dart';
 import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 import 'package:sportbook/screens/home/Notification/notification_screen.dart';
 import 'package:sportbook/screens/home/ViewAll/view_all.dart';
+import 'package:sportbook/screens/loading/splash_screen.dart';
 import '../feature/models/models.dart';
 import '../screens/main_screen.dart';
 import '../screens/booking_flow/booking_flow_screen.dart';
@@ -29,12 +30,14 @@ class AppRoutes {
   static const notification = '/notification';
   static const viewAll = '/viewAll';
   static const allbookings = '/allBookings';
+  static const splash = '/splash';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
         return MaterialPageRoute(builder: (_) => const MainScreen());
-
+      case splash:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
       case allbookings:
         final target = settings.arguments as bool;
         return MaterialPageRoute(
