@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
+import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 

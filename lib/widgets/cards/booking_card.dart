@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../feature/models/models.dart';
-import '../../feature/services/data_service.dart';
+import '../../feature/static/models/models.dart';
+import '../../feature/static/services/data_service.dart';
 import '../../routes/app_routes.dart';
 import '../../translations/app_translations.dart';
 import '../common/image_carousel.dart';

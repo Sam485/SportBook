@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
+import 'package:sportbook/feature/User/model/user_model.dart';
+import 'package:sportbook/feature/User/repositories/user_repository.dart';
 import 'package:sportbook/screens/settings/features/appearance_selection.dart';
 import 'package:sportbook/screens/settings/features/editing_profile.dart';
 import 'package:sportbook/screens/settings/features/history_booking.dart';
@@ -7,7 +11,7 @@ import 'package:sportbook/screens/settings/features/language_selection.dart';
 import 'package:sportbook/screens/settings/features/password_security.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import '../../core/theme.dart';
-import '../../feature/models/models.dart';
+import '../../feature/static/models/models.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 
@@ -20,29 +24,69 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isNotificationsEnabled = true;
+  bool _isLoading = true;
 
-  // User profile data
-  String _userName = 'John Doe';
-  String _userEmail = 'johndoe@gmail.com';
-  String _userLocation = 'New York, USA';
-  final String _userImageUrl =
+  // User profile data - will be loaded from API
+  UserModel? _user;
+
+  // Static avatar URL for now
+  final String _staticAvatarUrl =
       'https://imgs.search.brave.com/EipFQVm-X300u0qBZX5vva8FbVwDEBUGookALc-rjNM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMucGV4ZWxzLmNv/bS9waG90b3MvMTUz/OTM1OTAvcGV4ZWxz/LXBob3RvLTE1Mzkz/NTkwL2ZyZWUtcGhv/dG8tb2YtcGhvdG8t/b2YtYS1zaGlydGxl/c3MtaGFuZHNvbWUt/bWFuLWFnYWluc3Qt/dGhlLXNreS5qcGVn/P2F1dG89Y29tcHJl/c3MmY3M9dGlueXNy/Z2ImZHByPTEmdz01/MDA';
-
-  // Language state
-  late String _currentLanguage;
 
   // Sample history bookings
   final List<SportBooking> _historyBookings = [];
 
+  // Repositories and services
+  final _userRepository = getIt<Userrepository>();
+  final _tokenService = getIt<TokenService>();
+
+  // Language state
+  late String _currentLanguage;
+
   @override
   void initState() {
     super.initState();
+    _loadUserProfile();
     _loadSampleHistoryBookings();
     _loadCurrentLanguage();
   }
 
+  Future<void> _loadUserProfile() async {
+    try {
+      setState(() => _isLoading = true);
+
+      // Check if user has valid token
+      final hasValidToken = await _tokenService.hasValidTokenAsync();
+
+      if (hasValidToken) {
+        // Fetch user profile from API
+        final user = await _userRepository.getProfile();
+        setState(() {
+          _user = user;
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+        // Optionally redirect to login
+      }
+    } catch (e) {
+      print('Error loading profile: $e');
+      setState(() => _isLoading = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load profile: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _loadSampleHistoryBookings() {
     // Add sample history bookings - replace with your actual data
+    // You can also fetch from API here
   }
 
   void _loadCurrentLanguage() {
@@ -67,24 +111,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToEditProfile() async {
+    if (_user == null) return;
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(
-          currentName: _userName,
-          currentEmail: _userEmail,
-          currentLocation: _userLocation,
-          currentImageUrl: _userImageUrl,
+          currentName: _user!.fullName,
+          currentEmail: _user!.email,
+          currentLocation: _user!.location ?? '',
+          currentImageUrl:
+              _user!.avatarUrl ?? _staticAvatarUrl, // Use static URL
         ),
       ),
     );
 
     if (result != null && mounted) {
-      setState(() {
-        if (result['name'] != null) _userName = result['name'];
-        if (result['email'] != null) _userEmail = result['email'];
-        if (result['location'] != null) _userLocation = result['location'];
-      });
+      // Refresh user profile after edit
+      await _loadUserProfile();
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('profile_updated'.tr(context))));
@@ -131,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _signOut() {
+  void _signOut() async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -153,8 +198,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+
+              // Clear tokens
+              await _tokenService.clearToken();
+
+              // Navigate to login
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 '/login',
@@ -233,6 +283,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _profileInfo(bool isDark) {
+    if (_isLoading) {
+      return Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Center(
+          child: CircularProgressIndicator(color: AppTheme.kAccent),
+        ),
+      );
+    }
+
+    if (_user == null) {
+      return Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 8),
+            Text('Failed to load profile', style: TextStyle(color: Colors.red)),
+            const SizedBox(height: 8),
+            ElevatedButton(onPressed: _loadUserProfile, child: Text('Retry')),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
       child: GestureDetector(
@@ -258,38 +332,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       alignment: Alignment.center,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(50),
-                        child: _userImageUrl.isNotEmpty
-                            ? Image.network(
-                                _userImageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                        child: Image.network(
+                          _user!.avatarUrl ??
+                              _staticAvatarUrl, // Use static URL
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: AppTheme.cardAlt(context),
+                            child: Icon(
+                              Icons.person,
+                              size: 36,
+                              color: AppTheme.textSub(context),
+                            ),
+                          ),
+                          loadingBuilder: (_, c, p) => p == null
+                              ? c
+                              : Container(
                                   color: AppTheme.cardAlt(context),
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 36,
-                                    color: AppTheme.textSub(context),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppTheme.kAccent,
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
-                                loadingBuilder: (_, c, p) => p == null
-                                    ? c
-                                    : Container(
-                                        color: AppTheme.cardAlt(context),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppTheme.kAccent,
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      ),
-                              )
-                            : Container(
-                                color: AppTheme.cardAlt(context),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 36,
-                                  color: AppTheme.textSub(context),
-                                ),
-                              ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -299,11 +365,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _userName,
+                            _user!.fullName,
                             style: AppTheme.tsTitleAdaptive(context),
                           ),
                           Text(
-                            _userEmail,
+                            _user!.email,
                             style: AppTheme.tsBodyAdaptive(context),
                           ),
                           Row(
@@ -316,7 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(width: 2),
                               Expanded(
                                 child: Text(
-                                  _userLocation,
+                                  _user!.location ?? '',
                                   style: const TextStyle(
                                     color: AppTheme.kAccent,
                                     fontSize: 13,
@@ -380,11 +446,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             children: [
                               Text(
-                                '3',
+                                _user!.isVerified ? '3' : '0',
                                 style: AppTheme.tsTitleAdaptive(context),
                               ),
                               Text(
-                                'upcoming'.tr(context),
+                                _user!.isVerified
+                                    ? 'upcoming'.tr(context)
+                                    : 'unverified'.tr(context),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],

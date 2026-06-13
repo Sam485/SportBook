@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/services/data_service.dart';
+import 'package:sportbook/feature/static/services/data_service.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
-import '../../../feature/models/models.dart';
+import '../../../feature/static/models/models.dart';
 
 class ViewAll extends StatefulWidget {
   final String title;

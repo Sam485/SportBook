@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
-import 'package:sportbook/feature/user_feature/model/login_request_dto.dart';
-import 'package:sportbook/feature/user_feature/repositories/user_repository.dart';
+import 'package:sportbook/feature/User/model/login_request_dto.dart';
+import 'package:sportbook/feature/User/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 

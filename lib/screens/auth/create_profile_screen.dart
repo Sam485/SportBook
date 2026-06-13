@@ -5,8 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
-import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
-import 'package:sportbook/feature/user_feature/repositories/user_repository.dart';
+import 'package:sportbook/feature/User/model/register_request_dto.dart';
+import 'package:sportbook/feature/User/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
@@ -26,25 +26,30 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   File? _selectedImage;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
-  final _userRepository = getIt<Userrepository>();
-  TokenService token = TokenService();
+  final _userRepository = getIt<Userrepository>(); // Fixed typo
+  final TokenService token = getIt<TokenService>(); // Use GetIt instance
 
   Future<void> _handleCreateProfile(String username, String? email) async {
     try {
       setState(() => _isLoading = true);
 
       // Create the complete registration object
-      final registerRequest = RegisterRequestDto.fromInput(
-        RegisterRequestDto(
-          email: email!,
-          phone: widget.user.phone,
-          password: widget.user.password,
-          name: username,
-        ),
+      final registerRequest = RegisterRequestDto(
+        name: username,
+        email: email!.isEmpty ? widget.user.email : email,
+        phone: widget.user.phone,
+        password: widget.user.password,
       );
+
       // Call the register API
       final response = await _userRepository.registerUser(registerRequest);
       await token.saveTokens(response.tokenModel);
+
+      // Upload profile image if selected
+      if (_selectedImage != null) {
+        // TODO: Implement image upload
+        // await _uploadProfileImage(_selectedImage!);
+      }
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -207,7 +212,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
 
-    await _handleCreateProfile(username, email.isEmpty ? '' : email);
+    await _handleCreateProfile(username, email.isEmpty ? null : email);
   }
 
   @override
@@ -381,7 +386,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
               prefixIcon: Icon(
-                Icons.alternate_email_rounded,
+                Icons.person_rounded,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
               suffixIcon: null,

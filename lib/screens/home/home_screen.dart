@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/feature/Banner/model/banner_model.dart';
+import 'package:sportbook/feature/Banner/repository/banner_repository.dart';
+import 'package:sportbook/feature/User/model/user_model.dart';
+import 'package:sportbook/feature/User/repositories/user_repository.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
 import 'package:sportbook/widgets/common/map_picker_screen.dart';
 import '../../core/theme.dart';
-import '../../feature/models/models.dart';
-import '../../feature/services/data_service.dart';
+import '../../feature/static/models/models.dart';
+import '../../feature/static/services/data_service.dart';
 import '../../widgets/common/section_header.dart';
 import '../../widgets/cards/booking_card.dart';
 import '../../widgets/cards/club_card.dart';
@@ -22,9 +27,34 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCat = 'all';
   String _locationLabel = 'New York';
 
+  final _userRepository = getIt<Userrepository>();
+  final _bannerRepository = getIt<BannerRepository>();
+
+  List<BannerModel>? _banners;
+  UserModel? _user;
+
   List<SportClub> get _clubs => DataService.filteredClubs(_selectedCat);
   List<SportBooking> get _bookings =>
       DataService.filteredBookings(_selectedCat);
+
+  Future<void> initialLoad() async {
+    try {
+      final banners = await _bannerRepository.getAllActiveBanner();
+      final user = await _userRepository.getProfile();
+      setState(() {
+        _banners = banners;
+        _user = user;
+      });
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initialLoad();
+  }
 
   void _navigateViewAll() {
     final clubs = _clubs;
@@ -221,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _banner() => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-    child: const BannerCarousel(),
+    child: BannerCarousel(banners: _banners),
   );
 
   Widget _categories(bool isDark) => Padding(

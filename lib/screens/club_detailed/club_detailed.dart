@@ -2,11 +2,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/models/models.dart';
+import 'package:sportbook/feature/static/models/models.dart';
 import 'package:sportbook/providers/booking_provider.dart';
 import 'package:sportbook/providers/theme_provider.dart';
 import 'package:sportbook/screens/booking_flow/booking_flow_screen.dart';
-import 'package:sportbook/feature/services/data_service.dart';
+import 'package:sportbook/feature/static/services/data_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 

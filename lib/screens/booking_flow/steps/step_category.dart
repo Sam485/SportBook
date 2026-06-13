@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../providers/booking_provider.dart';
-import '../../../feature/services/data_service.dart';
+import '../../../feature/static/services/data_service.dart';
 import '../../../translations/app_translations.dart';
 
 class StepCategory extends StatelessWidget {

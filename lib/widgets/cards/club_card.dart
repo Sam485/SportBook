@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../feature/models/models.dart';
+import '../../feature/static/models/models.dart';
 import '../../routes/app_routes.dart';
 import '../../translations/app_translations.dart';
 

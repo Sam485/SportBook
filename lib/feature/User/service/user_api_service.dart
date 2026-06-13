@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:sportbook/feature/user_feature/model/login_request_dto.dart';
-import 'package:sportbook/feature/user_feature/model/login_response_%20model.dart';
-import 'package:sportbook/feature/user_feature/model/register_request_dto.dart';
+import 'package:sportbook/feature/User/model/login_request_dto.dart';
+import 'package:sportbook/feature/User/model/login_response_%20model.dart';
+import 'package:sportbook/feature/User/model/register_request_dto.dart';
+import 'package:sportbook/feature/User/model/user_model.dart';
 
 class UserApiService {
   final Dio dio;
@@ -46,6 +47,32 @@ class UserApiService {
         return LoginResponse.fromJson(response.data);
       } else {
         throw Exception('Login failed: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        // Server responded with error
+        final errorMessage =
+            e.response?.data['message'] ?? 'Invalid credentials';
+        throw Exception(errorMessage);
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception(
+          'Connection timeout. Please check your internet connection.',
+        );
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('Receive timeout. Server is not responding.');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    }
+  }
+
+  Future<UserModel> getProfile() async {
+    try {
+      final response = await dio.get('/users/me');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return UserModel.fromJson(response.data);
+      } else {
+        throw Exception('Retrieve Failed: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.response != null) {

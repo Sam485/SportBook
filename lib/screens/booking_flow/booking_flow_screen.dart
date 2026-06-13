@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sportbook/screens/booking_flow/steps/step_payment.dart';
 import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
-import '../../feature/models/models.dart';
+import '../../feature/static/models/models.dart';
 import '../../providers/booking_provider.dart';
 import '../../translations/app_translations.dart';
 import 'steps/step_category.dart';

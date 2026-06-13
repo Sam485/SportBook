@@ -1,10 +1,12 @@
+// banner_carousel.dart
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/services/data_service.dart';
+import 'package:sportbook/feature/Banner/model/banner_model.dart';
 
 class BannerCarousel extends StatefulWidget {
-  const BannerCarousel({super.key});
+  final List<BannerModel>? banners;
+  const BannerCarousel({super.key, required this.banners});
 
   @override
   State<BannerCarousel> createState() => _BannerCarouselState();
@@ -16,6 +18,42 @@ class _BannerCarouselState extends State<BannerCarousel> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final banners = widget.banners;
+
+    // Show loading or empty state
+    if (banners == null) {
+      return Container(
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.kAccent,
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (banners.isEmpty) {
+      return Container(
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+        ),
+        child: Center(
+          child: Text(
+            'No banners available',
+            style: TextStyle(
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            ),
+          ),
+        ),
+      );
+    }
 
     return Stack(
       children: [
@@ -35,13 +73,13 @@ class _BannerCarouselState extends State<BannerCarousel> {
               });
             },
           ),
-          items: DataService.bannerSport.map((url) {
+          items: banners.map((banner) {
             return Builder(
               builder: (BuildContext context) {
                 return ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    url.name,
+                    banner.imageUrl, // Adjust this based on your BannerModel
                     width: MediaQuery.of(context).size.width,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
@@ -75,7 +113,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
             );
           }).toList(),
         ),
-        if (DataService.bannerSport.length > 1)
+        if (banners.length > 1)
           Positioned(
             bottom: 10,
             left: 0,
@@ -83,7 +121,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                DataService.bannerSport.length,
+                banners.length,
                 (i) => AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   margin: const EdgeInsets.symmetric(horizontal: 3),

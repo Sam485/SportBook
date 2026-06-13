@@ -1,39 +1,34 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sportbook/feature/Token/api/token_api.dart';
 import 'package:sportbook/feature/Token/model/token_model.dart';
 
 class TokenService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final TokenApi _tokenApi;
 
-  // Store tokens
+  TokenService(this._tokenApi); // Add constructor dependency
+
   Future<void> saveTokens(TokenModel token) async {
     await _storage.write(key: 'access_token', value: token.accessToken);
     await _storage.write(key: 'refresh_token', value: token.refreshToken);
     await _storage.write(key: 'token_type', value: token.tokenType);
     await _storage.write(key: 'expired_in', value: token.expiredIn.toString());
+    await _storage.write(
+      key: 'token_received_time',
+      value: DateTime.now().toIso8601String(),
+    );
   }
 
-  // Async version - recommended
-  Future<bool> hasValidTokenAsync() async {
-    final tokens = await getTokens();
-    if (tokens == null) return false;
-
-    // Check if token is expired
-    return tokens.accessToken.isNotEmpty;
-  }
-
-  // Get stored tokens (FIXED: corrected 'refresh_token' key typo)
   Future<TokenModel?> getTokens() async {
     final accessToken = await _storage.read(key: 'access_token');
-    final refreshToken = await _storage.read(
-      key: 'refresh_token',
-    ); // Fixed typo
+    final refreshToken = await _storage.read(key: 'refresh_token');
     final tokenType = await _storage.read(key: 'token_type');
-    final expiredIn = await _storage.read(key: 'expired_in');
+    final expiredInStr = await _storage.read(key: 'expired_in');
 
     if (accessToken == null ||
         refreshToken == null ||
         tokenType == null ||
-        expiredIn == null) {
+        expiredInStr == null) {
       return null;
     }
 
@@ -41,30 +36,42 @@ class TokenService {
       accessToken: accessToken,
       refreshToken: refreshToken,
       tokenType: tokenType,
-      expiredIn: int.parse(expiredIn),
+      expiredIn: int.parse(expiredInStr),
     );
   }
 
-  // Get just the access token
   Future<String?> getAccessToken() async {
     return await _storage.read(key: 'access_token');
   }
 
-  // Get just the refresh token
   Future<String?> getRefreshToken() async {
     return await _storage.read(key: 'refresh_token');
   }
 
-  // Clear all tokens
+  Future<bool> hasValidTokenAsync() async {
+    final token = await getAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  Future<bool> refreshAccessToken() async {
+    try {
+      final refreshToken = await getRefreshToken();
+      if (refreshToken == null) return false;
+
+      final newTokenModel = await _tokenApi.refreshToken(refreshToken);
+      await saveTokens(newTokenModel);
+      return true;
+    } catch (e) {
+      await clearToken();
+      return false;
+    }
+  }
+
   Future<void> clearToken() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
     await _storage.delete(key: 'token_type');
     await _storage.delete(key: 'expired_in');
-  }
-
-  // Update access token only (useful for token refresh)
-  Future<void> updateAccessToken(String newAccessToken) async {
-    await _storage.write(key: 'access_token', value: newAccessToken);
+    await _storage.delete(key: 'token_received_time');
   }
 }

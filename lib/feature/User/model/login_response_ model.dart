@@ -1,5 +1,5 @@
 import 'package:sportbook/feature/Token/model/token_model.dart';
-import 'package:sportbook/feature/user_feature/model/user_model.dart';
+import 'package:sportbook/feature/User/model/user_model.dart';
 
 class LoginResponse {
   final TokenModel tokenModel;

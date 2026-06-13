@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/models/models.dart';
+import 'package:sportbook/feature/static/models/models.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class BookedDetailed extends StatelessWidget {
