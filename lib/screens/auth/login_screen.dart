@@ -3,7 +3,7 @@ import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/login_request_dto.dart';
-import 'package:sportbook/feature/User/repositories/user_repository.dart';
+import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
@@ -21,14 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController(); // Renamed for clarity
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  final _userRepository = getIt<Userrepository>();
+  final _userRService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
   String? _identifierError;
 
   Future<void> _handleLogin(String input, String password) async {
     try {
       final loginRequest = LoginRequestDto.fromInput(input, password);
-      final response = await _userRepository.loginUser(loginRequest);
+      final response = await _userRService.loginUser(loginRequest);
       await _tokenService.saveTokens(response.tokenModel);
 
       // Dismiss loading dialog before navigation

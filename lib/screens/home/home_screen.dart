@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
-import 'package:sportbook/feature/Banner/repository/banner_repository.dart';
+import 'package:sportbook/feature/Banner/service/banner_service.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
-import 'package:sportbook/feature/User/repositories/user_repository.dart';
+import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
@@ -27,8 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCat = 'all';
   String _locationLabel = 'New York';
 
-  final _userRepository = getIt<Userrepository>();
-  final _bannerRepository = getIt<BannerRepository>();
+  final _userService = getIt<UserService>();
+  final _bannerService = getIt<BannerService>();
 
   List<BannerModel>? _banners;
   UserModel? _user;
@@ -36,11 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<SportClub> get _clubs => DataService.filteredClubs(_selectedCat);
   List<SportBooking> get _bookings =>
       DataService.filteredBookings(_selectedCat);
-
   Future<void> initialLoad() async {
     try {
-      final banners = await _bannerRepository.getAllActiveBanner();
-      final user = await _userRepository.getProfile();
+      final banners = await _bannerService.getAllActiveBanner();
+      final user = await _userService.getProfile();
       setState(() {
         _banners = banners;
         _user = user;

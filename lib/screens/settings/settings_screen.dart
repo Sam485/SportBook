@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
-import 'package:sportbook/feature/User/repositories/user_repository.dart';
+import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/screens/settings/features/appearance_selection.dart';
 import 'package:sportbook/screens/settings/features/editing_profile.dart';
 import 'package:sportbook/screens/settings/features/history_booking.dart';
@@ -37,7 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final List<SportBooking> _historyBookings = [];
 
   // Repositories and services
-  final _userRepository = getIt<Userrepository>();
+  final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
 
   // Language state
@@ -60,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (hasValidToken) {
         // Fetch user profile from API
-        final user = await _userRepository.getProfile();
+        final user = await _userService.getProfile();
         setState(() {
           _user = user;
           _isLoading = false;
@@ -117,11 +117,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(
-          currentName: _user!.fullName,
-          currentEmail: _user!.email,
-          currentLocation: _user!.location ?? '',
-          currentImageUrl:
-              _user!.avatarUrl ?? _staticAvatarUrl, // Use static URL
+          user: _user!,
+          userService: _userService, // Use static URL
         ),
       ),
     );

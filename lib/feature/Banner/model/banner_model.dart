@@ -31,7 +31,7 @@ class BannerModel {
       sortOrder: json['sort_order'] ?? '',
       status: json['status'] ?? '',
       craetedAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['update_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
     );
   }
 }

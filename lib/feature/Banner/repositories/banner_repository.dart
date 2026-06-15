@@ -1,16 +1,18 @@
 import 'package:dio/dio.dart';
-import 'package:sportbook/feature/Sport%20Club/model/dto/get_all_sport_club_dto.dart';
+import 'package:sportbook/feature/Banner/model/banner_model.dart';
 
-class SportClubRepository {
+class BannerRepository {
   final Dio dio;
-  SportClubRepository(this.dio);
-  Future<GetAllSportClubDto> getAllSportClub() async {
+  BannerRepository(this.dio);
+
+  Future<List<BannerModel>> getAllActiveBanner() async {
     try {
-      final response = await dio.get('/sport-clubs?page=1&limit=10&search=');
+      final response = await dio.get('/banners/active');
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return GetAllSportClubDto.fromJson(response.data);
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => BannerModel.fromJson(json)).toList();
       } else {
-        throw Exception('Retrived data Failed: ${response.statusCode}');
+        throw Exception('Failed to retrieve data: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.response != null) {

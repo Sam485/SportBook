@@ -6,7 +6,7 @@ import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
-import 'package:sportbook/feature/User/repositories/user_repository.dart';
+import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
@@ -26,7 +26,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   File? _selectedImage;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
-  final _userRepository = getIt<Userrepository>(); // Fixed typo
+  final _userService = getIt<UserService>(); // Fixed typo
   final TokenService token = getIt<TokenService>(); // Use GetIt instance
 
   Future<void> _handleCreateProfile(String username, String? email) async {
@@ -42,7 +42,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       );
 
       // Call the register API
-      final response = await _userRepository.registerUser(registerRequest);
+      final response = await _userService.registerUser(registerRequest);
       await token.saveTokens(response.tokenModel);
 
       // Upload profile image if selected

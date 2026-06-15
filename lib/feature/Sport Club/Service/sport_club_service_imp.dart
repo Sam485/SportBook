@@ -1,10 +1,9 @@
 import 'package:sportbook/feature/Sport%20Club/Service/sport_club_service.dart';
 import 'package:sportbook/feature/Sport%20Club/model/dto/get_all_sport_club_dto.dart';
-import 'package:sportbook/feature/Sport%20Club/repository/sport_club_repository.dart';
 
-class SportClubRepositoryImp implements SportClubRepository {
+class SportClubServiceImp implements SportClubService {
   SportClubService sportClubService;
-  SportClubRepositoryImp(this.sportClubService);
+  SportClubServiceImp(this.sportClubService);
   @override
   Future<GetAllSportClubDto> getAllSportClub() async {
     try {
