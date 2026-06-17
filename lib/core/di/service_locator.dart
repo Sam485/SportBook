@@ -8,9 +8,9 @@ import 'package:sportbook/feature/Banner/service/banner_service_imp.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/Category/service/category_service_imp.dart';
 import 'package:sportbook/feature/Category/repository/category_repository.dart';
-import 'package:sportbook/feature/Sport%20Club/repository/sport_club_repository.dart';
-import 'package:sportbook/feature/Sport%20Club/Service/sport_club_service.dart';
-import 'package:sportbook/feature/Sport%20Club/Service/sport_club_service_imp.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service_imp.dart';
+import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart';
 import 'package:sportbook/feature/Token/api/token_api.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
@@ -67,7 +67,7 @@ Future<void> setupServiceLocator() async {
     () => UserApiRepository(getIt<Dio>()),
   );
 
-  // Register UserRepository
+  // Register UserService
   getIt.registerLazySingleton<UserService>(
     () => UserServiceImp(getIt<UserApiRepository>()),
   );
@@ -77,9 +77,11 @@ Future<void> setupServiceLocator() async {
     () => CategoryRepository(getIt<Dio>()),
   );
 
-  // Register CategoryService
+  // Register CategoryService - FIXED: Use CategoryServiceImp with CategoryRepository
   getIt.registerLazySingleton<CategoryService>(
-    () => CategoryServiceImp(getIt<CategoryService>()),
+    () => CategoryServiceImp(
+      getIt<CategoryRepository>(),
+    ), // Changed from CategoryService to CategoryRepository
   );
 
   // Register SportClubRepository
@@ -87,17 +89,19 @@ Future<void> setupServiceLocator() async {
     () => SportClubRepository(getIt<Dio>()),
   );
 
-  // Register SportClubRepository
+  // Register SportClubService - FIXED: Use SportClubServiceImp with SportClubRepository
   getIt.registerLazySingleton<SportClubService>(
-    () => SportClubServiceImp(getIt<SportClubService>()),
+    () => SportClubServiceImp(
+      getIt<SportClubRepository>(),
+    ), // Changed from SportClubRepository to SportClubService
   );
 
-  //Register BannerService
+  // Register BannerRepository
   getIt.registerLazySingleton<BannerRepository>(
     () => BannerRepository(getIt<Dio>()),
   );
 
-  // Register BannerRepository
+  // Register BannerService - FIXED: Use BannerServiceImp with BannerRepository
   getIt.registerLazySingleton<BannerService>(
     () => BannerServiceImp(getIt<BannerRepository>()),
   );

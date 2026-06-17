@@ -1,20 +1,25 @@
 // ─── Step 1: Category ─────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
-import '../../../providers/booking_provider.dart';
-import '../../../feature/static/services/data_service.dart';
 import '../../../translations/app_translations.dart';
 
 class StepCategory extends StatelessWidget {
   final VoidCallback onNext;
-  const StepCategory({super.key, required this.onNext});
+  final Function(String) onCategorySelected;
+  final String? selectedCategory;
+  final List<dynamic> categories;
+
+  const StepCategory({
+    super.key,
+    required this.onNext,
+    required this.onCategorySelected,
+    this.selectedCategory,
+    required this.categories,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final p = context.watch<BookingProvider>();
-    final sports = p.target?.sports ?? [];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -29,9 +34,7 @@ class StepCategory extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'choose_sport_at'
-              .tr(context)
-              .replaceAll('{name}', p.target?.name ?? ''),
+          'choose_sport_desc'.tr(context),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
@@ -39,11 +42,12 @@ class StepCategory extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        ...sports.map((sport) {
-          final sel = p.selectedSport == sport;
+        ...categories.map((category) {
+          final categoryStr = category.toString();
+          final sel = selectedCategory == categoryStr;
           return GestureDetector(
             onTap: () {
-              p.selectSport(sport);
+              onCategorySelected(categoryStr);
               Future.delayed(const Duration(milliseconds: 200), onNext);
             },
             child: AnimatedContainer(
@@ -93,7 +97,7 @@ class StepCategory extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      DataService.emojiFor(sport),
+                      _getEmojiForCategory(categoryStr),
                       style: const TextStyle(fontSize: 26),
                     ),
                   ),
@@ -103,7 +107,7 @@ class StepCategory extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _getTranslatedSportName(sport, context),
+                          _getTranslatedCategoryName(categoryStr, context),
                           style: TextStyle(
                             color: sel
                                 ? AppTheme.kAccent
@@ -114,7 +118,7 @@ class StepCategory extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          _subtitle(sport, context),
+                          _subtitle(categoryStr, context),
                           style: TextStyle(
                             color: isDark
                                 ? AppTheme.kTextSub
@@ -143,9 +147,39 @@ class StepCategory extends StatelessWidget {
     );
   }
 
-  String _getTranslatedSportName(String sport, BuildContext context) {
-    switch (sport.toLowerCase()) {
+  String _getEmojiForCategory(String category) {
+    switch (category.toLowerCase()) {
       case 'football':
+      case 'soccer':
+        return '⚽';
+      case 'badminton':
+        return '🏸';
+      case 'tennis':
+        return '🎾';
+      case 'basketball':
+        return '🏀';
+      case 'gym':
+      case 'fitness':
+        return '🏋️';
+      case 'swimming':
+        return '🏊';
+      case 'yoga':
+        return '🧘';
+      case 'boxing':
+        return '🥊';
+      case 'cycling':
+        return '🚴';
+      case 'running':
+        return '🏃';
+      default:
+        return '🏅';
+    }
+  }
+
+  String _getTranslatedCategoryName(String category, BuildContext context) {
+    switch (category.toLowerCase()) {
+      case 'football':
+      case 'soccer':
         return 'sport_football'.tr(context);
       case 'badminton':
         return 'sport_badminton'.tr(context);
@@ -154,15 +188,27 @@ class StepCategory extends StatelessWidget {
       case 'basketball':
         return 'sport_basketball'.tr(context);
       case 'gym':
+      case 'fitness':
         return 'sport_gym'.tr(context);
+      case 'swimming':
+        return 'sport_swimming'.tr(context);
+      case 'yoga':
+        return 'sport_yoga'.tr(context);
+      case 'boxing':
+        return 'sport_boxing'.tr(context);
+      case 'cycling':
+        return 'sport_cycling'.tr(context);
+      case 'running':
+        return 'sport_running'.tr(context);
       default:
-        return sport;
+        return category;
     }
   }
 
-  String _subtitle(String sport, BuildContext context) {
-    switch (sport.toLowerCase()) {
+  String _subtitle(String category, BuildContext context) {
+    switch (category.toLowerCase()) {
       case 'football':
+      case 'soccer':
         return 'football_subtitle'.tr(context);
       case 'badminton':
         return 'badminton_subtitle'.tr(context);
@@ -171,7 +217,18 @@ class StepCategory extends StatelessWidget {
       case 'basketball':
         return 'basketball_subtitle'.tr(context);
       case 'gym':
+      case 'fitness':
         return 'gym_subtitle'.tr(context);
+      case 'swimming':
+        return 'swimming_subtitle'.tr(context);
+      case 'yoga':
+        return 'yoga_subtitle'.tr(context);
+      case 'boxing':
+        return 'boxing_subtitle'.tr(context);
+      case 'cycling':
+        return 'cycling_subtitle'.tr(context);
+      case 'running':
+        return 'running_subtitle'.tr(context);
       default:
         return 'book_your_session'.tr(context);
     }

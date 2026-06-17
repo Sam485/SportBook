@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/screens/auth/create_profile_screen.dart';
 import 'package:sportbook/screens/auth/forget_screen.dart';
@@ -36,8 +37,10 @@ class AppRoutes {
     switch (settings.name) {
       case home:
         return MaterialPageRoute(builder: (_) => const MainScreen());
+
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
+
       case allbookings:
         final target = settings.arguments as bool;
         return MaterialPageRoute(
@@ -49,7 +52,11 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ViewAll(
             title: args['title'] as String,
-            data: args['data'] as List<SportClub>,
+            data:
+                args['data']
+                    as List<
+                      SportClubModel
+                    >, // Changed from SportClub to SportClubModel
           ),
         );
 
@@ -87,14 +94,22 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => SignUpScreen());
 
       case bookingFlow:
-        final target = settings.arguments as BookingTarget;
+        final target =
+            settings.arguments
+                as SportClubModel; // Changed from BookingTarget to SportClubModel
         return MaterialPageRoute(
-          builder: (_) => BookingFlowScreen(target: target),
+          builder: (_) =>
+              BookingFlowScreen(target: target), // Pass SportClubModel directly
         );
 
       case clubDetailed:
-        final target = settings.arguments as BookingTarget;
-        return MaterialPageRoute(builder: (_) => ClubDetailed(target: target));
+        final target =
+            settings.arguments
+                as SportClubModel; // Changed from BookingTarget to SportClubModel
+        return MaterialPageRoute(
+          builder: (_) =>
+              ClubDetailed(target: target), // Pass SportClubModel directly
+        );
 
       default:
         return MaterialPageRoute(

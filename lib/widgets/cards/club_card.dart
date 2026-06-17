@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import '../../core/theme.dart';
-import '../../feature/static/models/models.dart';
 import '../../routes/app_routes.dart';
 import '../../translations/app_translations.dart';
 
 class ClubCard extends StatefulWidget {
-  final SportClub club;
+  final SportClubModel club;
   const ClubCard({super.key, required this.club});
 
   @override
@@ -63,24 +63,24 @@ class _ClubCardState extends State<ClubCard> {
     final c = widget.club;
     final urls = c.imageUrls;
 
+    // Check if urls is empty
+    final hasImages = urls.isNotEmpty;
+
     return Container(
       width: 260,
       margin: const EdgeInsets.only(right: 14),
       clipBehavior: Clip.hardEdge,
       decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
       child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          AppRoutes.bookingFlow,
-          arguments: BookingTarget.fromClub(c),
-        ),
+        onTap: () =>
+            Navigator.pushNamed(context, AppRoutes.bookingFlow, arguments: c),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Image carousel ──────────────────────────────────────────
             GestureDetector(
-              onHorizontalDragUpdate: _onDragUpdate,
-              onHorizontalDragEnd: _onDragEnd,
+              onHorizontalDragUpdate: hasImages ? _onDragUpdate : null,
+              onHorizontalDragEnd: hasImages ? _onDragEnd : null,
               behavior: HitTestBehavior.opaque,
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -92,36 +92,71 @@ class _ClubCardState extends State<ClubCard> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Pages
-                      PageView.builder(
-                        controller: _ctrl,
-                        itemCount: null,
-                        physics: const NeverScrollableScrollPhysics(),
-                        onPageChanged: (i) =>
-                            setState(() => _page = i % urls.length),
-                        itemBuilder: (_, i) => Image.network(
-                          urls[i % urls.length],
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: isDark
-                                ? AppTheme.kCardAlt
-                                : AppTheme.kLightCardAlt,
-                          ),
-                          loadingBuilder: (_, ch, p) => p == null
-                              ? ch
-                              : Container(
-                                  color: isDark
-                                      ? AppTheme.kCardAlt
-                                      : AppTheme.kLightCardAlt,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppTheme.kAccent,
-                                      strokeWidth: 2,
+                      // Pages - Only show if images exist
+                      if (hasImages)
+                        PageView.builder(
+                          controller: _ctrl,
+                          itemCount: null,
+                          physics: const NeverScrollableScrollPhysics(),
+                          onPageChanged: (i) =>
+                              setState(() => _page = i % urls.length),
+                          itemBuilder: (_, i) => Image.network(
+                            urls[i % urls.length],
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: isDark
+                                  ? AppTheme.kCardAlt
+                                  : AppTheme.kLightCardAlt,
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey,
+                                size: 40,
+                              ),
+                            ),
+                            loadingBuilder: (_, ch, p) => p == null
+                                ? ch
+                                : Container(
+                                    color: isDark
+                                        ? AppTheme.kCardAlt
+                                        : AppTheme.kLightCardAlt,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: AppTheme.kAccent,
+                                        strokeWidth: 2,
+                                      ),
                                     ),
                                   ),
+                          ),
+                        )
+                      else
+                        // Placeholder when no images
+                        Container(
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.sports,
+                                color: isDark
+                                    ? Colors.white38
+                                    : AppTheme.kLightTextSub,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'no_images'.tr(context),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white38
+                                      : AppTheme.kLightTextSub,
+                                  fontSize: 12,
                                 ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
                       // Scrim
                       Container(
@@ -147,7 +182,7 @@ class _ClubCardState extends State<ClubCard> {
                         child: _openCloseBadge(isDark),
                       ),
 
-                      // Page count badge
+                      // Page count badge - Only show if multiple images
                       if (urls.length > 1)
                         Positioned(
                           top: 8,
@@ -173,7 +208,7 @@ class _ClubCardState extends State<ClubCard> {
                           ),
                         ),
 
-                      // Dot indicators
+                      // Dot indicators - Only show if multiple images
                       if (urls.length > 1)
                         Positioned(
                           bottom: 8,
@@ -219,7 +254,7 @@ class _ClubCardState extends State<ClubCard> {
                     onTap: () => Navigator.pushNamed(
                       context,
                       AppRoutes.clubDetailed,
-                      arguments: BookingTarget.fromClub(c),
+                      arguments: c,
                     ),
                     child: Row(
                       children: [
@@ -319,7 +354,7 @@ class _ClubCardState extends State<ClubCard> {
                   ),
                   const SizedBox(height: 6),
 
-                  // Venue
+                  // Venue - Changed to location
                   Row(
                     children: [
                       const Icon(
@@ -330,7 +365,7 @@ class _ClubCardState extends State<ClubCard> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          c.venue,
+                          c.location,
                           style: TextStyle(
                             color: isDark
                                 ? Colors.white70
@@ -354,7 +389,7 @@ class _ClubCardState extends State<ClubCard> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${c.distanceKm} ${'km_away'.tr(context)}',
+                        '${c.distanceKm.toStringAsFixed(1)} ${'km_away'.tr(context)}',
                         style: TextStyle(
                           color: isDark
                               ? AppTheme.kTextSub
@@ -367,7 +402,7 @@ class _ClubCardState extends State<ClubCard> {
                         onTap: () => Navigator.pushNamed(
                           context,
                           AppRoutes.bookingFlow,
-                          arguments: BookingTarget.fromClub(c),
+                          arguments: c,
                         ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -407,26 +442,7 @@ class _ClubCardState extends State<ClubCard> {
   }
 
   Widget _openCloseBadge(bool isDark) {
-    final now = TimeOfDay.now();
-    final nowM = now.hour * 60 + now.minute;
-
-    int parse(String t) {
-      try {
-        final p = t.trim().split(':');
-        var h = int.parse(p[0]);
-        final rest = p[1].split(' ');
-        final period = rest[1].toUpperCase();
-        if (period == 'PM' && h != 12) h += 12;
-        if (period == 'AM' && h == 12) h = 0;
-        return h * 60 + int.parse(rest[0]);
-      } catch (_) {
-        return 0;
-      }
-    }
-
-    final isOpen =
-        nowM >= parse(widget.club.openTime) &&
-        nowM < parse(widget.club.closeTime);
+    final isOpen = widget.club.isCurrentlyOpen;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),

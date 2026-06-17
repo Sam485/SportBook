@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/static/services/data_service.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
@@ -18,14 +19,20 @@ class ViewAll extends StatefulWidget {
 class _ViewAllState extends State<ViewAll> {
   String _selectedCat = 'all';
 
-  bool get _isClubs => widget.data.isEmpty || widget.data.first is SportClub;
+  // Changed from SportClub to SportClubModel
+  bool get _isClubs =>
+      widget.data.isEmpty || widget.data.first is SportClubModel;
 
   List<dynamic> get _filtered {
     if (_selectedCat == 'all') return widget.data;
     if (_isClubs) {
       return widget.data
-          .cast<SportClub>()
-          .where((c) => c.sports.any((s) => s.toLowerCase() == _selectedCat))
+          .cast<SportClubModel>()
+          .where(
+            (c) => c.categories.any(
+              (cat) => cat.toString().toLowerCase() == _selectedCat,
+            ),
+          )
           .toList();
     } else {
       return widget.data
@@ -88,7 +95,9 @@ class _ViewAllState extends State<ViewAll> {
                 delegate: SliverChildBuilderDelegate(
                   (_, i) => Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: ClubCard(club: filtered[i] as SportClub),
+                    child: ClubCard(
+                      club: filtered[i] as SportClubModel,
+                    ), // Changed to SportClubModel
                   ),
                   childCount: filtered.length,
                 ),

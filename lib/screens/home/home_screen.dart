@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -30,33 +32,69 @@ class _HomeScreenState extends State<HomeScreen> {
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
 
+  // Get the sport club service
+  late final SportClubService _clubService;
+
   List<BannerModel>? _banners;
   UserModel? _user;
 
-  List<SportClub> get _clubs => DataService.filteredClubs(_selectedCat);
+  // Get clubs directly from service
+  List<SportClubModel> get _clubs => _clubService.clubs;
+
+  // Get filtered clubs based on selected category
+  List<SportClubModel> get _filteredClubs {
+    if (_selectedCat == 'all') {
+      return _clubs;
+    }
+    return _clubs
+        .where(
+          (club) =>
+              club.categories.any((cat) => cat.toString() == _selectedCat),
+        )
+        .toList();
+  }
+
+  // Keep bookings from static data for now
   List<SportBooking> get _bookings =>
       DataService.filteredBookings(_selectedCat);
+
   Future<void> initialLoad() async {
     try {
-      final banners = await _bannerService.getAllActiveBanner();
-      final user = await _userService.getProfile();
+      // Load banners, user, and clubs in parallel
+      final results = await Future.wait([
+        _bannerService.getAllActiveBanner(),
+        _userService.getProfile(),
+        _clubService.fetchClubs(),
+      ]);
+
       setState(() {
-        _banners = banners;
-        _user = user;
+        _banners = results[0] as List<BannerModel>?;
+        _user = results[1] as UserModel?;
+        _locationLabel = _user?.location ?? 'New York';
       });
     } catch (e) {
-      print('Error: $e');
+      print('Error loading initial data: $e');
+      // Show error snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   void initState() {
     super.initState();
+    _clubService = getIt<SportClubService>();
     initialLoad();
   }
 
   void _navigateViewAll() {
-    final clubs = _clubs;
+    final clubs = _filteredClubs;
     if (clubs.isEmpty) return;
     Navigator.pushNamed(
       context,
@@ -87,9 +125,38 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       if (city != null && city.isNotEmpty) {
         setState(() => _locationLabel = city);
+        // Refresh clubs with new location
+        await _refreshClubsWithLocation(city);
       }
     } else if (result != null && result.isNotEmpty) {
       setState(() => _locationLabel = result);
+      // Refresh clubs with new location
+      await _refreshClubsWithLocation(result);
+    }
+  }
+
+  Future<void> _refreshClubsWithLocation(String location) async {
+    try {
+      await _clubService.fetchClubs(search: location);
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Clubs updated for $location'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update clubs: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -169,7 +236,9 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'hello_message'.tr(context).replaceAll('{name}', 'Jane'),
+              'hello_message'
+                  .tr(context)
+                  .replaceAll('{name}', _user?.fullName ?? 'Guest'),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 17,
@@ -189,12 +258,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     size: 13,
                   ),
                   const SizedBox(width: 3),
-                  Text(
-                    _locationLabel,
-                    style: const TextStyle(
-                      color: AppTheme.kAccent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    child: Text(
+                      _locationLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.kAccent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const Icon(
@@ -315,33 +389,144 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   Widget _clubsList(bool isDark) {
-    final clubs = _clubs;
+    // Show loading state
+    if (_clubService.isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Container(
+          height: 250,
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppTheme.kAccent),
+                SizedBox(height: 16),
+                Text(
+                  'Loading clubs...',
+                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Show error state
+    if (_clubService.error.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Column(
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Failed to load clubs',
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _clubService.error,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await _clubService.fetchClubs();
+                  if (mounted) setState(() {});
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.kAccent,
+                  foregroundColor: const Color(0xFF0A1828),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text('retry'.tr(context)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Get filtered clubs
+    final clubs = _filteredClubs;
+
+    // Show empty state
     if (clubs.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: AppTheme.cardDecorationAdaptive(context),
-          child: Center(
-            child: Text(
-              'no_clubs_for_sport'.tr(context),
-              style: TextStyle(
-                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                fontSize: 14,
+          child: Column(
+            children: [
+              Icon(
+                Icons.sports,
+                color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
+                size: 48,
               ),
-            ),
+              const SizedBox(height: 12),
+              Text(
+                'no_clubs_for_sport'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try selecting a different category or location',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       );
     }
+
+    // Show clubs list - FIXED: using clubs instead of _clubs
     return SizedBox(
       height: 290,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: clubs.length,
-        itemBuilder: (_, i) => ClubCard(club: clubs[i]),
+        itemBuilder: (_, i) =>
+            ClubCard(club: clubs[i]), // Changed from _clubs[i] to clubs[i]
       ),
     );
+  }
+
+  // Helper method to manually refresh data (pull to refresh would call this)
+  Future<void> refreshData() async {
+    await initialLoad();
   }
 }

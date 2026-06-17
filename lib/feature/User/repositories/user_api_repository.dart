@@ -123,7 +123,13 @@ class UserApiRepository {
 
   Future<UserModel> updateAvatar(File avatar) async {
     try {
-      final response = await dio.post('/users/me/avatar', data: avatar);
+      // Create FormData with the file
+      final formData = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(avatar.path),
+      });
+
+      final response = await dio.post('/users/me/avatar', data: formData);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return UserModel.fromJson(response.data);
       } else {
@@ -133,7 +139,7 @@ class UserApiRepository {
       if (e.response != null) {
         // Server responded with error
         final errorMessage =
-            e.response?.data['message'] ?? 'Invalid credentials';
+            e.response?.data['message'] ?? 'Failed to update avatar';
         throw Exception(errorMessage);
       } else if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception(

@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
-import '../../../providers/booking_provider.dart';
 import '../../../translations/app_translations.dart';
 
 class StepDateAndTime extends StatefulWidget {
   final VoidCallback onConfirm;
-  const StepDateAndTime({super.key, required this.onConfirm});
+  final Function(DateTime, TimeOfDay, TimeOfDay) onDateTimeSelected;
+  final DateTime? selectedDate;
+  final TimeOfDay? selectedStartTime;
+  final TimeOfDay? selectedEndTime;
+  final int? selectedCourt;
+  final String? selectedCategory;
+
+  const StepDateAndTime({
+    super.key,
+    required this.onConfirm,
+    required this.onDateTimeSelected,
+    this.selectedDate,
+    this.selectedStartTime,
+    this.selectedEndTime,
+    this.selectedCourt,
+    this.selectedCategory,
+  });
 
   @override
   State<StepDateAndTime> createState() => _StepDateAndTimeState();
@@ -17,6 +31,12 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+
+  // Local state
+  DateTime? _selectedDate;
+  int? _startHour;
+  int? _endHour;
+  bool _hasAutoConfirmed = false;
 
   static DateTime get _startOfWeek {
     final now = DateTime.now();
@@ -64,8 +84,20 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
+    // Initialize with provided selected date or today
+    _selectedDate = widget.selectedDate ?? DateTime.now();
+
+    // Initialize times from widget if provided
+    if (widget.selectedStartTime != null) {
+      _startHour = widget.selectedStartTime!.hour;
+    }
+    if (widget.selectedEndTime != null) {
+      _endHour = widget.selectedEndTime!.hour;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoSelectTodayDate();
+      _animController.forward(from: 0);
+      _autoConfirmIfComplete();
     });
   }
 
@@ -75,36 +107,112 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     super.dispose();
   }
 
-  void _autoSelectTodayDate() {
-    final p = context.read<BookingProvider>();
-    final today = DateTime.now();
-
-    if (p.selectedDate == null) {
-      p.selectDate(today);
-      _animController.forward(from: 0);
+  void _autoConfirmIfComplete() {
+    if (!_hasAutoConfirmed && _canConfirm) {
+      _hasAutoConfirmed = true;
+      widget.onConfirm();
     }
   }
 
-  void _onDateSelected(BookingProvider p, DateTime date) {
-    p.selectDate(date);
-    p.clearTimeSelection();
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+      _startHour = null;
+      _endHour = null;
+      _hasAutoConfirmed = false;
+    });
     _animController.forward(from: 0);
+
+    // Notify parent of partial selection
+    if (_startHour != null && _endHour != null) {
+      final startTime = TimeOfDay(hour: _startHour!, minute: 0);
+      final endTime = TimeOfDay(hour: _endHour!, minute: 0);
+      widget.onDateTimeSelected(date, startTime, endTime);
+    }
+  }
+
+  void _onStartHourSelected(int hour) {
+    setState(() {
+      _startHour = hour;
+      _endHour = null;
+      _hasAutoConfirmed = false;
+    });
+
+    // Notify parent if both times are selected
+    if (_selectedDate != null && _endHour != null) {
+      final startTime = TimeOfDay(hour: _startHour!, minute: 0);
+      final endTime = TimeOfDay(hour: _endHour!, minute: 0);
+      widget.onDateTimeSelected(_selectedDate!, startTime, endTime);
+    }
+  }
+
+  void _onEndHourSelected(int hour) {
+    setState(() {
+      _endHour = hour;
+    });
+
+    // Notify parent
+    if (_selectedDate != null && _startHour != null) {
+      final startTime = TimeOfDay(hour: _startHour!, minute: 0);
+      final endTime = TimeOfDay(hour: _endHour!, minute: 0);
+      widget.onDateTimeSelected(_selectedDate!, startTime, endTime);
+    }
+
+    // Auto confirm after selection
+    if (_canConfirm) {
+      _hasAutoConfirmed = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onConfirm();
+        }
+      });
+    }
+  }
+
+  bool get _canConfirm {
+    return _selectedDate != null && _startHour != null && _endHour != null;
+  }
+
+  String get _timeRangeLabel {
+    if (_startHour != null && _endHour != null) {
+      return '${_fmtH(_startHour!)} - ${_fmtH(_endHour!)}';
+    }
+    return '';
+  }
+
+  int get _durationHours {
+    if (_startHour != null && _endHour != null) {
+      return _endHour! - _startHour!;
+    }
+    return 0;
+  }
+
+  double get _totalPrice {
+    // Calculate based on hours
+    final hours = _durationHours;
+    final pricePerHour = 10.0; // Default price, you can make this dynamic
+    return hours * pricePerHour;
+  }
+
+  List<int> get _availableHours {
+    // Generate available hours from 6 AM to 10 PM
+    return List.generate(17, (i) => i + 6);
+  }
+
+  List<int> get _fromHours {
+    return _availableHours;
+  }
+
+  List<int> get _toHours {
+    if (_startHour == null) return [];
+    return _availableHours.where((h) => h > _startHour!).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final p = context.watch<BookingProvider>();
     final weekDates = _weekDates;
-    final dateSelected = p.selectedDate != null;
-
-    final sport = p.selectedSport ?? '';
-    final court = p.selectedCourt ?? 0;
-    final date = p.selectedDate ?? DateTime.now();
-
-    final bookedRanges = dateSelected
-        ? p.bookedRanges(court, date, sport)
-        : <List<int>>[];
+    final dateSelected = _selectedDate != null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -138,7 +246,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               onTap: () async {
                 final DateTime? picked = await showDatePicker(
                   context: context,
-                  initialDate: p.selectedDate ?? DateTime.now(),
+                  initialDate: _selectedDate ?? DateTime.now(),
                   firstDate: DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                   builder: (context, child) {
@@ -163,8 +271,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   },
                 );
                 if (picked != null &&
-                    !DateUtils.isSameDay(picked, p.selectedDate)) {
-                  _onDateSelected(p, picked);
+                    !DateUtils.isSameDay(_selectedDate, picked)) {
+                  _onDateSelected(picked);
                 }
               },
               child: Container(
@@ -244,15 +352,14 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
           itemBuilder: (_, i) {
             final d = weekDates[i];
             final sel =
-                p.selectedDate != null &&
-                DateUtils.isSameDay(d, p.selectedDate!);
+                _selectedDate != null && DateUtils.isSameDay(d, _selectedDate!);
             final isToday = DateUtils.isSameDay(d, DateTime.now());
             final isWeekend =
                 d.weekday == DateTime.saturday || d.weekday == DateTime.sunday;
             final isPast = d.isBefore(DateTime.now()) && !isToday;
 
             return GestureDetector(
-              onTap: isPast ? null : () => _onDateSelected(p, d),
+              onTap: isPast ? null : () => _onDateSelected(d),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 decoration: BoxDecoration(
@@ -448,8 +555,8 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '${_getTranslatedDay(_days[p.selectedDate!.weekday - 1], context)}, '
-                          '${_getTranslatedMonth(_months[p.selectedDate!.month - 1], context)} ${p.selectedDate!.day} ${p.selectedDate!.year}',
+                          '${_getTranslatedDay(_days[_selectedDate!.weekday - 1], context)}, '
+                          '${_getTranslatedMonth(_months[_selectedDate!.month - 1], context)} ${_selectedDate!.day} ${_selectedDate!.year}',
                           style: const TextStyle(
                             color: AppTheme.kAccent,
                             fontSize: 13,
@@ -462,76 +569,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
 
                   const SizedBox(height: 20),
 
-                  if (bookedRanges.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppTheme.kCardAlt
-                            : AppTheme.kLightCardAlt,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.event_busy_rounded,
-                                color: Colors.redAccent,
-                                size: 13,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'already_booked'.tr(context),
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white60
-                                      : AppTheme.kLightTextSub,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: bookedRanges
-                                .map(
-                                  (r) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.redAccent.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: Colors.redAccent.withOpacity(
-                                          0.4,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      '${_fmtH(r[0])} – ${_fmtH(r[1])}',
-                                      style: const TextStyle(
-                                        color: Colors.redAccent,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
                   _sectionLabel(
                     'from_label'.tr(context).toUpperCase(),
                     Icons.play_arrow_rounded,
@@ -540,14 +577,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   ),
                   const SizedBox(height: 10),
                   _horizontalChips(
-                    hours: _fromHours(p, court, date, sport),
-                    selected: p.startHour,
+                    hours: _fromHours,
+                    selected: _startHour,
                     selColor: const Color(0xFF4CAF50),
                     isDark: isDark,
-                    onTap: (h) {
-                      p.selectStartHour(h);
-                      p.clearEndHour();
-                    },
+                    onTap: _onStartHourSelected,
                   ),
                   const SizedBox(height: 20),
 
@@ -559,17 +593,17 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   ),
                   const SizedBox(height: 10),
                   _horizontalChips(
-                    hours: _toHours(p, court, date, sport),
-                    selected: p.endHour,
+                    hours: _toHours,
+                    selected: _endHour,
                     selColor: Colors.redAccent,
                     isDark: isDark,
-                    emptyMessage: p.startHour == null
+                    emptyMessage: _startHour == null
                         ? 'pick_start_time_first'.tr(context)
                         : 'no_available_end_times'.tr(context),
-                    onTap: (h) => p.selectEndHour(h),
+                    onTap: _onEndHourSelected,
                   ),
 
-                  if (p.canConfirm) ...[
+                  if (_canConfirm) ...[
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -596,7 +630,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  p.timeRangeLabel,
+                                  _timeRangeLabel,
                                   style: const TextStyle(
                                     color: AppTheme.kAccent,
                                     fontSize: 14,
@@ -604,7 +638,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                   ),
                                 ),
                                 Text(
-                                  '${p.durationHours} ${'hours'.tr(context)}',
+                                  '$_durationHours ${'hours'.tr(context)}',
                                   style: TextStyle(
                                     color: isDark
                                         ? AppTheme.kTextSub
@@ -619,7 +653,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '\$${p.totalPrice.toStringAsFixed(0)}',
+                                '\$${_totalPrice.toStringAsFixed(0)}',
                                 style: TextStyle(
                                   color: isDark
                                       ? Colors.white
@@ -629,7 +663,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                 ),
                               ),
                               Text(
-                                '\$${p.target?.pricePerHour.toStringAsFixed(0) ?? '0'}/hr',
+                                '\$10/hr',
                                 style: TextStyle(
                                   color: isDark
                                       ? AppTheme.kTextSub
@@ -703,33 +737,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       default:
         return month;
     }
-  }
-
-  List<int> _fromHours(
-    BookingProvider p,
-    int court,
-    DateTime date,
-    String sport,
-  ) {
-    return List.generate(23, (i) => i).where((h) {
-      for (final r in p.bookedRanges(court, date, sport)) {
-        if (h >= r[0] && h < r[1]) return false;
-      }
-      return true;
-    }).toList();
-  }
-
-  List<int> _toHours(
-    BookingProvider p,
-    int court,
-    DateTime date,
-    String sport,
-  ) {
-    if (p.startHour == null) return [];
-    return List.generate(24, (i) => i).where((h) {
-      if (h <= p.startHour!) return false;
-      return !p.rangeConflicts(court, date, sport, p.startHour!, h);
-    }).toList();
   }
 
   Widget _sectionLabel(String label, IconData icon, Color color, bool isDark) {
