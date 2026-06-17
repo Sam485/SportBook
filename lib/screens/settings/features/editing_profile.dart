@@ -32,6 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _selectedImage;
   bool _isLoading = false;
   bool _isAvatarLoading = false;
+  String? _uploadedAvatarUrl;
 
   // Location variables
   LatLng? _selectedLocation;
@@ -60,14 +61,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _updateAvatar(File imageFile) async {
+  Future<void> _uploadAvatar(File imageFile) async {
     setState(() {
       _isAvatarLoading = true;
     });
 
     try {
-      // Update the widget.user with the new avatar URL
+      // Upload the avatar and get the URL
+      final avatarUrl = await widget.userService.updateAvatar(imageFile);
+
       setState(() {
+        _uploadedAvatarUrl = avatarUrl.avatarUrl;
         _selectedImage = null; // Clear temp selected image
         _isAvatarLoading = false;
       });
@@ -453,10 +457,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       imageQuality: 80,
     );
     if (image != null) {
+      final file = File(image.path);
       setState(() {
-        _selectedImage = File(image.path);
+        _selectedImage = file;
       });
-      // Don't upload immediately, just show preview
+      // Upload immediately
+      await _uploadAvatar(file);
     }
   }
 
@@ -467,10 +473,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       imageQuality: 80,
     );
     if (image != null) {
+      final file = File(image.path);
       setState(() {
-        _selectedImage = File(image.path);
+        _selectedImage = file;
       });
-      // Don't upload immediately, just show preview
+      // Upload immediately
+      await _uploadAvatar(file);
     }
   }
 
@@ -478,7 +486,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final file = await ImagePickerBottomSheet.show(context);
     if (file != null) {
       setState(() => _selectedImage = file);
-      // Don't upload immediately, just show preview
+      // Upload immediately
+      await _uploadAvatar(file);
     }
   }
 
@@ -545,6 +554,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _profileImage() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Determine which avatar to show
+    String? avatarUrl;
+    if (_uploadedAvatarUrl != null && _uploadedAvatarUrl!.isNotEmpty) {
+      avatarUrl = _uploadedAvatarUrl;
+    } else if (widget.user.avatarUrl != null &&
+        widget.user.avatarUrl!.isNotEmpty) {
+      avatarUrl = widget.user.avatarUrl;
+    }
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Center(
@@ -580,10 +598,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           width: 120,
                           height: 120,
                         )
-                      : widget.user.avatarUrl != null &&
-                            widget.user.avatarUrl!.isNotEmpty
+                      : avatarUrl != null && avatarUrl.isNotEmpty
                       ? Image.network(
-                          widget.user.avatarUrl!,
+                          avatarUrl,
                           fit: BoxFit.cover,
                           width: 120,
                           height: 120,

@@ -346,7 +346,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
             crossAxisCount: 7,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: 0.75,
+            childAspectRatio: 0.70,
           ),
           itemCount: weekDates.length,
           itemBuilder: (_, i) {

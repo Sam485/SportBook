@@ -1,3 +1,4 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -25,6 +26,9 @@ void main() async {
   );
 
   runApp(const SportMateApp());
+  // runApp(
+  //   DevicePreview(enabled: true, builder: (context) => const SportMateApp()),
+  // );
 }
 
 class SportMateApp extends StatelessWidget {
