@@ -1,4 +1,5 @@
-import 'package:sportbook/feature/Category/model/category_model.dart';
+// feature/Category/model/dto/get_all_category_dto.dart
+import '../category_model.dart';
 
 class GetAllCategoryDto {
   final List<CategoryModel> data;
@@ -14,11 +15,25 @@ class GetAllCategoryDto {
   });
 
   factory GetAllCategoryDto.fromJson(Map<String, dynamic> json) {
+    // If the API returns a list directly
+    final List<dynamic>? items = json['data'] ?? json['items'] ?? json;
+
     return GetAllCategoryDto(
-      data: json['data'].map((item) => CategoryModel.fromJson(json)),
-      total: json['total'],
-      page: json['page'],
-      limit: json['limit'],
+      data: items != null
+          ? items.map((item) => CategoryModel.fromJson(item)).toList()
+          : [],
+      total: json['total'] ?? 0,
+      page: json['page'] ?? 1,
+      limit: json['limit'] ?? 10,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.map((e) => e.toJson()).toList(),
+      'total': total,
+      'page': page,
+      'limit': limit,
+    };
   }
 }

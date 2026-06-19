@@ -1,19 +1,47 @@
-// feature/Sport Club/Service/sport_club_service.dart
+// feature/SportClub/Service/sport_club_service.dart
+import 'package:sportbook/feature/SportClub/model/dto/favorite_response_dto.dart';
 import 'package:sportbook/feature/SportClub/model/dto/get_all_sport_club_dto.dart';
 import '../model/sport_club_model.dart';
 
 abstract class SportClubService {
-  // Original method
-  Future<GetAllSportClubDto> getAllSportClub();
+  // ============================================================================
+  // All Clubs Methods
+  // ============================================================================
 
-  // New provider-like methods
-  Future<List<SportClubModel>> fetchClubs({int page, int limit, String search});
+  Future<GetAllSportClubDto> getAllSportClub();
+  Future<List<SportClubModel>> fetchClubs({
+    int page = 1,
+    int limit = 10,
+    String search = '',
+  });
   Future<List<SportClubModel>> getFilteredClubs(String categoryId);
   Future<SportClubModel?> getClubById(int id);
   Future<void> refreshClubs();
 
-  // State getters
+  // Getters for all clubs
   List<SportClubModel> get clubs;
   bool get isLoading;
   String get error;
+
+  // ============================================================================
+  // Favorites Methods
+  // ============================================================================
+
+  Future<List<SportClubModel>> fetchFavorite();
+  Future<GetAllSportClubDto> getAllFavorite();
+  Future<FavoriteResponseDto?> toggleFavorite(int clubId);
+
+  // Getters for favorites
+  List<SportClubModel> get favoriteClubs;
+  bool get isLoadingFavorites;
+  String get favoritesError;
+  int get favoriteCount;
+
+  // Helper methods
+  bool isClubFavorited(int clubId);
+  Set<int> get favoritedClubIds;
+
+  void removeListener(void Function() onServiceChanged) {}
+
+  void addListener(void Function() onServiceChanged) {}
 }

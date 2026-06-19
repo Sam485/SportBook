@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
+import 'package:sportbook/feature/Category/model/category_model.dart';
+import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
@@ -28,18 +30,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedCat = 'all';
   String _locationLabel = 'New York';
+  bool _isDisposed = false;
+  bool _isLoading = true;
+  int _refreshCounter = 0;
 
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
-
-  // Get the sport club service
+  final _categoryService = getIt<CategoryService>();
   late final SportClubService _clubService;
 
   List<BannerModel>? _banners;
   UserModel? _user;
+  List<CategoryModel> _categories = [];
+  bool _isCategoriesLoading = true;
 
   // Get clubs directly from service
-  List<SportClubModel> get _clubs => _clubService.clubs;
+  List<SportClubModel> get _clubs => List.from(_clubService.clubs);
 
   // Get filtered clubs based on selected category
   List<SportClubModel> get _filteredClubs {
@@ -60,22 +66,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> initialLoad() async {
     try {
-      // Load banners, user, and clubs in parallel
       final results = await Future.wait([
         _bannerService.getAllActiveBanner(),
         _userService.getProfile(),
         _clubService.fetchClubs(),
+        _categoryService.fetchCategories(limit: 100), // Fetch all categories
       ]);
 
-      setState(() {
-        _banners = results[0] as List<BannerModel>?;
-        _user = results[1] as UserModel?;
-        _locationLabel = _user?.location ?? 'New York';
-      });
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _banners = results[0] as List<BannerModel>?;
+          _user = results[1] as UserModel?;
+          _locationLabel = _user?.location ?? 'New York';
+          _categories = results[3] as List<CategoryModel>;
+          _isCategoriesLoading = false;
+          _isLoading = false;
+          _refreshCounter++;
+        });
+      }
     } catch (e) {
       print('Error loading initial data: $e');
-      // Show error snackbar
-      if (mounted) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _isLoading = false;
+          _isCategoriesLoading = false;
+          _refreshCounter++;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load data: $e'),
@@ -90,7 +106,43 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _clubService = getIt<SportClubService>();
+    // Listen to service changes
+    _clubService.addListener(_onServiceChanged);
+    _categoryService.addListener(_onCategoryServiceChanged);
     initialLoad();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _clubService.removeListener(_onServiceChanged);
+    _categoryService.removeListener(_onCategoryServiceChanged);
+    super.dispose();
+  }
+
+  void _onServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _refreshCounter++;
+        });
+      }
+    });
+  }
+
+  void _onCategoryServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _categories = _categoryService.categories;
+          _refreshCounter++;
+        });
+      }
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    await initialLoad();
   }
 
   void _navigateViewAll() {
@@ -118,19 +170,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
 
     if (result == '__open_map__') {
-      // User chose "Pin on Map" — open the full-screen map picker
       final city = await Navigator.push<String>(
         context,
         MaterialPageRoute(builder: (_) => const MapPickerScreen()),
       );
       if (city != null && city.isNotEmpty) {
         setState(() => _locationLabel = city);
-        // Refresh clubs with new location
         await _refreshClubsWithLocation(city);
       }
     } else if (result != null && result.isNotEmpty) {
       setState(() => _locationLabel = result);
-      // Refresh clubs with new location
       await _refreshClubsWithLocation(result);
     }
   }
@@ -138,8 +187,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refreshClubsWithLocation(String location) async {
     try {
       await _clubService.fetchClubs(search: location);
-      if (mounted) {
-        setState(() {});
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _refreshCounter++;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Clubs updated for $location'),
@@ -149,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update clubs: $e'),
@@ -166,36 +217,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-      body: SafeArea(
-        child: CustomScrollView(
-          physics: const ClampingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(child: _header(isDark)),
-            SliverToBoxAdapter(child: _banner()),
-            SliverToBoxAdapter(child: _categories(isDark)),
-            SliverToBoxAdapter(
-              child: SectionHeader(
-                title: 'clubs_nearby'.tr(context),
-                onAction: _navigateViewAll,
-                isDark: isDark,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppTheme.kAccent,
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+        child: SafeArea(
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _header(isDark)),
+              SliverToBoxAdapter(child: _banner()),
+              SliverToBoxAdapter(child: _categoriesWidget(isDark)),
+              SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'clubs_nearby'.tr(context),
+                  onAction: _navigateViewAll,
+                  isDark: isDark,
+                ),
               ),
-            ),
-            SliverToBoxAdapter(child: _clubsList(isDark)),
-            SliverToBoxAdapter(
-              child: SectionHeader(
-                title: 'upcoming_bookings'.tr(context),
-                onAction: _navigateBookings,
-                isDark: isDark,
+              SliverToBoxAdapter(child: _clubsList(isDark)),
+              SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'upcoming_bookings'.tr(context),
+                  onAction: _navigateBookings,
+                  isDark: isDark,
+                ),
               ),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (_, i) => BookingCard(booking: _bookings[i]),
-                childCount: _bookings.length,
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (_, i) => BookingCard(booking: _bookings[i]),
+                  childCount: _bookings.length,
+                ),
               ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+          ),
         ),
       ),
     );
@@ -219,16 +275,54 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           padding: const EdgeInsets.all(2),
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: AppTheme.kAccent,
-              size: 26,
-            ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: _user?.avatarUrl != null && _user!.avatarUrl!.isNotEmpty
+                ? Image.network(
+                    _user!.avatarUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: AppTheme.kAccent,
+                        size: 26,
+                      ),
+                    ),
+                    loadingBuilder: (_, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: AppTheme.kAccent,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                    ),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: AppTheme.kAccent,
+                      size: 26,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(width: 12),
@@ -327,70 +421,144 @@ class _HomeScreenState extends State<HomeScreen> {
     child: BannerCarousel(banners: _banners),
   );
 
-  Widget _categories(bool isDark) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: SizedBox(
-      height: 48,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: DataService.categories.length,
-        itemBuilder: (_, i) {
-          final cat = DataService.categories[i];
-          final sel = _selectedCat == cat.id;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCat = cat.id),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: sel
-                    ? AppTheme.kAccent
-                    : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
+  Widget _categoriesWidget(bool isDark) {
+    if (_isCategoriesLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox(
+            height: 30,
+            width: 30,
+            child: CircularProgressIndicator(
+              color: AppTheme.kAccent,
+              strokeWidth: 2,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Add "All" category at the beginning
+    final displayCategories = [
+      CategoryModel(
+        id: 0,
+        name: 'all'.tr(context),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      ..._categories,
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: SizedBox(
+        height: 48,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: displayCategories.length,
+          itemBuilder: (_, i) {
+            final cat = displayCategories[i];
+            final isAll = cat.id == 0;
+            final sel = _selectedCat == (isAll ? 'all' : cat.id.toString());
+
+            return GestureDetector(
+              onTap: () => setState(() {
+                _selectedCat = isAll ? 'all' : cat.id.toString();
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
                   color: sel
                       ? AppTheme.kAccent
-                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
-                ),
-                boxShadow: sel
-                    ? [
-                        BoxShadow(
-                          color: AppTheme.kAccent.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(cat.emoji, style: const TextStyle(fontSize: 15)),
-                  const SizedBox(width: 6),
-                  Text(
-                    cat.name,
-                    style: TextStyle(
-                      color: sel
-                          ? const Color(0xFF0A1828)
-                          : (isDark ? Colors.white60 : AppTheme.kLightTextSub),
-                      fontSize: 13,
-                      fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
-                    ),
+                      : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: sel
+                        ? AppTheme.kAccent
+                        : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                   ),
-                ],
+                  boxShadow: sel
+                      ? [
+                          BoxShadow(
+                            color: AppTheme.kAccent.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!isAll) ...[
+                      Text(
+                        _getCategoryEmoji(cat.name),
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      isAll ? 'all'.tr(context) : cat.name,
+                      style: TextStyle(
+                        color: sel
+                            ? const Color(0xFF0A1828)
+                            : (isDark
+                                  ? Colors.white60
+                                  : AppTheme.kLightTextSub),
+                        fontSize: 13,
+                        fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  String _getCategoryEmoji(String categoryName) {
+    // Map category names to emojis
+    switch (categoryName.toLowerCase()) {
+      case 'football':
+        return '⚽';
+      case 'basketball':
+        return '🏀';
+      case 'tennis':
+        return '🎾';
+      case 'badminton':
+        return '🏸';
+      case 'gym':
+        return '🏋️';
+      case 'volleyball':
+        return '🏐';
+      case 'swimming':
+        return '🏊';
+      case 'yoga':
+        return '🧘';
+      case 'boxing':
+        return '🥊';
+      case 'running':
+        return '🏃';
+      default:
+        return '🏅';
+    }
+  }
 
   Widget _clubsList(bool isDark) {
-    // Show loading state
-    if (_clubService.isLoading) {
+    if (_clubService.isLoading || _isLoading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Container(
@@ -413,7 +581,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Show error state
     if (_clubService.error.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -449,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ElevatedButton.icon(
                 onPressed: () async {
                   await _clubService.fetchClubs();
-                  if (mounted) setState(() {});
+                  if (!_isDisposed && mounted) setState(() {});
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.kAccent,
@@ -471,10 +638,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Get filtered clubs
     final clubs = _filteredClubs;
 
-    // Show empty state
     if (clubs.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -512,21 +677,18 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Show clubs list - FIXED: using clubs instead of _clubs
     return SizedBox(
       height: 290,
       child: ListView.builder(
+        key: ValueKey('clubs_list_$_refreshCounter'),
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: clubs.length,
-        itemBuilder: (_, i) =>
-            ClubCard(club: clubs[i]), // Changed from _clubs[i] to clubs[i]
+        itemBuilder: (_, i) => ClubCard(
+          key: ValueKey('club_${clubs[i].id}_$_refreshCounter'),
+          club: clubs[i],
+        ),
       ),
     );
-  }
-
-  // Helper method to manually refresh data (pull to refresh would call this)
-  Future<void> refreshData() async {
-    await initialLoad();
   }
 }

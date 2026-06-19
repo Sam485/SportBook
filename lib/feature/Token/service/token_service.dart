@@ -6,7 +6,10 @@ class TokenService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final TokenApi _tokenApi;
 
-  TokenService(this._tokenApi); // Add constructor dependency
+  TokenService(this._tokenApi);
+
+  // Token expiry buffer (refresh 5 minutes before actual expiry)
+  static const int _expiryBufferSeconds = 300; // 5 minutes
 
   Future<void> saveTokens(TokenModel token) async {
     await _storage.write(key: 'access_token', value: token.accessToken);
@@ -48,20 +51,86 @@ class TokenService {
     return await _storage.read(key: 'refresh_token');
   }
 
+  // Check if token exists and is still valid
   Future<bool> hasValidTokenAsync() async {
     final token = await getAccessToken();
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+
+    // Check if token is expired
+    final isExpired = await isTokenExpired();
+    if (isExpired) {
+      // Try to refresh
+      return await refreshAccessToken();
+    }
+
+    return true;
+  }
+
+  // Check if token is expired or about to expire
+  Future<bool> isTokenExpired() async {
+    final receivedTimeStr = await _storage.read(key: 'token_received_time');
+    final expiredInStr = await _storage.read(key: 'expired_in');
+
+    if (receivedTimeStr == null || expiredInStr == null) {
+      return true;
+    }
+
+    try {
+      final receivedTime = DateTime.parse(receivedTimeStr);
+      final expiredIn = int.parse(expiredInStr);
+
+      // Calculate when token will expire
+      final expiryTime = receivedTime.add(Duration(seconds: expiredIn));
+
+      // Check if token is expired or will expire within buffer time
+      final timeUntilExpiry = expiryTime.difference(DateTime.now());
+      return timeUntilExpiry.inSeconds <= _expiryBufferSeconds;
+    } catch (e) {
+      // If there's any error parsing, consider token expired
+      return true;
+    }
+  }
+
+  // Get remaining time until token expires
+  Future<int?> getRemainingExpiryTime() async {
+    final receivedTimeStr = await _storage.read(key: 'token_received_time');
+    final expiredInStr = await _storage.read(key: 'expired_in');
+
+    if (receivedTimeStr == null || expiredInStr == null) {
+      return null;
+    }
+
+    try {
+      final receivedTime = DateTime.parse(receivedTimeStr);
+      final expiredIn = int.parse(expiredInStr);
+      final expiryTime = receivedTime.add(Duration(seconds: expiredIn));
+
+      return expiryTime.difference(DateTime.now()).inSeconds;
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<bool> refreshAccessToken() async {
     try {
       final refreshToken = await getRefreshToken();
-      if (refreshToken == null) return false;
+      if (refreshToken == null || refreshToken.isEmpty) {
+        await clearToken();
+        return false;
+      }
 
       final newTokenModel = await _tokenApi.refreshToken(refreshToken);
-      await saveTokens(newTokenModel);
-      return true;
+      if (newTokenModel.accessToken.isNotEmpty) {
+        await saveTokens(newTokenModel);
+        return true;
+      }
+
+      await clearToken();
+      return false;
     } catch (e) {
+      print('Refresh token failed: $e');
       await clearToken();
       return false;
     }

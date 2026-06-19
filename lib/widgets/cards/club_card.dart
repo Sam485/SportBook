@@ -1,5 +1,8 @@
+// widgets/cards/club_card.dart
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import '../../core/theme.dart';
 import '../../routes/app_routes.dart';
 import '../../translations/app_translations.dart';
@@ -15,17 +18,51 @@ class ClubCard extends StatefulWidget {
 class _ClubCardState extends State<ClubCard> {
   int _page = 0;
   late final PageController _ctrl;
+  bool _isFavoriting = false;
+  bool _isFavorited = false;
+  bool _isDisposed = false;
+
+  final _clubService = getIt<SportClubService>();
 
   @override
   void initState() {
     super.initState();
     _ctrl = PageController(initialPage: 10000);
+    // Check if this club is already favorited
+    _isFavorited = _clubService.isClubFavorited(widget.club.id);
+    // Listen to service changes
+    _clubService.addListener(_onServiceChanged);
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
+    _clubService.removeListener(_onServiceChanged);
     _ctrl.dispose();
     super.dispose();
+  }
+
+  void _onServiceChanged() {
+    // Schedule the update after the current build phase completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        final isNowFavorited = _clubService.isClubFavorited(widget.club.id);
+        if (_isFavorited != isNowFavorited) {
+          setState(() {
+            _isFavorited = isNowFavorited;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(ClubCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update favorite status if the club ID changed
+    if (oldWidget.club.id != widget.club.id) {
+      _isFavorited = _clubService.isClubFavorited(widget.club.id);
+    }
   }
 
   void _onDragUpdate(DragUpdateDetails d) {
@@ -57,17 +94,54 @@ class _ClubCardState extends State<ClubCard> {
       );
   }
 
+  Future<void> _toggleFavorite() async {
+    if (_isFavoriting) return;
+
+    // Store the current state before toggling
+    final wasFavorited = _isFavorited;
+
+    setState(() {
+      _isFavoriting = true;
+      // Optimistically update UI
+      _isFavorited = !_isFavorited;
+    });
+
+    try {
+      await _clubService.toggleFavorite(widget.club.id);
+
+      if (!_isDisposed && mounted) {
+        // Get the actual state from the service after the operation
+        final isNowFavorited = _clubService.isClubFavorited(widget.club.id);
+
+        setState(() {
+          _isFavorited = isNowFavorited;
+          _isFavoriting = false;
+        });
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        // Revert to the previous state on error
+        setState(() {
+          _isFavorited = wasFavorited;
+          _isFavoriting = false;
+        });
+
+        // Optional: Log error silently
+        print('Failed to toggle favorite: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final c = widget.club;
     final urls = c.imageUrls;
 
-    // Check if urls is empty
     final hasImages = urls.isNotEmpty;
 
     return Container(
-      width: 260,
+      width: 280,
       margin: const EdgeInsets.only(right: 14),
       clipBehavior: Clip.hardEdge,
       decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
@@ -182,10 +256,50 @@ class _ClubCardState extends State<ClubCard> {
                         child: _openCloseBadge(isDark),
                       ),
 
+                      // Favorite button - TOP RIGHT
+                      Positioned(
+                        top: 8,
+                        right: 10,
+                        child: GestureDetector(
+                          onTap: _toggleFavorite,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: _isFavorited
+                                    ? AppTheme.kAccent
+                                    : Colors.white24,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: _isFavoriting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      color: AppTheme.kAccent,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(
+                                    _isFavorited
+                                        ? Icons.favorite_rounded
+                                        : Icons.favorite_border_rounded,
+                                    color: _isFavorited
+                                        ? AppTheme.kAccent
+                                        : Colors.white70,
+                                    size: 18,
+                                  ),
+                          ),
+                        ),
+                      ),
+
                       // Page count badge - Only show if multiple images
                       if (urls.length > 1)
                         Positioned(
-                          top: 8,
+                          bottom: 8,
                           right: 10,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -250,36 +364,34 @@ class _ClubCardState extends State<ClubCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name + hours
-                  InkWell(
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.clubDetailed,
-                      arguments: c,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: c.color.withOpacity(0.2),
-                            border: Border.all(color: c.color, width: 1.8),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            c.initials,
-                            style: TextStyle(
-                              color: isDark
-                                  ? Colors.white
-                                  : AppTheme.kLightText,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: c.color.withOpacity(0.2),
+                          border: Border.all(color: c.color, width: 1.8),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          c.initials,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppTheme.kLightText,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.clubDetailed,
+                            arguments: c,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -343,8 +455,8 @@ class _ClubCardState extends State<ClubCard> {
                             ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 6),
@@ -379,7 +491,7 @@ class _ClubCardState extends State<ClubCard> {
                   ),
                   const SizedBox(height: 6),
 
-                  // Distance + Book button
+                  // Distance + Favorite count + Book button
                   Row(
                     children: [
                       const Icon(
@@ -396,6 +508,28 @@ class _ClubCardState extends State<ClubCard> {
                               : AppTheme.kLightTextSub,
                           fontSize: 11,
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Favorite count indicator
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.favorite_rounded,
+                            color: AppTheme.kAccent.withOpacity(0.7),
+                            size: 12,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${c.favoriteCount}',
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppTheme.kTextSub
+                                  : AppTheme.kLightTextSub,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                       const Spacer(),
                       GestureDetector(

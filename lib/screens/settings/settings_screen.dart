@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/screens/settings/features/appearance_selection.dart';
 import 'package:sportbook/screens/settings/features/editing_profile.dart';
+import 'package:sportbook/screens/settings/features/favorite_club.dart';
 import 'package:sportbook/screens/settings/features/history_booking.dart';
 import 'package:sportbook/screens/settings/features/language_selection.dart';
 import 'package:sportbook/screens/settings/features/password_security.dart';
@@ -39,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Repositories and services
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
+  final _clubService = getIt<SportClubService>();
 
   // Language state
   late String _currentLanguage;
@@ -110,16 +113,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _navigateToFavorites() {
+    // Navigate directly to FavoriteClub without loading data here
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FavoriteClub()),
+    );
+  }
+
   void _navigateToEditProfile() async {
     if (_user == null) return;
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditProfileScreen(
-          user: _user!,
-          userService: _userService, // Use static URL
-        ),
+        builder: (context) =>
+            EditProfileScreen(user: _user!, userService: _userService),
       ),
     );
 
@@ -240,6 +249,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: _navigateToHistory,
                   ),
                 ),
+                SliverToBoxAdapter(
+                  child: _singleButton(
+                    'favorites'.tr(context).toUpperCase(),
+                    Icons.favorite_rounded,
+                    'favorites'.tr(context),
+                    'view_favorite_clubs'.tr(context),
+                    onTap: _navigateToFavorites,
+                  ),
+                ),
                 SliverToBoxAdapter(child: _multipleButton(themeProvider)),
                 SliverToBoxAdapter(
                   child: _singleButton(
@@ -330,8 +348,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(50),
                         child: Image.network(
-                          _user!.avatarUrl ??
-                              _staticAvatarUrl, // Use static URL
+                          _user!.avatarUrl ?? _staticAvatarUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: AppTheme.cardAlt(context),
@@ -493,6 +510,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String subTitle, {
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
@@ -517,7 +536,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: AppTheme.textSub(context),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: AppTheme.bg(context)),
+                      child: Icon(
+                        icon,
+                        color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(

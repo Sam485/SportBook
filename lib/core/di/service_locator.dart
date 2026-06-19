@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sportbook/core/config/app_config.dart';
@@ -8,6 +9,9 @@ import 'package:sportbook/feature/Banner/service/banner_service_imp.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/Category/service/category_service_imp.dart';
 import 'package:sportbook/feature/Category/repository/category_repository.dart';
+import 'package:sportbook/feature/Notification/repository/notification_repository.dart';
+import 'package:sportbook/feature/Notification/service/notification_service.dart';
+import 'package:sportbook/feature/Notification/service/notification_service_imp.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service_imp.dart';
 import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart';
@@ -70,6 +74,16 @@ Future<void> setupServiceLocator() async {
   // Register UserService
   getIt.registerLazySingleton<UserService>(
     () => UserServiceImp(getIt<UserApiRepository>()),
+  );
+
+  // Register NotificationRepository
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepository(getIt<Dio>()),
+  );
+
+  // Register NotificationService
+  getIt.registerLazySingleton<NotificationService>(
+    () => NotificationServiceImp(getIt<NotificationRepository>()),
   );
 
   // Register CategoryRepository

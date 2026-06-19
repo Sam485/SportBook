@@ -59,7 +59,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
       children: [
         CarouselSlider(
           options: CarouselOptions(
-            height: 150,
+            height: 120,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayAnimationDuration: const Duration(milliseconds: 800),
@@ -77,11 +77,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
             return Builder(
               builder: (BuildContext context) {
                 return ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   child: Image.network(
                     banner.imageUrl, // Adjust this based on your BannerModel
                     width: MediaQuery.of(context).size.width,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fitWidth,
                     errorBuilder: (_, __, ___) => Container(
                       color: isDark
                           ? AppTheme.kCardAlt
