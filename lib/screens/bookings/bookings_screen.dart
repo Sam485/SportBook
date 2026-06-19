@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/models/models.dart';
-import 'package:sportbook/services/data_service.dart';
+import 'package:sportbook/feature/static/models/models.dart';
+import 'package:sportbook/feature/static/services/data_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booked_card.dart';
 

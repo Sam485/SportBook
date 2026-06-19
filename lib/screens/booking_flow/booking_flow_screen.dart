@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/screens/booking_flow/steps/step_payment.dart';
 import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
-import '../../models/models.dart';
-import '../../providers/booking_provider.dart';
 import '../../translations/app_translations.dart';
 import 'steps/step_category.dart';
 import 'steps/step_court.dart';
 import 'steps/step_date_time.dart';
 
 class BookingFlowScreen extends StatefulWidget {
-  final BookingTarget target;
+  final SportClubModel target;
   const BookingFlowScreen({super.key, required this.target});
 
   @override
@@ -23,7 +21,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   int _step = 0;
   final _paymentKey = GlobalKey<StepPaymentState>();
 
-  bool get _skipCategory => widget.target.sports.length == 1;
+  // Local state for booking
+  String? _selectedCategory;
+  int? _selectedCourt;
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedStartTime;
+  TimeOfDay? _selectedEndTime;
+
+  bool get _skipCategory => widget.target.categories.length <= 1;
   int get _totalSteps => _skipCategory ? 3 : 4;
   List<String> get _stepLabels => _skipCategory
       ? ['court'.tr(context), 'date_time'.tr(context), 'payment'.tr(context)]
@@ -34,17 +39,53 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           'payment'.tr(context),
         ];
 
+  // Check if we can proceed to next step
+  bool get _canProceed {
+    final stepIndex = _skipCategory ? _step + 1 : _step;
+    switch (stepIndex) {
+      case 0:
+        return _selectedCategory != null;
+      case 1:
+        return _selectedCourt != null;
+      case 2:
+        return _selectedDate != null &&
+            _selectedStartTime != null &&
+            _selectedEndTime != null;
+      case 3:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  bool get _canConfirm {
+    return _selectedCategory != null &&
+        _selectedCourt != null &&
+        _selectedDate != null &&
+        _selectedStartTime != null &&
+        _selectedEndTime != null;
+  }
+
+  double get _totalPrice {
+    // Calculate price based on selection
+    // Placeholder calculation
+    return (widget.target.favoriteCount + 10).toDouble();
+  }
+
+  String get _timeRangeLabel {
+    if (_selectedStartTime != null && _selectedEndTime != null) {
+      return '${_selectedStartTime!.format(context)} - ${_selectedEndTime!.format(context)}';
+    }
+    return '';
+  }
+
   @override
   void initState() {
     super.initState();
     _page = PageController();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final p = context.read<BookingProvider>();
-      p.setTarget(widget.target);
-      if (_skipCategory && widget.target.sports.isNotEmpty) {
-        p.selectSport(widget.target.sports.first);
-      }
-    });
+    if (_skipCategory && widget.target.categories.isNotEmpty) {
+      _selectedCategory = widget.target.categories.first.toString();
+    }
   }
 
   @override
@@ -54,7 +95,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   void _next() {
-    if (_step < _totalSteps - 1) {
+    if (_step < _totalSteps - 1 && _canProceed) {
       setState(() => _step++);
       _page.animateToPage(
         _step,
@@ -77,29 +118,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     }
   }
 
-  bool _canNext(BookingProvider p) {
-    final stepIndex = _skipCategory ? _step + 1 : _step;
-    switch (stepIndex) {
-      case 0:
-        return p.canProceedFromCategory;
-      case 1:
-        return p.canProceedFromCourt;
-      case 2:
-        return p.canProceedFromDate;
-      case 3:
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  void _handleConfirm(BookingProvider p) {
+  void _handleConfirm() {
     _paymentKey.currentState?.handleConfirm();
   }
 
-  void _onPaymentConfirmed(BookingProvider p) {
-    if (!p.canConfirm) return;
-    p.confirmBooking();
+  void _onPaymentConfirmed() {
+    // Handle booking confirmation
+    // You can add API call here
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PaymentSuccessPage(
@@ -110,62 +135,110 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     );
   }
 
+  // Callbacks from steps
+  void _onCategorySelected(String category) {
+    setState(() {
+      _selectedCategory = category;
+    });
+  }
+
+  void _onCourtSelected(int court) {
+    setState(() {
+      _selectedCourt = court;
+    });
+  }
+
+  void _onDateTimeSelected(DateTime date, TimeOfDay start, TimeOfDay end) {
+    setState(() {
+      _selectedDate = date;
+      _selectedStartTime = start;
+      _selectedEndTime = end;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Consumer<BookingProvider>(
-      builder: (context, provider, _) => Scaffold(
-        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-        appBar: _buildAppBar(provider, isDark),
-        body: Column(
-          children: [
-            _StepIndicator(
-              steps: _stepLabels,
-              currentStep: _step,
-              isDark: isDark,
+    return Scaffold(
+      backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+      appBar: _buildAppBar(isDark),
+      body: Column(
+        children: [
+          _StepIndicator(
+            steps: _stepLabels,
+            currentStep: _step,
+            isDark: isDark,
+          ),
+          Expanded(
+            child: PageView(
+              controller: _page,
+              physics: const NeverScrollableScrollPhysics(),
+              children: _skipCategory
+                  ? [
+                      StepCourt(
+                        onNext: _next,
+                        onCourtSelected: _onCourtSelected,
+                        selectedCourt: _selectedCourt,
+                      ),
+                      StepDateAndTime(
+                        onConfirm: _next,
+                        onDateTimeSelected: _onDateTimeSelected,
+                        selectedDate: _selectedDate,
+                        selectedStartTime: _selectedStartTime,
+                        selectedEndTime: _selectedEndTime,
+                      ),
+                      StepPayment(
+                        key: _paymentKey,
+                        onConfirm: _onPaymentConfirmed,
+                      ),
+                    ]
+                  : [
+                      StepCategory(
+                        onNext: _next,
+                        onCategorySelected: _onCategorySelected,
+                        selectedCategory: _selectedCategory,
+                        categories: widget.target.categories,
+                      ),
+                      StepCourt(
+                        onNext: _next,
+                        onCourtSelected: _onCourtSelected,
+                        selectedCourt: _selectedCourt,
+                      ),
+                      StepDateAndTime(
+                        onConfirm: _next,
+                        onDateTimeSelected: _onDateTimeSelected,
+                        selectedDate: _selectedDate,
+                        selectedStartTime: _selectedStartTime,
+                        selectedEndTime: _selectedEndTime,
+                      ),
+                      StepPayment(
+                        key: _paymentKey,
+                        onConfirm: _onPaymentConfirmed,
+                      ),
+                    ],
             ),
-            Expanded(
-              child: PageView(
-                controller: _page,
-                physics: const NeverScrollableScrollPhysics(),
-                children: _skipCategory
-                    ? [
-                        StepCourt(onNext: _next),
-                        StepDateAndTime(onConfirm: _next),
-                        StepPayment(
-                          key: _paymentKey,
-                          onConfirm: () => _onPaymentConfirmed(provider),
-                        ),
-                      ]
-                    : [
-                        StepCategory(onNext: _next),
-                        StepCourt(onNext: _next),
-                        StepDateAndTime(onConfirm: _next),
-                        StepPayment(
-                          key: _paymentKey,
-                          onConfirm: () => _onPaymentConfirmed(provider),
-                        ),
-                      ],
-              ),
-            ),
-            _BottomBar(
-              step: _step,
-              totalSteps: _totalSteps,
-              canProceed: _canNext(provider),
-              onBack: _back,
-              onNext: _next,
-              onConfirm: () => _handleConfirm(provider),
-              provider: provider,
-              isDark: isDark,
-            ),
-          ],
-        ),
+          ),
+          _BottomBar(
+            step: _step,
+            totalSteps: _totalSteps,
+            canProceed: _canProceed,
+            onBack: _back,
+            onNext: _next,
+            onConfirm: _handleConfirm,
+            selectedCategory: _selectedCategory,
+            selectedCourt: _selectedCourt,
+            selectedDate: _selectedDate,
+            timeRangeLabel: _timeRangeLabel,
+            totalPrice: _totalPrice,
+            isDark: isDark,
+          ),
+        ],
       ),
     );
   }
 
-  AppBar _buildAppBar(BookingProvider p, bool isDark) => AppBar(
+  AppBar _buildAppBar(bool isDark) => AppBar(
     backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
     elevation: 0,
     leading: IconButton(
@@ -189,7 +262,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         Text(
-          widget.target.venue,
+          widget.target.location,
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 11.5,
@@ -332,7 +405,11 @@ class _BottomBar extends StatelessWidget {
   final int step, totalSteps;
   final bool canProceed;
   final VoidCallback onBack, onNext, onConfirm;
-  final BookingProvider provider;
+  final String? selectedCategory;
+  final int? selectedCourt;
+  final DateTime? selectedDate;
+  final String timeRangeLabel;
+  final double totalPrice;
   final bool isDark;
 
   const _BottomBar({
@@ -342,11 +419,20 @@ class _BottomBar extends StatelessWidget {
     required this.onBack,
     required this.onNext,
     required this.onConfirm,
-    required this.provider,
+    required this.selectedCategory,
+    required this.selectedCourt,
+    required this.selectedDate,
+    required this.timeRangeLabel,
+    required this.totalPrice,
     required this.isDark,
   });
 
   bool get isLastStep => step == totalSteps - 1;
+  bool get canConfirm =>
+      selectedCategory != null &&
+      selectedCourt != null &&
+      selectedDate != null &&
+      timeRangeLabel.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +456,7 @@ class _BottomBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isLastStep && provider.canConfirm) ...[
+          if (isLastStep && canConfirm) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
@@ -382,9 +468,9 @@ class _BottomBar extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  if (provider.selectedSport != null) ...[
+                  if (selectedCategory != null) ...[
                     Text(
-                      provider.selectedSport!,
+                      selectedCategory!,
                       style: const TextStyle(
                         color: AppTheme.kAccent,
                         fontSize: 12,
@@ -393,11 +479,11 @@ class _BottomBar extends StatelessWidget {
                     ),
                     _dot(),
                   ],
-                  if (provider.selectedCourt != null) ...[
+                  if (selectedCourt != null) ...[
                     Text(
                       'court_label'
                           .tr(context)
-                          .replaceAll('{number}', '${provider.selectedCourt}'),
+                          .replaceAll('{number}', '$selectedCourt'),
                       style: TextStyle(
                         color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 12,
@@ -406,9 +492,9 @@ class _BottomBar extends StatelessWidget {
                     ),
                     _dot(),
                   ],
-                  if (provider.selectedDate != null) ...[
+                  if (selectedDate != null) ...[
                     Text(
-                      _fmtDate(provider.selectedDate!, context),
+                      _fmtDate(selectedDate!, context),
                       style: TextStyle(
                         color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                         fontSize: 12,
@@ -418,7 +504,7 @@ class _BottomBar extends StatelessWidget {
                   ],
                   Expanded(
                     child: Text(
-                      provider.timeRangeLabel,
+                      timeRangeLabel,
                       style: const TextStyle(
                         color: AppTheme.kAccent,
                         fontSize: 12,
@@ -428,7 +514,7 @@ class _BottomBar extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '\$${provider.totalPrice.toStringAsFixed(0)}',
+                    '\$${totalPrice.toStringAsFixed(0)}',
                     style: TextStyle(
                       color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 13,
@@ -470,11 +556,11 @@ class _BottomBar extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     height: 52,
                     decoration: BoxDecoration(
-                      color: canProceed
+                      color: canProceed || (isLastStep && canConfirm)
                           ? AppTheme.kAccent
                           : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                       borderRadius: BorderRadius.circular(26),
-                      boxShadow: canProceed
+                      boxShadow: canProceed || (isLastStep && canConfirm)
                           ? [
                               BoxShadow(
                                 color: AppTheme.kAccent.withOpacity(0.35),
@@ -493,7 +579,7 @@ class _BottomBar extends StatelessWidget {
                               ? 'confirm_booking'.tr(context)
                               : 'next'.tr(context),
                           style: TextStyle(
-                            color: canProceed
+                            color: canProceed || (isLastStep && canConfirm)
                                 ? const Color(0xFF0A1828)
                                 : (isDark
                                       ? Colors.white38
@@ -502,7 +588,7 @@ class _BottomBar extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        if (canProceed) ...[
+                        if (canProceed || (isLastStep && canConfirm)) ...[
                           const SizedBox(width: 6),
                           Icon(
                             isLastStep

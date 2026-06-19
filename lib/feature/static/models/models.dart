@@ -229,3 +229,31 @@ extension PaymentMethodExtension on PaymentMethod {
     }
   }
 }
+
+// ─── Banner ──────────────────────────────────────────────────────────────────
+class BannerSport {
+  final int id;
+  final String name;
+  const BannerSport({required this.id, required this.name});
+}
+
+// ─── Notification ─────────────────────────────────────────────────────────────
+class NotificationItem {
+  final IconData icon;
+  final String title;
+  final String description;
+  final String datetime;
+  final String category;
+  final Color iconColor;
+  bool isRead;
+
+  NotificationItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.datetime,
+    required this.category,
+    required this.iconColor,
+    this.isRead = false,
+  });
+}

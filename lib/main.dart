@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'core/theme.dart';
 import 'providers/booking_provider.dart';
 import 'providers/theme_provider.dart';
@@ -12,6 +15,8 @@ import 'routes/app_routes.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPreferences.getInstance();
+  await setupServiceLocator();
+  await dotenv.load(fileName: ".env");
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -19,11 +24,65 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
+
   runApp(const SportMateApp());
 }
 
-class SportMateApp extends StatelessWidget {
+class SportMateApp extends StatefulWidget {
   const SportMateApp({super.key});
+
+  @override
+  State<SportMateApp> createState() => _SportMateAppState();
+}
+
+class _SportMateAppState extends State<SportMateApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkTokenOnResume();
+    }
+  }
+
+  Future<void> _checkTokenOnResume() async {
+    try {
+      final tokenService = getIt<TokenService>();
+      final hasValidToken = await tokenService.hasValidTokenAsync();
+
+      if (!hasValidToken && mounted) {
+        // Token expired, try to refresh or logout
+        final refreshed = await tokenService.refreshAccessToken();
+        if (!refreshed && mounted) {
+          // Token refresh failed, redirect to login
+          // Use a post-frame callback to avoid issues during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              // Navigate to login only if not already on login screen
+              final currentRoute = ModalRoute.of(context)?.settings.name;
+              if (currentRoute != AppRoutes.login &&
+                  currentRoute != AppRoutes.splash) {
+                Navigator.pushReplacementNamed(context, AppRoutes.login);
+              }
+            }
+          });
+        }
+      }
+    } catch (e) {
+      print('Token check on resume error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +107,7 @@ class SportMateApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            initialRoute: AppRoutes.landing,
+            initialRoute: AppRoutes.splash,
             onGenerateRoute: AppRoutes.onGenerateRoute,
           );
         },

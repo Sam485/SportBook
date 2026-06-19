@@ -1,17 +1,12 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/models/models.dart';
-import 'package:sportbook/providers/booking_provider.dart';
-import 'package:sportbook/providers/theme_provider.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/screens/booking_flow/booking_flow_screen.dart';
-import 'package:sportbook/services/data_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
-import 'package:sportbook/widgets/cards/booking_card.dart';
 
 class ClubDetailed extends StatefulWidget {
-  final BookingTarget target;
+  final SportClubModel target;
   const ClubDetailed({super.key, required this.target});
 
   @override
@@ -25,22 +20,26 @@ class _ClubDetailedState extends State<ClubDetailed> {
   bool get _isOpen {
     final now = TimeOfDay.now();
     final nowM = now.hour * 60 + now.minute;
+
     int parse(String t) {
       try {
-        final p = t.trim().split(':');
-        var h = int.parse(p[0]);
-        final rest = p[1].split(' ');
-        final period = rest[1].toUpperCase();
-        if (period == 'PM' && h != 12) h += 12;
-        if (period == 'AM' && h == 12) h = 0;
-        return h * 60 + int.parse(rest[0]);
+        final parts = t.trim().split(':');
+        int hour = int.parse(parts[0]);
+        int minute = int.parse(parts[1]);
+        return hour * 60 + minute;
       } catch (_) {
         return 0;
       }
     }
 
-    return nowM >= parse(widget.target.openTime) &&
-        nowM < parse(widget.target.closeTime);
+    final openMinutes = parse(widget.target.openTime);
+    final closeMinutes = parse(widget.target.closeTime);
+
+    if (closeMinutes < openMinutes) {
+      return nowM >= openMinutes || nowM < closeMinutes;
+    } else {
+      return nowM >= openMinutes && nowM < closeMinutes;
+    }
   }
 
   @override
@@ -80,7 +79,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 SliverToBoxAdapter(
                   child: _divider('you_might_also_like'.tr(context), isDark),
                 ),
-                SliverToBoxAdapter(child: _suggestions()),
+                SliverToBoxAdapter(child: _suggestions(isDark)),
                 const SliverToBoxAdapter(child: SizedBox(height: 80)),
               ],
             ),
@@ -112,7 +111,12 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 .toList(),
           )
         else
-          _netImage(widget.target.imageUrls.first, isDark),
+          _netImage(
+            widget.target.imageUrls.isNotEmpty
+                ? widget.target.imageUrls.first
+                : '',
+            isDark,
+          ),
 
         Positioned.fill(
           child: DecoratedBox(
@@ -204,31 +208,41 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  Widget _netImage(String url, bool isDark) => Image.network(
-    url,
-    width: double.infinity,
-    height: 260,
-    fit: BoxFit.cover,
-    errorBuilder: (_, __, ___) => Container(
-      color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-      child: Icon(
-        Icons.image_not_supported,
-        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-        size: 36,
-      ),
-    ),
-    loadingBuilder: (_, child, p) => p == null
-        ? child
-        : Container(
+  Widget _netImage(String url, bool isDark) => url.isNotEmpty
+      ? Image.network(
+          url,
+          width: double.infinity,
+          height: 260,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
             color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: AppTheme.kAccent,
-                strokeWidth: 2,
-              ),
+            child: Icon(
+              Icons.image_not_supported,
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              size: 36,
             ),
           ),
-  );
+          loadingBuilder: (_, child, p) => p == null
+              ? child
+              : Container(
+                  color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.kAccent,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+        )
+      : Container(
+          height: 260,
+          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+          child: Icon(
+            Icons.image_not_supported,
+            color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            size: 36,
+          ),
+        );
 
   Widget _infoSection(bool isDark) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -299,7 +313,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           children: [
             _statPill(
               Icons.grid_view_rounded,
-              '${widget.target.sports.length} ${'courts'.tr(context)}',
+              '${widget.target.categories.length} ${'courts'.tr(context)}',
               AppTheme.kAccent,
             ),
             const SizedBox(width: 8),
@@ -307,7 +321,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             const SizedBox(width: 8),
             _statPill(
               Icons.attach_money_rounded,
-              '\$${widget.target.pricePerHour.toStringAsFixed(0)}/hr',
+              '\$${(widget.target.favoriteCount + 10).toString()}/hr',
               const Color(0xFF4CAF50),
             ),
           ],
@@ -424,9 +438,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
     child: Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: widget.target.sports
+      children: widget.target.categories
           .map(
-            (s) => Container(
+            (cat) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: AppTheme.kAccent.withOpacity(0.1),
@@ -434,7 +448,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 border: Border.all(color: AppTheme.kAccent.withOpacity(0.35)),
               ),
               child: Text(
-                '${DataService.emojiFor(s)} $s',
+                cat.toString(),
                 style: const TextStyle(
                   color: AppTheme.kAccent,
                   fontSize: 12,
@@ -462,7 +476,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         children: [
           _priceRow(
             'peak_hours'.tr(context),
-            '\$${(widget.target.pricePerHour * 1.25).toStringAsFixed(0)}/hr',
+            '\$${(widget.target.favoriteCount + 15).toString()}/hr',
             const Color(0xFFF59E0B),
             isDark,
           ),
@@ -472,7 +486,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
           _priceRow(
             'off_peak_hours'.tr(context),
-            '\$${widget.target.pricePerHour.toStringAsFixed(0)}/hr',
+            '\$${(widget.target.favoriteCount + 10).toString()}/hr',
             const Color(0xFF4CAF50),
             isDark,
           ),
@@ -482,7 +496,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
           _priceRow(
             'weekend_surcharge'.tr(context),
-            '+\$${(widget.target.pricePerHour * 0.2).toStringAsFixed(0)}/hr',
+            '+\$${(widget.target.favoriteCount ~/ 5 + 5).toString()}/hr',
             Colors.redAccent,
             isDark,
           ),
@@ -543,7 +557,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  widget.target.venue,
+                  widget.target.location,
                   style: TextStyle(
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 13,
@@ -623,7 +637,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
         ),
       ),
       child: Text(
-        widget.target.name + ' ' + 'about_description'.tr(context),
+        widget.target.description.isNotEmpty
+            ? widget.target.description
+            : '${widget.target.name} ' + 'about_description'.tr(context),
         style: TextStyle(
           color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
           fontSize: 13,
@@ -633,47 +649,29 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  Widget _suggestions() {
-    final currentId = widget.target.id;
-    final currentSports = widget.target.sports.toSet();
-
-    var suggestions = DataService.clubs
-        .where(
-          (c) =>
-              c.id != currentId &&
-              c.sports.any((s) => currentSports.contains(s)),
-        )
-        .take(3)
-        .toList();
-
-    if (suggestions.isEmpty) {
-      suggestions = DataService.clubs
-          .where((c) => c.id != currentId)
-          .take(3)
-          .toList();
-    }
-
-    if (suggestions.isEmpty) return const SizedBox.shrink();
-
-    SportBooking clubToBooking(SportClub c) => SportBooking(
-      id: c.id,
-      title: c.name,
-      ownerName: c.name,
-      ownerInitials: c.initials,
-      ownerColor: c.color,
-      sportTypes: c.sports,
-      venue: c.venue,
-      imageUrls: c.imageUrls,
-      openTime: c.openTime,
-      closeTime: c.closeTime,
-      bookedSlots: 0,
-      totalSlots: c.totalCourts,
-    );
-
-    return Column(
-      children: suggestions
-          .map((c) => BookingCard(booking: clubToBooking(c)))
-          .toList(),
+  Widget _suggestions(bool isDark) {
+    // Since we don't have static data anymore, show a message or empty
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            'more_clubs_coming_soon'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -802,93 +800,11 @@ class _ClubDetailedState extends State<ClubDetailed> {
   );
 
   void _showBookingSheet(BuildContext context) {
-    context.read<BookingProvider>().setTarget(widget.target);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.92,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (ctx, scrollController) => Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            return Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                border: Border.all(
-                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white24 : Colors.grey[400],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                    child: Row(
-                      children: [
-                        Text(
-                          'book_court'.tr(context),
-                          style: TextStyle(
-                            color: isDark ? Colors.white : AppTheme.kLightText,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(ctx),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppTheme.kCardAlt
-                                  : AppTheme.kLightCardAlt,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark
-                                    ? AppTheme.kBorder
-                                    : AppTheme.kLightBorder,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: isDark
-                                  ? Colors.white60
-                                  : AppTheme.kLightTextSub,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
-                    height: 1,
-                  ),
-                  Expanded(child: BookingFlowScreen(target: widget.target)),
-                ],
-              ),
-            );
-          },
-        ),
+    // Navigate directly to booking flow with the club
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingFlowScreen(target: widget.target),
       ),
     );
   }

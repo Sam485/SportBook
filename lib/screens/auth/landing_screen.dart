@@ -53,7 +53,10 @@ class _LandingScreenState extends State<LandingScreen> {
             height: MediaQuery.of(context).size.height * 0.65,
             child: _carousel(context),
           ),
-          _buildBottomSection(context),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.35,
+            child: _buildBottomSection(context),
+          ),
         ],
       ),
     );
@@ -209,7 +212,7 @@ class _LandingScreenState extends State<LandingScreen> {
           // Sign Up button (primary)
           SizedBox(
             width: double.infinity,
-            height: 52,
+            height: 50,
             child: ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.signUp),
               style: AppTheme.elevatedButtonStyle(),
@@ -225,7 +228,7 @@ class _LandingScreenState extends State<LandingScreen> {
           // Login button (outlined)
           SizedBox(
             width: double.infinity,
-            height: 52,
+            height: 50,
             child: OutlinedButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
               style: OutlinedButton.styleFrom(

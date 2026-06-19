@@ -29,6 +29,7 @@ class AppTranslations {
       'open': 'Open',
       'closed': 'Closed',
       'view_all': 'View All',
+      'no_images': 'No Images',
 
       // ---------------------- Sports Names ----------------------------
       'sport_football': 'Football',
@@ -43,6 +44,9 @@ class AppTranslations {
       'bookings': 'Bookings',
       'settings': 'Settings',
       'profile': 'Profile',
+      'user': 'User',
+      'favorites': 'Favorites',
+      'view_favorite_clubs': 'View your favorite clubs',
 
       // ---------------------- Location Picker ----------------------------
       'select_location': 'Select location',
@@ -75,6 +79,9 @@ class AppTranslations {
       'no_bookings': 'No bookings for this sport',
       'hello_message': 'Hello, {name} 👋',
       'no_clubs_for_sport': 'No clubs for this sport',
+      'favorites_empty': 'No favorite clubs yet',
+      'favorites_hint': 'Start favoriting clubs you love!',
+      'explore_clubs': 'Explore Clubs',
 
       // ---------------------- Explore Screen ----------------------------
       'nearby': 'Nearby',
@@ -86,7 +93,7 @@ class AppTranslations {
       'search': 'Search',
       'book_now': 'Book Now',
       'select_sport': 'Select Sport',
-      'select_court': 'Select Court',
+      'select_court': 'Select Booking',
       'select_date': 'Select Date',
       'select_time': 'Select Time',
       'payment': 'Payment',
@@ -350,6 +357,21 @@ class AppTranslations {
       'remembered_password': 'Remembered your password?',
       'resend_in': 'Resend in {seconds}s',
       'back_to': 'Back to ',
+      'email_phone_username': 'Email, Phone or Username',
+      'email_phone_username_hint': 'Enter your email, phone or username',
+      'identifier_required': 'Email, phone or username is required',
+      'invalid_email_format':
+          'Please enter a valid email address (e.g., user@example.com)',
+      'invalid_phone_format':
+          'Please enter a valid Cambodian phone number (e.g., 0123456789, 85512345678, +85512345678)',
+      'invalid_phone_length':
+          'Phone number must be 9-10 digits after country code',
+      'username_too_short': 'Username must be at least 3 characters',
+      'username_too_long': 'Username must be less than 30 characters',
+      'invalid_identifier':
+          'Please enter a valid email, phone number, or username (letters, numbers, dots, underscores)',
+      'login_success': 'Login successful!',
+      'login_failed': 'Login failed. Please check your credentials',
 
       // ---------------------- Create Profile Screen ----------------------------
       'choose_photo': 'Choose Photo',
@@ -405,20 +427,6 @@ class AppTranslations {
     // Khmer Translations
     // ------------------------------------------------------------------------
     'km': {
-      // ---------------------- Landing Screen ----------------------------
-      'banner_title_1': 'កក់កីឡា\nរបស់អ្នកថ្ងៃនេះ!',
-      'banner_title_2': 'ស្វែងរកទីលាន\nភ្លាមៗ',
-      'banner_title_3': 'ជួប និងលេង\nជាមួយអ្នកដទៃ',
-      'banner_title_4': 'តាមដាន\nការអនុវត្តន៍',
-      'banner_desc_1':
-          'ស្វែងរកទីលាន កក់ពេលវេលា និងភ្ជាប់ជាមួយអ្នកលេងក្បែរអ្នក — ទាំងអស់នៅកន្លែងតែមួយ។',
-      'banner_desc_2':
-          'ស្វែងរកទីលានបាល់បោះដែលមាន ពិនិត្យមើលភាពអាចរកបានតាមពេលវេលាជាក់ស្តែង និងកក់ក្នុងរយៈពេលប៉ុន្មានវិនាទី។',
-      'banner_desc_3':
-          'ចូលរួមការប្រកួតក្នុងតំបន់ ប្រកួតប្រជែងជាមួយអ្នកលេងក្បែរអ្នក និងពង្រីកសហគមន៍កីឡារបស់អ្នក។',
-      'banner_desc_4':
-          'កត់ត្រាវគ្គរបស់អ្នក តាមដានវឌ្ឍនភាព និងបង្កើនសមត្ថភាពផ្ទាល់ខ្លួនរាល់ពេលដែលអ្នកលេង។',
-
       // ---------------------- Common UI Elements ----------------------------
       'app_name': 'ស្ព័រមិត្ត',
       'ok': 'យល់ព្រម',
@@ -434,13 +442,14 @@ class AppTranslations {
       'open': 'បើក',
       'closed': 'បិទ',
       'view_all': 'មើលទាំងអស់',
+      'no_images': 'គ្មានរូបភាព',
 
       // ---------------------- Sports Names ----------------------------
-      'sport_football': 'Football',
-      'sport_basketball': 'Basketball',
-      'sport_tennis': 'Tennis',
-      'sport_badminton': 'Badminton',
-      'sport_gym': 'Gym',
+      'sport_football': 'បាល់ទាត់',
+      'sport_basketball': 'បាល់បោះ',
+      'sport_tennis': 'តេនីស',
+      'sport_badminton': 'បាត់មីនតុន',
+      'sport_gym': 'កន្លែងហាត់ប្រាណ',
 
       // ---------------------- Navigation ----------------------------
       'home': 'ទំព័រដើម',
@@ -448,6 +457,9 @@ class AppTranslations {
       'bookings': 'ការកក់',
       'settings': 'ការកំណត់',
       'profile': 'ប្រវត្តិរូប',
+      'user': 'អ្នកប្រើប្រាស់',
+      'favorites': 'ការពេញចិត្ត',
+      'view_favorite_clubs': 'មើលក្លឹបដែលអ្នកចូលចិត្ត',
 
       // ---------------------- Location Picker ----------------------------
       'select_location': 'ជ្រើសរើសទីតាំង',
@@ -481,6 +493,9 @@ class AppTranslations {
       'no_bookings': 'គ្មានការកក់សម្រាប់កីឡានេះ',
       'hello_message': 'សួស្តី, {name} 👋',
       'no_clubs_for_sport': 'គ្មានក្លឹបសម្រាប់កីឡានេះ',
+      'favorites_empty': 'មិនទាន់មានក្លឹបដែលអ្នកចូលចិត្តនៅឡើយទេ',
+      'favorites_hint': 'ចាប់ផ្តើមចូលចិត្តក្លឹបដែលអ្នកស្រលាញ់!',
+      'explore_clubs': 'ស្វែងរកក្លឹប',
 
       // ---------------------- Explore Screen ----------------------------
       'nearby': 'ក្បែរអ្នក',
@@ -753,6 +768,22 @@ class AppTranslations {
       'remembered_password': 'ចងចាំពាក្យសម្ងាត់របស់អ្នក?',
       'resend_in': 'ផ្ញើម្តងទៀតក្នុងរយៈពេល {seconds} វិនាទី',
       'back_to': 'ត្រឡប់ទៅ ',
+      'email_phone_username': 'អ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើ',
+      'email_phone_username_hint':
+          'បញ្ចូលអ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើរបស់អ្នក',
+      'identifier_required': 'តម្រូវឱ្យបញ្ចូលអ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើ',
+      'invalid_email_format':
+          'សូមបញ្ចូលអាសយដ្ឋានអ៊ីមែលដែលមានសុពលភាព (ឧទាហរណ៍ user@example.com)',
+      'invalid_phone_format':
+          'សូមបញ្ចូលលេខទូរស័ព្ទកម្ពុជាដែលមានសុពលភាព (ឧទាហរណ៍ ០១២៣៤៥៦៧៨៩, ៨៥៥១២៣៤៥៦៧៨, +៨៥៥១២៣៤៥៦៧៨)',
+      'invalid_phone_length':
+          'លេខទូរស័ព្ទត្រូវតែមាន ៩-១០ ខ្ទង់បន្ទាប់ពីកូដប្រទេស',
+      'username_too_short': 'ឈ្មោះអ្នកប្រើត្រូវតែមានយ៉ាងហោចណាស់ ៣ តួអក្សរ',
+      'username_too_long': 'ឈ្មោះអ្នកប្រើត្រូវតែតិចជាង ៣០ តួអក្សរ',
+      'invalid_identifier':
+          'សូមបញ្ចូលអ៊ីមែល លេខទូរស័ព្ទ ឬឈ្មោះអ្នកប្រើដែលមានសុពលភាព (អក្សរ លេខ ចំនុច គូសក្រោម)',
+      'login_success': 'ការចូលបានជោគជ័យ!',
+      'login_failed': 'ការចូលបរាជ័យ។ សូមពិនិត្យមើលព័ត៌មានសម្គាល់របស់អ្នក',
 
       // ---------------------- Create Profile Screen ----------------------------
       'choose_photo': 'ជ្រើសរើសរូបថត',
@@ -788,6 +819,20 @@ class AppTranslations {
       'confirmed': 'បានបញ្ជាក់',
       'pending': 'កំពុងរង់ចាំ',
       'cancelled': 'បានបោះបង់',
+
+      // ---------------------- Landing Screen ----------------------------
+      'banner_title_1': 'កក់កីឡា\nរបស់អ្នកថ្ងៃនេះ!',
+      'banner_title_2': 'ស្វែងរកទីលាន\nភ្លាមៗ',
+      'banner_title_3': 'ជួប និងលេង\nជាមួយអ្នកដទៃ',
+      'banner_title_4': 'តាមដាន\nការអនុវត្តន៍',
+      'banner_desc_1':
+          'ស្វែងរកទីលាន កក់ពេលវេលា និងភ្ជាប់ជាមួយអ្នកលេងក្បែរអ្នក — ទាំងអស់នៅកន្លែងតែមួយ។',
+      'banner_desc_2':
+          'ស្វែងរកទីលានបាល់បោះដែលមាន ពិនិត្យមើលភាពអាចរកបានតាមពេលវេលាជាក់ស្តែង និងកក់ក្នុងរយៈពេលប៉ុន្មានវិនាទី។',
+      'banner_desc_3':
+          'ចូលរួមការប្រកួតក្នុងតំបន់ ប្រកួតប្រជែងជាមួយអ្នកលេងក្បែរអ្នក និងពង្រីកសហគមន៍កីឡារបស់អ្នក។',
+      'banner_desc_4':
+          'កត់ត្រាវគ្គរបស់អ្នក តាមដានវឌ្ឍនភាព និងបង្កើនសមត្ថភាពផ្ទាល់ខ្លួនរាល់ពេលដែលអ្នកលេង។',
     },
   };
 
