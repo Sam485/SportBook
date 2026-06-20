@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
-import 'package:sportbook/feature/User/model/register_request_dto.dart';
-import 'package:sportbook/screens/auth/create_profile_screen.dart';
-import 'package:sportbook/screens/auth/forget_screen.dart';
-import 'package:sportbook/screens/auth/landing_screen.dart';
+import 'package:sportbook/screens/auth/forget_password_screen.dart';
 import 'package:sportbook/screens/auth/login_screen.dart';
-import 'package:sportbook/screens/auth/signup_screen.dart';
+import 'package:sportbook/screens/auth/sign_in_with_otp_screen.dart';
+import 'package:sportbook/screens/auth/sign_up_screen.dart';
 import 'package:sportbook/screens/auth/verify_screen.dart';
 import 'package:sportbook/screens/bookings/bookings_screen.dart';
 import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
@@ -18,28 +16,44 @@ import '../screens/booking_flow/booking_flow_screen.dart';
 import '../screens/club_detailed/club_detailed.dart';
 
 class AppRoutes {
-  static const home = '/';
-  static const bookingFlow = '/booking';
-  static const clubDetailed = '/clubDetailed';
-  static const landing = '/landing';
-  static const signUp = '/signup';
-  static const login = '/login';
-  static const forget = '/forget';
-  static const verify = '/verify';
-  static const createProfile = '/createProfile';
-  static const bookedDetailed = '/bookedDetailed';
-  static const notification = '/notification';
-  static const viewAll = '/viewAll';
-  static const allbookings = '/allBookings';
-  static const splash = '/splash';
+  static const String home = '/';
+  static const String bookingFlow = '/booking';
+  static const String clubDetailed = '/club-detailed';
+  static const String landing = '/landing';
+  static const String verify = '/verify';
+  static const String bookedDetailed = '/booked-detailed';
+  static const String notification = '/notification';
+  static const String viewAll = '/view-all';
+  static const String allbookings = '/all-bookings';
+  static const String splash = '/splash';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String otpLogin = '/otp-login';
+  static const String forgetPass = '/forget-password';
+  static const String otpVerify = '/otp-verify';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case otpVerify:
+        return MaterialPageRoute(builder: (_) => const VerifyScreen());
+
+      case forgetPass:
+        return MaterialPageRoute(builder: (_) => const ForgetPasswordScreen());
+
+      case otpLogin:
+        return MaterialPageRoute(builder: (_) => const SignInWithOtpScreen());
+
       case home:
         return MaterialPageRoute(builder: (_) => const MainScreen());
 
+      case login:
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
+
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
+
+      case signup:
+        return MaterialPageRoute(builder: (_) => const SignUpScreen());
 
       case allbookings:
         final target = settings.arguments as bool;
@@ -52,22 +66,12 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ViewAll(
             title: args['title'] as String,
-            data:
-                args['data']
-                    as List<
-                      SportClubModel
-                    >, // Changed from SportClub to SportClubModel
+            data: args['data'] as List<SportClubModel>,
           ),
         );
 
       case notification:
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
-
-      case createProfile:
-        final args = settings.arguments as RegisterRequestDto;
-        return MaterialPageRoute(
-          builder: (_) => CreateProfileScreen(user: args),
-        );
 
       case bookedDetailed:
         final target = settings.arguments as SportBooking;
@@ -75,41 +79,15 @@ class AppRoutes {
           builder: (_) => BookedDetailed(booking: target),
         );
 
-      case verify:
-        final target = settings.arguments as RegisterRequestDto?;
-        return MaterialPageRoute(
-          builder: (_) => VerifyScreen(isSignUp: target),
-        );
-
-      case forget:
-        return MaterialPageRoute(builder: (_) => const ForgetScreen());
-
-      case landing:
-        return MaterialPageRoute(builder: (_) => LandingScreen());
-
-      case login:
-        return MaterialPageRoute(builder: (_) => LoginScreen());
-
-      case signUp:
-        return MaterialPageRoute(builder: (_) => SignUpScreen());
-
       case bookingFlow:
-        final target =
-            settings.arguments
-                as SportClubModel; // Changed from BookingTarget to SportClubModel
+        final target = settings.arguments as SportClubModel;
         return MaterialPageRoute(
-          builder: (_) =>
-              BookingFlowScreen(target: target), // Pass SportClubModel directly
+          builder: (_) => BookingFlowScreen(target: target),
         );
 
       case clubDetailed:
-        final target =
-            settings.arguments
-                as SportClubModel; // Changed from BookingTarget to SportClubModel
-        return MaterialPageRoute(
-          builder: (_) =>
-              ClubDetailed(target: target), // Pass SportClubModel directly
-        );
+        final target = settings.arguments as SportClubModel;
+        return MaterialPageRoute(builder: (_) => ClubDetailed(target: target));
 
       default:
         return MaterialPageRoute(

@@ -1,3 +1,4 @@
+// home_screen.dart - Using the same pattern as favorite feature
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
@@ -6,6 +7,7 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -18,7 +20,6 @@ import '../../feature/static/services/data_service.dart';
 import '../../widgets/common/section_header.dart';
 import '../../widgets/cards/booking_card.dart';
 import '../../widgets/cards/club_card.dart';
-import '../../widgets/common/location_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _refreshCounter = 0;
 
+  // Services - all declared here once
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
   final _categoryService = getIt<CategoryService>();
@@ -66,19 +68,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> initialLoad() async {
     try {
+      // Load user first, then other data
+      await _userService.getProfile();
+
       final results = await Future.wait([
         _bannerService.getAllActiveBanner(),
-        _userService.getProfile(),
         _clubService.fetchClubs(),
-        _categoryService.fetchCategories(limit: 100), // Fetch all categories
+        _categoryService.fetchCategories(limit: 100),
       ]);
 
       if (!_isDisposed && mounted) {
         setState(() {
           _banners = results[0] as List<BannerModel>?;
-          _user = results[1] as UserModel?;
+          _user = _userService.currentUser;
           _locationLabel = _user?.location ?? 'New York';
-          _categories = results[3] as List<CategoryModel>;
+          _categories = results[2] as List<CategoryModel>;
           _isCategoriesLoading = false;
           _isLoading = false;
           _refreshCounter++;
@@ -92,12 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
           _isCategoriesLoading = false;
           _refreshCounter++;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Failed to load data: $e'),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
       }
     }
   }
@@ -106,9 +110,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _clubService = getIt<SportClubService>();
-    // Listen to service changes
+
+    // Listen to service changes (same pattern as favorite)
     _clubService.addListener(_onServiceChanged);
     _categoryService.addListener(_onCategoryServiceChanged);
+    _userService.addListener(_onUserServiceChanged);
+
     initialLoad();
   }
 
@@ -117,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _isDisposed = true;
     _clubService.removeListener(_onServiceChanged);
     _categoryService.removeListener(_onCategoryServiceChanged);
+    _userService.removeListener(_onUserServiceChanged);
     super.dispose();
   }
 
@@ -135,6 +143,19 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!_isDisposed && mounted) {
         setState(() {
           _categories = _categoryService.categories;
+          _refreshCounter++;
+        });
+      }
+    });
+  }
+
+  // Listen to user service changes
+  void _onUserServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _user = _userService.currentUser;
+          _locationLabel = _user?.location ?? 'New York';
           _refreshCounter++;
         });
       }
@@ -164,23 +185,74 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const LocationPickerSheet(),
+      enableDrag: false,
+      isDismissible: false,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.60,
+          width: double.infinity,
+          decoration: const BoxDecoration(color: Colors.transparent),
+          child: MapPickerScreen(
+            initialLat: _user?.lat,
+            initialLng: _user?.lng,
+            initialLabel: _locationLabel,
+          ),
+        );
+      },
     );
 
-    if (!mounted) return;
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _locationLabel = result;
+      });
 
-    if (result == '__open_map__') {
-      final city = await Navigator.push<String>(
-        context,
-        MaterialPageRoute(builder: (_) => const MapPickerScreen()),
-      );
-      if (city != null && city.isNotEmpty) {
-        setState(() => _locationLabel = city);
-        await _refreshClubsWithLocation(city);
-      }
-    } else if (result != null && result.isNotEmpty) {
-      setState(() => _locationLabel = result);
+      await _updateUserLocation(result);
       await _refreshClubsWithLocation(result);
+    }
+  }
+
+  Future<void> _updateUserLocation(String location) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final updateDto = UpdateDto(
+        fullName: _user?.fullName ?? '',
+        location: location,
+        lat: _user?.lat ?? 0.0,
+        lng: _user?.lng ?? 0.0,
+      );
+
+      // Update user profile - this will trigger _onUserServiceChanged
+      await _userService.updateProfile(updateDto);
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Location updated successfully'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update location: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -191,22 +263,15 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _refreshCounter++;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Clubs updated for $location'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update clubs: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Failed to update clubs: $e'),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
       }
     }
   }
@@ -442,7 +507,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return const SizedBox.shrink();
     }
 
-    // Add "All" category at the beginning
     final displayCategories = [
       CategoryModel(
         id: 0,
@@ -530,7 +594,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getCategoryEmoji(String categoryName) {
-    // Map category names to emojis
     switch (categoryName.toLowerCase()) {
       case 'football':
         return '⚽';

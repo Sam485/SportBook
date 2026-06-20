@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "235348445295",
+    "project_id": "sportbook-4af31",
+    "storage_bucket": "sportbook-4af31.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:235348445295:android:4216d16e5896f6fd83659a",
+        "android_client_info": {
+          "package_name": "com.example.sportbook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCap67F0Iw1uHj92kFZ682odjosz7CbAi0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

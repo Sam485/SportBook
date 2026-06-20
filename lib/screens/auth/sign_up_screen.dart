@@ -1,83 +1,121 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
-import 'package:sportbook/feature/User/model/login_request_dto.dart';
+import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _identifierController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
   bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
-  bool _rememberMe = false;
+  bool _agreeToTerms = false;
+
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
+  final _firebaseOtpService = getIt<FirebaseOtpService>();
 
   @override
   void dispose() {
-    _identifierController.dispose();
+    _fullNameController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  String _formatPhoneNumber(String phone) {
+    String cleaned = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '+855${cleaned.substring(1)}';
+    } else if (!cleaned.startsWith('+')) {
+      if (cleaned.startsWith('855')) {
+        cleaned = '+$cleaned';
+      } else {
+        cleaned = '+855$cleaned';
+      }
+    }
+    return cleaned;
+  }
+
+  Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!_agreeToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please agree to the terms and conditions'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      // Create login request
-      final loginRequest = LoginRequestDto.fromInput(
-        _identifierController.text.trim(),
-        _passwordController.text.trim(),
+      final formattedPhone = _formatPhoneNumber(_phoneController.text.trim());
+
+      await _firebaseOtpService.sendOtp(
+        phoneNumber: formattedPhone,
+        onCodeSent: (verificationId) {
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+
+          final registerRequest = RegisterRequestDto(
+            name: _fullNameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+          Navigator.pushNamed(
+            context,
+            AppRoutes.otpVerify,
+            arguments: {
+              'userData': registerRequest,
+              'flow': 'signup',
+              'phoneNumber': formattedPhone,
+            },
+          );
+        },
+        onFailed: (FirebaseAuthException e) {
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          _showError(e.message ?? 'Verification failed (${e.code})');
+        },
       );
-
-      // Call login API
-      final response = await _userService.loginUser(loginRequest);
-
-      // Save tokens to secure storage
-      await _tokenService.saveTokens(response.tokenModel);
-
-      if (mounted) {
-        // Show success message
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Login successful!'),
-        //     backgroundColor: Colors.green,
-        //     duration: const Duration(seconds: 2),
-        //   ),
-        // );
-
-        // Navigate to home
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
     } catch (e) {
-      if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text(
-        //       'Login failed: ${e.toString().replaceAll('Exception: ', '')}',
-        //     ),
-        //     backgroundColor: Colors.red,
-        //     duration: const Duration(seconds: 3),
-        //   ),
-        // );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showError(e.toString());
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -96,13 +134,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Header with decoration - Centered
                   _buildHeader(isDark),
-                  const SizedBox(height: 32),
-                  // Form Card
+                  const SizedBox(height: 24),
                   _buildFormCard(isDark),
                   const SizedBox(height: 20),
-                  // Footer
                   _buildFooter(isDark),
                 ],
               ),
@@ -122,16 +157,28 @@ class _LoginScreenState extends State<LoginScreen> {
             color: AppTheme.kAccent.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.sports, color: AppTheme.kAccent, size: 32),
+          child: const Icon(
+            Icons.person_add_rounded,
+            color: AppTheme.kAccent,
+            size: 32,
+          ),
         ),
         const SizedBox(height: 16),
         Text(
-          'Welcome Back',
+          'Create Account',
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Sign up to get started',
+          style: TextStyle(
+            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
+            fontSize: 14,
           ),
         ),
       ],
@@ -161,80 +208,59 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Email/Username Field
-            Text(
-              'Phone or Username',
-              style: TextStyle(
-                color: isDark ? Colors.white : AppTheme.kLightText,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            // Full Name Field
+            _buildLabel('Full Name', isDark),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _identifierController,
+              controller: _fullNameController,
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter phone or username';
+                  return 'Please enter your full name';
                 }
                 return null;
               },
-              decoration: InputDecoration(
-                hintText: 'Enter phone or username',
-                hintStyle: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  fontSize: 14,
-                ),
-                prefixIcon: Icon(
-                  Icons.person_outline_rounded,
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                ),
-                filled: true,
-                fillColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: AppTheme.kAccent,
-                    width: 2,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.red, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
+              decoration: _buildInputDecoration(
+                Icons.person_outline_rounded,
+                'Enter your full name',
+                isDark,
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
-            // Password Field
-            Text(
-              'Password',
+            // Phone Field
+            _buildLabel('Phone Number', isDark),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your phone number';
+                }
+                final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+                if (cleaned.length < 9) {
+                  return 'Please enter a valid phone number';
+                }
+                return null;
+              },
+              decoration: _buildInputDecoration(
+                Icons.phone_rounded,
+                '+855 12 345 678',
+                isDark,
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Password Field
+            _buildLabel('Password', isDark),
             const SizedBox(height: 8),
             TextFormField(
               controller: _passwordController,
@@ -245,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your password';
+                  return 'Please enter a password';
                 }
                 if (value.length < 6) {
                   return 'Password must be at least 6 characters';
@@ -253,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Enter your password',
+                hintText: 'Min 6 characters',
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
@@ -304,48 +330,108 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            // Remember Me & Forgot Password
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        onChanged: (value) =>
-                            setState(() => _rememberMe = value ?? false),
-                        activeColor: AppTheme.kAccent,
-                        checkColor: const Color(0xFF0A1828),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Remember Me',
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+            // Confirm Password Field
+            _buildLabel('Confirm Password', isDark),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _confirmPasswordController,
+              obscureText: !_isConfirmPasswordVisible,
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 15,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please confirm your password';
+                }
+                if (value != _passwordController.text) {
+                  return "Passwords don't match";
+                }
+                return null;
+              },
+              decoration: InputDecoration(
+                hintText: 'Re-enter your password',
+                hintStyle: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 14,
                 ),
-                GestureDetector(
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.forgetPass),
+                prefixIcon: Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                ),
+                suffixIcon: IconButton(
+                  onPressed: () => setState(
+                    () =>
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                  ),
+                  icon: Icon(
+                    _isConfirmPasswordVisible
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded,
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                    size: 20,
+                  ),
+                ),
+                filled: true,
+                fillColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: AppTheme.kAccent,
+                    width: 2,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Terms and Conditions
+            Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Checkbox(
+                    value: _agreeToTerms,
+                    onChanged: (value) =>
+                        setState(() => _agreeToTerms = value ?? false),
+                    activeColor: AppTheme.kAccent,
+                    checkColor: const Color(0xFF0A1828),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    'Forgot Password?',
+                    'I agree to the Terms of Service and Privacy Policy',
                     style: TextStyle(
-                      color: AppTheme.kAccent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -353,12 +439,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Sign In Button
+            // Create Account Button
             SizedBox(
               height: 52,
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
+                onPressed: _isLoading ? null : _handleSignUp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.kAccent,
                   foregroundColor: const Color(0xFF0A1828),
@@ -383,7 +469,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Sign In',
+                            'Create Account',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -400,77 +486,61 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 24),
-
-            // Divider with "or continue with"
-            Row(
-              children: [
-                Expanded(
-                  child: Divider(
-                    color: isDark ? Colors.grey[700] : Colors.grey[300],
-                    thickness: 0.5,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'or continue with',
-                    style: TextStyle(
-                      color: isDark ? Colors.grey[500] : Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Divider(
-                    color: isDark ? Colors.grey[700] : Colors.grey[300],
-                    thickness: 0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // OTP Button
-            SizedBox(
-              height: 52,
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.otpLogin),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(
-                    color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.phone,
-                      color: isDark ? Colors.white : AppTheme.kLightText,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Sign in with OTP',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : AppTheme.kLightText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLabel(String text, bool isDark) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: isDark ? Colors.white : AppTheme.kLightText,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(
+    IconData icon,
+    String hint,
+    bool isDark,
+  ) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+        fontSize: 14,
+      ),
+      prefixIcon: Icon(
+        icon,
+        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+      ),
+      filled: true,
+      fillColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
@@ -479,7 +549,7 @@ class _LoginScreenState extends State<LoginScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Don't have an account?",
+          "Already have an account?",
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
@@ -487,9 +557,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
           child: Text(
-            'Sign Up',
+            'Sign In',
             style: TextStyle(
               color: AppTheme.kAccent,
               fontSize: 14,

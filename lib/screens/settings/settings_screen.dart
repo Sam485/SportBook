@@ -1,3 +1,4 @@
+// screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/core/di/service_locator.dart';
@@ -27,8 +28,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isNotificationsEnabled = true;
   bool _isLoading = true;
+  bool _isDisposed = false;
 
-  // User profile data - will be loaded from API
+  // User profile data
   UserModel? _user;
 
   // Static avatar URL for now
@@ -49,9 +51,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _userService.addListener(_onUserServiceChanged);
     _loadUserProfile();
     _loadSampleHistoryBookings();
     _loadCurrentLanguage();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _userService.removeListener(_onUserServiceChanged);
+    super.dispose();
+  }
+
+  void _onUserServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _user = _userService.currentUser;
+        });
+      }
+    });
   }
 
   Future<void> _loadUserProfile() async {
@@ -63,9 +83,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (hasValidToken) {
         // Fetch user profile from API
-        final user = await _userService.getProfile();
+        await _userService.getProfile();
         setState(() {
-          _user = user;
+          _user = _userService.currentUser;
           _isLoading = false;
         });
       } else {
@@ -114,7 +134,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToFavorites() {
-    // Navigate directly to FavoriteClub without loading data here
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const FavoriteClub()),
@@ -122,13 +141,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToEditProfile() async {
-    if (_user == null) return;
-
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            EditProfileScreen(user: _user!, userService: _userService),
+        builder: (context) => const EditProfileScreen(),
       ),
     );
 
@@ -209,6 +225,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Clear tokens
               await _tokenService.clearToken();
+
+              // Clear user data
+              _userService.clearUser();
 
               // Navigate to login
               Navigator.pushNamedAndRemoveUntil(
@@ -347,29 +366,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       alignment: Alignment.center,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(50),
-                        child: Image.network(
-                          _user!.avatarUrl ?? _staticAvatarUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: AppTheme.cardAlt(context),
-                            child: Icon(
-                              Icons.person,
-                              size: 36,
-                              color: AppTheme.textSub(context),
-                            ),
-                          ),
-                          loadingBuilder: (_, c, p) => p == null
-                              ? c
-                              : Container(
+                        child: _user!.avatarUrl != null && _user!.avatarUrl!.isNotEmpty
+                            ? Image.network(
+                                _user!.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
                                   color: AppTheme.cardAlt(context),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppTheme.kAccent,
-                                      strokeWidth: 2,
-                                    ),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 36,
+                                    color: AppTheme.textSub(context),
                                   ),
                                 ),
-                        ),
+                                loadingBuilder: (_, c, p) => p == null
+                                    ? c
+                                    : Container(
+                                        color: AppTheme.cardAlt(context),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppTheme.kAccent,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                              )
+                            : Image.network(
+                                _staticAvatarUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: AppTheme.cardAlt(context),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 36,
+                                    color: AppTheme.textSub(context),
+                                  ),
+                                ),
+                                loadingBuilder: (_, c, p) => p == null
+                                    ? c
+                                    : Container(
+                                        color: AppTheme.cardAlt(context),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppTheme.kAccent,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 10),

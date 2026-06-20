@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sportbook/core/config/firebase_config.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'core/theme.dart';
@@ -12,8 +13,15 @@ import 'providers/theme_provider.dart';
 import 'providers/language_provider.dart';
 import 'routes/app_routes.dart';
 
+// Global navigator key
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await FirebaseConfig.initialize();
+  await FirebaseConfig.requestNotificationPermission();
+
   await SharedPreferences.getInstance();
   await setupServiceLocator();
   await dotenv.load(fileName: ".env");
@@ -61,20 +69,17 @@ class _SportMateAppState extends State<SportMateApp>
       final tokenService = getIt<TokenService>();
       final hasValidToken = await tokenService.hasValidTokenAsync();
 
-      if (!hasValidToken && mounted) {
-        // Token expired, try to refresh or logout
+      if (!hasValidToken) {
         final refreshed = await tokenService.refreshAccessToken();
-        if (!refreshed && mounted) {
-          // Token refresh failed, redirect to login
-          // Use a post-frame callback to avoid issues during build
+        if (!refreshed) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              // Navigate to login only if not already on login screen
-              final currentRoute = ModalRoute.of(context)?.settings.name;
-              if (currentRoute != AppRoutes.login &&
-                  currentRoute != AppRoutes.splash) {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
-              }
+            final navState = navigatorKey.currentState;
+            if (navState == null) return;
+
+            final currentRoute = ModalRoute.of(navState.context)?.settings.name;
+            if (currentRoute != AppRoutes.login &&
+                currentRoute != AppRoutes.splash) {
+              navState.pushReplacementNamed(AppRoutes.login);
             }
           });
         }
@@ -95,6 +100,7 @@ class _SportMateAppState extends State<SportMateApp>
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
           return MaterialApp(
+            navigatorKey: navigatorKey, // <-- add this
             title: 'SportMate',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,

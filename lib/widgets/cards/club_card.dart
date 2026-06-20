@@ -1,4 +1,3 @@
-// widgets/cards/club_card.dart
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
@@ -15,21 +14,30 @@ class ClubCard extends StatefulWidget {
   State<ClubCard> createState() => _ClubCardState();
 }
 
-class _ClubCardState extends State<ClubCard> {
+class _ClubCardState extends State<ClubCard>
+    with AutomaticKeepAliveClientMixin {
   int _page = 0;
   late final PageController _ctrl;
   bool _isFavoriting = false;
   bool _isFavorited = false;
   bool _isDisposed = false;
 
-  final _clubService = getIt<SportClubService>();
+  late final SportClubService _clubService;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     _ctrl = PageController(initialPage: 10000);
+
+    // ✅ Get service instance AFTER it's registered
+    _clubService = getIt<SportClubService>();
+
     // Check if this club is already favorited
     _isFavorited = _clubService.isClubFavorited(widget.club.id);
+
     // Listen to service changes
     _clubService.addListener(_onServiceChanged);
   }
@@ -74,24 +82,25 @@ class _ClubCardState extends State<ClubCard> {
     if (!_ctrl.hasClients) return;
     final v = d.primaryVelocity ?? 0;
     final c = _ctrl.page?.round() ?? 10000;
-    if (v < -300)
+    if (v < -300) {
       _ctrl.animateToPage(
         c + 1,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
-    else if (v > 300)
+    } else if (v > 300) {
       _ctrl.animateToPage(
         c - 1,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
-    else
+    } else {
       _ctrl.animateToPage(
         c,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -127,13 +136,15 @@ class _ClubCardState extends State<ClubCard> {
         });
 
         // Optional: Log error silently
-        print('Failed to toggle favorite: $e');
+        debugPrint('Failed to toggle favorite: $e');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final c = widget.club;
     final urls = c.imageUrls;

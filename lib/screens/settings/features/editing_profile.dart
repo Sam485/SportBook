@@ -1,26 +1,18 @@
+// screens/settings/features/editing_profile.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:sportbook/widgets/common/map_picker_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final UserModel user;
-  final UserService userService;
-
-  const EditProfileScreen({
-    super.key,
-    required this.user,
-    required this.userService,
-  });
+  const EditProfileScreen({super.key});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -33,29 +25,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = false;
   bool _isAvatarLoading = false;
   String? _uploadedAvatarUrl;
+  bool _isDisposed = false;
 
   // Location variables
-  LatLng? _selectedLocation;
+  double? _selectedLat;
+  double? _selectedLng;
   String _selectedAddress = '';
-  bool _isLocationPickerOpen = false;
+
+  final _userService = getIt<UserService>();
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.user.fullName);
-    _locationController = TextEditingController(
-      text: widget.user.location ?? '',
-    );
+    final user = _userService.currentUser;
+    
+    _nameController = TextEditingController(text: user?.fullName ?? '');
+    _locationController = TextEditingController(text: user?.location ?? '');
 
     // Initialize location from user data
-    if (widget.user.lat != null && widget.user.lng != null) {
-      _selectedLocation = LatLng(widget.user.lat!, widget.user.lng!);
-      _selectedAddress = widget.user.location ?? '';
+    if (user?.lat != null && user?.lng != null) {
+      _selectedLat = user!.lat;
+      _selectedLng = user.lng;
+      _selectedAddress = user.location ?? '';
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _nameController.dispose();
     _locationController.dispose();
     super.dispose();
@@ -67,16 +64,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      // Upload the avatar and get the URL
-      final avatarUrl = await widget.userService.updateAvatar(imageFile);
+      final updatedUser = await _userService.updateAvatar(imageFile);
+      
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _uploadedAvatarUrl = updatedUser.avatarUrl;
+          _selectedImage = null;
+          _isAvatarLoading = false;
+        });
 
-      setState(() {
-        _uploadedAvatarUrl = avatarUrl.avatarUrl;
-        _selectedImage = null; // Clear temp selected image
-        _isAvatarLoading = false;
-      });
-
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('avatar_updated_successfully'.tr(context)),
@@ -85,318 +81,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${'avatar_update_failed'.tr(context)}: $e'),
             backgroundColor: Colors.red,
           ),
         );
-      }
-      setState(() {
-        _isAvatarLoading = false;
-      });
-    }
-  }
-
-  Future<void> _getCurrentLocation(MapController controller) async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location services are disabled'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location permissions are denied'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permissions are permanently denied'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      setState(() {
-        _selectedLocation = LatLng(position.latitude, position.longitude);
-      });
-
-      await _updateAddressFromCoordinates();
-
-      // Move map
-      controller.move(_selectedLocation!, 15);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error getting location: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _updateAddressFromCoordinates() async {
-    if (_selectedLocation == null) return;
-
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        _selectedLocation!.latitude,
-        _selectedLocation!.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
-        String address = [
-          place.name,
-          place.subLocality,
-          place.locality,
-          place.administrativeArea,
-          place.country,
-        ].where((element) => element != null && element.isNotEmpty).join(', ');
-
         setState(() {
-          _selectedAddress = address;
-          _locationController.text = address;
+          _isAvatarLoading = false;
         });
-      }
-    } catch (e) {
-      debugPrint('Error getting address: $e');
-    }
-  }
-
-  Future<void> _searchLocation(String query, MapController controller) async {
-    if (query.isEmpty) return;
-
-    try {
-      List<Location> locations = await locationFromAddress(query);
-      if (locations.isNotEmpty) {
-        Location location = locations.first;
-        setState(() {
-          _selectedLocation = LatLng(location.latitude, location.longitude);
-        });
-
-        await _updateAddressFromCoordinates();
-
-        // Move map
-        controller.move(_selectedLocation!, 15);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location not found'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error searching location: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
 
   Future<void> _openLocationPicker() async {
-    setState(() {
-      _isLocationPickerOpen = true;
-    });
-
-    // Create a new MapController for the bottom sheet
-    final mapController = MapController();
-
-    // Set initial location if available
-    if (_selectedLocation != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        mapController.move(_selectedLocation!, 13);
-      });
-    }
-
-    await showModalBottomSheet(
+    final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return DraggableScrollableSheet(
-            initialChildSize: 0.9,
-            minChildSize: 0.5,
-            maxChildSize: 0.95,
-            builder: (context, scrollController) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppTheme.kBg
-                      : AppTheme.kLightBg,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.all(12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              onSubmitted: (query) async {
-                                await _searchLocation(query, mapController);
-                                setModalState(() {});
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'search_location'.tr(context),
-                                prefixIcon: const Icon(Icons.search),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                filled: true,
-                                fillColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? AppTheme.kCard
-                                    : AppTheme.kLightCard,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: () async {
-                              await _getCurrentLocation(mapController);
-                              setModalState(() {});
-                            },
-                            icon: const Icon(Icons.my_location),
-                            tooltip: 'current_location'.tr(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: FlutterMap(
-                        mapController: mapController,
-                        options: MapOptions(
-                          initialCenter:
-                              _selectedLocation ?? const LatLng(0, 0),
-                          initialZoom: 13,
-                          onTap: (tapPosition, point) {
-                            setModalState(() {
-                              _selectedLocation = point;
-                            });
-                            _updateAddressFromCoordinates();
-                          },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.sportbook.app',
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              if (_selectedLocation != null)
-                                Marker(
-                                  point: _selectedLocation!,
-                                  width: 80,
-                                  height: 80,
-                                  child: const Icon(
-                                    Icons.location_pin,
-                                    color: Colors.red,
-                                    size: 40,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _selectedAddress.isNotEmpty
-                                  ? _selectedAddress
-                                  : 'tap_on_map_to_select_location'.tr(context),
-                              style: TextStyle(
-                                color: _selectedAddress.isNotEmpty
-                                    ? Colors.green
-                                    : Colors.grey,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          ElevatedButton(
-                            onPressed: _selectedLocation != null
-                                ? () {
-                                    Navigator.pop(context);
-                                    setState(() {
-                                      _isLocationPickerOpen = false;
-                                    });
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.kAccent,
-                              foregroundColor: Colors.black,
-                            ),
-                            child: Text('confirm'.tr(context)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
+      enableDrag: false,
+      isDismissible: false,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.60,
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: Colors.transparent,
+          ),
+          child: MapPickerScreen(
+            initialLat: _selectedLat,
+            initialLng: _selectedLng,
+            initialLabel: _selectedAddress,
+          ),
+        );
+      },
     );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _selectedAddress = result;
+        _locationController.text = result;
+        // Note: The coordinates would need to be updated from the MapPickerScreen
+        // For now, we keep existing coordinates
+      });
+    }
   }
 
   Future<void> _saveChanges() async {
@@ -412,15 +141,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      // Update profile data
       final updateDto = UpdateDto(
         fullName: _nameController.text,
         location: _locationController.text,
-        lat: _selectedLocation!.latitude,
-        lng: _selectedLocation!.longitude,
+        lat: _selectedLat ?? 0.0,
+        lng: _selectedLng ?? 0.0,
       );
 
-      final updatedUser = await widget.userService.updateProfile(updateDto);
+      await _userService.updateProfile(updateDto);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -430,7 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         );
 
-        Navigator.pop(context, updatedUser);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -461,7 +189,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _selectedImage = file;
       });
-      // Upload immediately
       await _uploadAvatar(file);
     }
   }
@@ -477,7 +204,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _selectedImage = file;
       });
-      // Upload immediately
       await _uploadAvatar(file);
     }
   }
@@ -486,7 +212,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final file = await ImagePickerBottomSheet.show(context);
     if (file != null) {
       setState(() => _selectedImage = file);
-      // Upload immediately
       await _uploadAvatar(file);
     }
   }
@@ -553,14 +278,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _profileImage() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = _userService.currentUser;
 
     // Determine which avatar to show
     String? avatarUrl;
     if (_uploadedAvatarUrl != null && _uploadedAvatarUrl!.isNotEmpty) {
       avatarUrl = _uploadedAvatarUrl;
-    } else if (widget.user.avatarUrl != null &&
-        widget.user.avatarUrl!.isNotEmpty) {
-      avatarUrl = widget.user.avatarUrl;
+    } else if (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty) {
+      avatarUrl = user.avatarUrl;
     }
 
     return Padding(
@@ -703,7 +428,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildLocationField({required bool isDark}) {
     return GestureDetector(
-      onTap: _isLocationPickerOpen ? null : _openLocationPicker,
+      onTap: _openLocationPicker,
       child: AbsorbPointer(
         child: TextField(
           controller: _locationController,

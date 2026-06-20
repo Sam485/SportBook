@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get_it/get_it.dart';
 import 'package:sportbook/core/config/app_config.dart';
+import 'package:sportbook/core/interceptors/auth_interceptor.dart';
+import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/feature/Banner/repositories/banner_repository.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
 import 'package:sportbook/feature/Banner/service/banner_service_imp.dart';
@@ -20,7 +21,6 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/feature/User/service/user_service_imp.dart';
 import 'package:sportbook/feature/User/repositories/user_api_repository.dart';
-import 'package:sportbook/core/interceptors/auth_interceptor.dart'; // Create this
 
 final getIt = GetIt.instance;
 
@@ -30,6 +30,13 @@ Future<void> setupServiceLocator() async {
     () => const FlutterSecureStorage(),
   );
 
+  // ============================================================
+  // REGISTER FIREBASE OTP SERVICE
+  // ============================================================
+  getIt.registerLazySingleton<FirebaseOtpService>(
+    () => FirebaseOtpService.instance,
+  );
+
   // Register Dio with interceptors
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio(
@@ -37,6 +44,7 @@ Future<void> setupServiceLocator() async {
         baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -44,12 +52,13 @@ Future<void> setupServiceLocator() async {
       ),
     );
 
-    // Add interceptors
     dio.interceptors.add(AuthInterceptor());
     dio.interceptors.add(
       LogInterceptor(
         request: true,
+        requestHeader: true,
         requestBody: true,
+        responseHeader: true,
         responseBody: true,
         error: true,
       ),
@@ -91,11 +100,9 @@ Future<void> setupServiceLocator() async {
     () => CategoryRepository(getIt<Dio>()),
   );
 
-  // Register CategoryService - FIXED: Use CategoryServiceImp with CategoryRepository
+  // Register CategoryService
   getIt.registerLazySingleton<CategoryService>(
-    () => CategoryServiceImp(
-      getIt<CategoryRepository>(),
-    ), // Changed from CategoryService to CategoryRepository
+    () => CategoryServiceImp(getIt<CategoryRepository>()),
   );
 
   // Register SportClubRepository
@@ -103,11 +110,9 @@ Future<void> setupServiceLocator() async {
     () => SportClubRepository(getIt<Dio>()),
   );
 
-  // Register SportClubService - FIXED: Use SportClubServiceImp with SportClubRepository
+  // Register SportClubService
   getIt.registerLazySingleton<SportClubService>(
-    () => SportClubServiceImp(
-      getIt<SportClubRepository>(),
-    ), // Changed from SportClubRepository to SportClubService
+    () => SportClubServiceImp(getIt<SportClubRepository>()),
   );
 
   // Register BannerRepository
@@ -115,7 +120,7 @@ Future<void> setupServiceLocator() async {
     () => BannerRepository(getIt<Dio>()),
   );
 
-  // Register BannerService - FIXED: Use BannerServiceImp with BannerRepository
+  // Register BannerService
   getIt.registerLazySingleton<BannerService>(
     () => BannerServiceImp(getIt<BannerRepository>()),
   );
