@@ -1,4 +1,3 @@
-// screens/settings/features/editing_profile.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,7 +7,6 @@ import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
-import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/widgets/common/map_picker_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -32,13 +30,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   double? _selectedLng;
   String _selectedAddress = '';
 
-  final _userService = getIt<UserService>();
+  late final UserService _userService;
 
   @override
   void initState() {
     super.initState();
+    _userService = getIt<UserService>();
+
     final user = _userService.currentUser;
-    
+
     _nameController = TextEditingController(text: user?.fullName ?? '');
     _locationController = TextEditingController(text: user?.location ?? '');
 
@@ -48,14 +48,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _selectedLng = user.lng;
       _selectedAddress = user.location ?? '';
     }
+
+    // Listen to user service changes
+    _userService.addListener(_onUserServiceChanged);
   }
 
   @override
   void dispose() {
     _isDisposed = true;
+    _userService.removeListener(_onUserServiceChanged);
     _nameController.dispose();
     _locationController.dispose();
     super.dispose();
+  }
+
+  void _onUserServiceChanged() {
+    if (!_isDisposed && mounted) {
+      final user = _userService.currentUser;
+      if (user != null) {
+        setState(() {
+          _uploadedAvatarUrl = user.avatarUrl;
+        });
+      }
+    }
   }
 
   Future<void> _uploadAvatar(File imageFile) async {
@@ -64,9 +79,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      final updatedUser = await _userService.updateAvatar(imageFile);
-      
+      // Create a copy of the file to avoid issues
+      final tempFile = File(imageFile.path);
+
+      final updatedUser = await _userService.updateAvatar(tempFile);
+
       if (!_isDisposed && mounted) {
+        // Refresh user data from server
+        await _userService.refreshCurrentUser();
+
         setState(() {
           _uploadedAvatarUrl = updatedUser.avatarUrl;
           _selectedImage = null;
@@ -77,15 +98,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           SnackBar(
             content: Text('avatar_updated_successfully'.tr(context)),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
+        String errorMessage = e.toString();
+        if (errorMessage.contains('Exception:')) {
+          errorMessage = errorMessage.replaceAll('Exception: ', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${'avatar_update_failed'.tr(context)}: $e'),
+            content: Text(
+              '${'avatar_update_failed'.tr(context)}: $errorMessage',
+            ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
         setState(() {
@@ -106,9 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return Container(
           height: MediaQuery.of(context).size.height * 0.60,
           width: double.infinity,
-          decoration: const BoxDecoration(
-            color: Colors.transparent,
-          ),
+          decoration: const BoxDecoration(color: Colors.transparent),
           child: MapPickerScreen(
             initialLat: _selectedLat,
             initialLng: _selectedLng,
@@ -122,17 +150,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _selectedAddress = result;
         _locationController.text = result;
-        // Note: The coordinates would need to be updated from the MapPickerScreen
-        // For now, we keep existing coordinates
       });
     }
   }
 
   Future<void> _saveChanges() async {
     if (_nameController.text.isEmpty || _locationController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('fill_all_fields'.tr(context))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('fill_all_fields'.tr(context)),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -142,8 +171,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final updateDto = UpdateDto(
-        fullName: _nameController.text,
-        location: _locationController.text,
+        fullName: _nameController.text.trim(),
+        location: _locationController.text.trim(),
         lat: _selectedLat ?? 0.0,
         lng: _selectedLng ?? 0.0,
       );
@@ -155,6 +184,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           SnackBar(
             content: Text('profile_updated_successfully'.tr(context)),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
           ),
         );
 
@@ -162,10 +192,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = e.toString();
+        if (errorMessage.contains('Exception:')) {
+          errorMessage = errorMessage.replaceAll('Exception: ', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${'update_failed'.tr(context)}: $e'),
+            content: Text('${'update_failed'.tr(context)}: $errorMessage'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -183,12 +219,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
     if (image != null) {
       final file = File(image.path);
-      setState(() {
-        _selectedImage = file;
-      });
       await _uploadAvatar(file);
     }
   }
@@ -198,12 +233,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final XFile? image = await picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 80,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
     if (image != null) {
       final file = File(image.path);
-      setState(() {
-        _selectedImage = file;
-      });
       await _uploadAvatar(file);
     }
   }
@@ -211,7 +245,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _showImagePickerDialog() async {
     final file = await ImagePickerBottomSheet.show(context);
     if (file != null) {
-      setState(() => _selectedImage = file);
       await _uploadAvatar(file);
     }
   }
@@ -219,6 +252,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = _userService.currentUser;
+
+    // Determine which avatar to show
+    String? avatarUrl;
+    if (_uploadedAvatarUrl != null && _uploadedAvatarUrl!.isNotEmpty) {
+      avatarUrl = _uploadedAvatarUrl;
+    } else if (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty) {
+      avatarUrl = user.avatarUrl;
+    }
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -267,27 +309,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _profileImage()),
-          SliverToBoxAdapter(child: _textFields()),
-          SliverToBoxAdapter(child: _saveButton()),
+          SliverToBoxAdapter(
+            child: _profileImage(avatarUrl: avatarUrl, isDark: isDark),
+          ),
+          SliverToBoxAdapter(child: _textFields(isDark: isDark)),
+          SliverToBoxAdapter(child: _saveButton(isDark: isDark)),
           const SliverToBoxAdapter(child: SizedBox(height: 30)),
         ],
       ),
     );
   }
 
-  Widget _profileImage() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final user = _userService.currentUser;
-
-    // Determine which avatar to show
-    String? avatarUrl;
-    if (_uploadedAvatarUrl != null && _uploadedAvatarUrl!.isNotEmpty) {
-      avatarUrl = _uploadedAvatarUrl;
-    } else if (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty) {
-      avatarUrl = user.avatarUrl;
-    }
-
+  Widget _profileImage({required String? avatarUrl, required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Center(
@@ -402,9 +435,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _textFields() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _textFields({required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -507,9 +538,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _saveButton() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _saveButton({required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       child: SizedBox(

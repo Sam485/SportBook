@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/User/model/change_pass_reqeuest_dto.dart';
 import 'package:sportbook/feature/User/model/login_request_dto.dart';
 import 'package:sportbook/feature/User/model/login_response_%20model.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
@@ -64,7 +65,6 @@ class UserServiceImp extends ChangeNotifier implements UserService {
     }
   }
 
-  // lib/feature/User/service/user_service_imp.dart
   @override
   Future<LoginResponse> loginWithFirebase({
     required String firebaseToken,
@@ -174,6 +174,40 @@ class UserServiceImp extends ChangeNotifier implements UserService {
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> changePassword(ChangePasswordRequestDto request) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
+
+    try {
+      await userApiRepository.changePassword(request);
+      _isLoading = false;
+      _error = '';
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // ✅ NEW: Refresh current user data from server
+  @override
+  Future<UserModel> refreshCurrentUser() async {
+    try {
+      final user = await getProfile();
+      _currentUser = user;
+      notifyListeners();
+      return user;
+    } catch (e) {
+      _error = e.toString();
       notifyListeners();
       rethrow;
     }
