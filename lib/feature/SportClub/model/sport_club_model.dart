@@ -1,5 +1,5 @@
-// feature/SportClub/model/sport_club_model.dart
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/Category/model/category_model.dart';
 
 class SportClubModel {
   final int id;
@@ -13,7 +13,7 @@ class SportClubModel {
   final String description;
   final List<String> imageUrls;
   final int favoriteCount;
-  final List<dynamic> categories;
+  final List<CategoryModel> categories;
   final CreatorModel createdBy;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -40,15 +40,11 @@ class SportClubModel {
       const Color(0xFF16A085), // Dark Teal
       const Color(0xFF8E44AD), // Dark Purple
     ];
-    // FIX: Use modulo with safe division, handle id = 0
     return colors[id % colors.length];
   }
 
   double get distanceKm {
-    // FIX: Return a default value instead of dividing by zero
-    // You can calculate this based on user location
-    // For now, return a random-looking value based on id
-    if (id == 0) return 1.5; // Default distance
+    if (id == 0) return 1.5;
     return (id % 10) + 0.5 + (id % 5) / 10;
   }
 
@@ -96,6 +92,14 @@ class SportClubModel {
   });
 
   factory SportClubModel.fromJson(Map<String, dynamic> json) {
+    // Handle categories - they are now CategoryModel objects with image_url
+    List<CategoryModel> categories = [];
+    if (json['categories'] != null) {
+      categories = (json['categories'] as List)
+          .map((cat) => CategoryModel.fromJson(cat))
+          .toList();
+    }
+
     return SportClubModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
@@ -110,7 +114,7 @@ class SportClubModel {
           ? List<String>.from(json['image_urls'])
           : ['https://via.placeholder.com/400x300?text=No+Image'],
       favoriteCount: json['favorite_count'] ?? 0,
-      categories: json['categories'] ?? [],
+      categories: categories,
       createdBy: CreatorModel.fromJson(json['created_by'] ?? {}),
       createdAt: DateTime.parse(
         json['created_at'] ?? DateTime.now().toIso8601String(),
@@ -134,7 +138,7 @@ class SportClubModel {
       'description': description,
       'image_urls': imageUrls,
       'favorite_count': favoriteCount,
-      'categories': categories,
+      'categories': categories.map((e) => e.toJson()).toList(),
       'created_by': createdBy.toJson(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -145,19 +149,31 @@ class SportClubModel {
 class CreatorModel {
   final int id;
   final String fullName;
+  final String? avatarUrl;
   final String role;
 
-  CreatorModel({required this.id, required this.fullName, required this.role});
+  CreatorModel({
+    required this.id,
+    required this.fullName,
+    this.avatarUrl,
+    required this.role,
+  });
 
   factory CreatorModel.fromJson(Map<String, dynamic> json) {
     return CreatorModel(
       id: json['id'] ?? 0,
       fullName: json['full_name'] ?? '',
+      avatarUrl: json['avatar_url'],
       role: json['role'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'full_name': fullName, 'role': role};
+    return {
+      'id': id,
+      'full_name': fullName,
+      'avatar_url': avatarUrl,
+      'role': role,
+    };
   }
 }

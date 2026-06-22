@@ -1,4 +1,3 @@
-// feature/Sport Club/model/dto/get_all_sport_club_dto.dart
 import '../sport_club_model.dart';
 
 class GetAllSportClubDto {
@@ -15,8 +14,6 @@ class GetAllSportClubDto {
   });
 
   factory GetAllSportClubDto.fromJson(Map<String, dynamic> json) {
-    // Assuming your API returns a list directly
-    // If it returns paginated data with 'data' key, adjust accordingly
     final List<dynamic>? items = json['data'] ?? json['items'] ?? json;
 
     return GetAllSportClubDto(
@@ -27,5 +24,14 @@ class GetAllSportClubDto {
       page: json['page'] ?? 1,
       limit: json['limit'] ?? 10,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.map((e) => e.toJson()).toList(),
+      'total': total,
+      'page': page,
+      'limit': limit,
+    };
   }
 }

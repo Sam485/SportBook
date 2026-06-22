@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/screens/auth/forget_password_screen.dart';
 import 'package:sportbook/screens/auth/login_screen.dart';
+import 'package:sportbook/screens/auth/reset_password_screen.dart';
 import 'package:sportbook/screens/auth/sign_in_with_otp_screen.dart';
 import 'package:sportbook/screens/auth/sign_up_screen.dart';
 import 'package:sportbook/screens/auth/verify_screen.dart';
@@ -31,12 +32,14 @@ class AppRoutes {
   static const String otpLogin = '/otp-login';
   static const String forgetPass = '/forget-password';
   static const String otpVerify = '/otp-verify';
+  static const String resetPassword = '/reset-password';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case otpVerify:
         return MaterialPageRoute(builder: (_) => const VerifyScreen());
-
+      case resetPassword:
+        return MaterialPageRoute(builder: (_) => const ResetPasswordScreen());
       case forgetPass:
         return MaterialPageRoute(builder: (_) => const ForgetPasswordScreen());
 

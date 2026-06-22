@@ -74,33 +74,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _uploadAvatar(File imageFile) async {
+    // Prevent multiple uploads
+    if (_isAvatarLoading) return;
+
     setState(() {
       _isAvatarLoading = true;
+      // Show the selected image immediately for better UX
+      _selectedImage = imageFile;
     });
 
     try {
-      // Create a copy of the file to avoid issues
-      final tempFile = File(imageFile.path);
-
-      final updatedUser = await _userService.updateAvatar(tempFile);
+      // Upload avatar
+      final updatedUser = await _userService.updateAvatar(imageFile);
 
       if (!_isDisposed && mounted) {
-        // Refresh user data from server
-        await _userService.refreshCurrentUser();
-
         setState(() {
           _uploadedAvatarUrl = updatedUser.avatarUrl;
           _selectedImage = null;
           _isAvatarLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('avatar_updated_successfully'.tr(context)),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
@@ -118,11 +110,199 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+
         setState(() {
+          _selectedImage = null;
           _isAvatarLoading = false;
         });
       }
     }
+  }
+
+  // ✅ FIXED: This method now properly handles image picking
+  Future<void> _pickImage() async {
+    if (_isAvatarLoading) return;
+
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null) {
+        final file = File(image.path);
+        await _uploadAvatar(file);
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  // ✅ FIXED: This method now properly handles taking a photo
+  Future<void> _takePhoto() async {
+    if (_isAvatarLoading) return;
+
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null) {
+        final file = File(image.path);
+        await _uploadAvatar(file);
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to take photo: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  // ✅ FIXED: This method now properly shows the image picker options
+  Future<void> _showImagePickerDialog() async {
+    if (_isAvatarLoading) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Show custom bottom sheet
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub)
+                      .withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'choose_photo'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.kAccent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.photo_library_rounded,
+                    color: AppTheme.kAccent,
+                  ),
+                ),
+                title: Text(
+                  'choose_from_library'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage();
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.kAccent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.camera_alt_rounded,
+                    color: AppTheme.kAccent,
+                  ),
+                ),
+                title: Text(
+                  'take_a_photo'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+              if (_uploadedAvatarUrl != null || _selectedImage != null)
+                ListTile(
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_rounded, color: Colors.red),
+                  ),
+                  title: Text(
+                    'remove_photo'.tr(context),
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeAvatar();
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ FIXED: Method to remove avatar (placeholder)
+  Future<void> _removeAvatar() async {
+    // You would need an API endpoint to remove avatar
+    // For now, just show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Remove avatar feature coming soon'),
+        backgroundColor: Colors.grey,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _openLocationPicker() async {
@@ -180,14 +360,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await _userService.updateProfile(updateDto);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('profile_updated_successfully'.tr(context)),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
         Navigator.pop(context, true);
       }
     } catch (e) {
@@ -211,41 +383,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _isLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-      maxWidth: 1024,
-      maxHeight: 1024,
-    );
-    if (image != null) {
-      final file = File(image.path);
-      await _uploadAvatar(file);
-    }
-  }
-
-  Future<void> _takePhoto() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-      maxWidth: 1024,
-      maxHeight: 1024,
-    );
-    if (image != null) {
-      final file = File(image.path);
-      await _uploadAvatar(file);
-    }
-  }
-
-  Future<void> _showImagePickerDialog() async {
-    final file = await ImagePickerBottomSheet.show(context);
-    if (file != null) {
-      await _uploadAvatar(file);
     }
   }
 

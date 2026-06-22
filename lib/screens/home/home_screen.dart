@@ -1,4 +1,4 @@
-// home_screen.dart - Using the same pattern as favorite feature
+// home_screen.dart - Fixed version
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
@@ -35,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _refreshCounter = 0;
 
-  // Services - all declared here once
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
   final _categoryService = getIt<CategoryService>();
@@ -46,29 +45,28 @@ class _HomeScreenState extends State<HomeScreen> {
   List<CategoryModel> _categories = [];
   bool _isCategoriesLoading = true;
 
-  // Get clubs directly from service
   List<SportClubModel> get _clubs => List.from(_clubService.clubs);
 
-  // Get filtered clubs based on selected category
+  // Fixed: Filter clubs by category ID
   List<SportClubModel> get _filteredClubs {
     if (_selectedCat == 'all') {
       return _clubs;
     }
     return _clubs
         .where(
-          (club) =>
-              club.categories.any((cat) => cat.toString() == _selectedCat),
+          (club) => club.categories.any(
+            (cat) =>
+                cat.id.toString() == _selectedCat || cat.name == _selectedCat,
+          ),
         )
         .toList();
   }
 
-  // Keep bookings from static data for now
   List<SportBooking> get _bookings =>
       DataService.filteredBookings(_selectedCat);
 
   Future<void> initialLoad() async {
     try {
-      // Load user first, then other data
       await _userService.getProfile();
 
       final results = await Future.wait([
@@ -96,12 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _isCategoriesLoading = false;
           _refreshCounter++;
         });
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Failed to load data: $e'),
-        //     backgroundColor: Colors.red,
-        //   ),
-        // );
       }
     }
   }
@@ -111,10 +103,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _clubService = getIt<SportClubService>();
 
-    // Listen to service changes (same pattern as favorite)
+    // Only SportClubService is a ChangeNotifier
     _clubService.addListener(_onServiceChanged);
-    _categoryService.addListener(_onCategoryServiceChanged);
-    _userService.addListener(_onUserServiceChanged);
 
     initialLoad();
   }
@@ -123,8 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _isDisposed = true;
     _clubService.removeListener(_onServiceChanged);
-    _categoryService.removeListener(_onCategoryServiceChanged);
-    _userService.removeListener(_onUserServiceChanged);
     super.dispose();
   }
 
@@ -132,30 +120,6 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && mounted) {
         setState(() {
-          _refreshCounter++;
-        });
-      }
-    });
-  }
-
-  void _onCategoryServiceChanged() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDisposed && mounted) {
-        setState(() {
-          _categories = _categoryService.categories;
-          _refreshCounter++;
-        });
-      }
-    });
-  }
-
-  // Listen to user service changes
-  void _onUserServiceChanged() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDisposed && mounted) {
-        setState(() {
-          _user = _userService.currentUser;
-          _locationLabel = _user?.location ?? 'New York';
           _refreshCounter++;
         });
       }
@@ -224,10 +188,12 @@ class _HomeScreenState extends State<HomeScreen> {
         lng: _user?.lng ?? 0.0,
       );
 
-      // Update user profile - this will trigger _onUserServiceChanged
       await _userService.updateProfile(updateDto);
 
+      // Manually update user after profile update
       setState(() {
+        _user = _userService.currentUser;
+        _locationLabel = _user?.location ?? location;
         _isLoading = false;
       });
 
@@ -266,12 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Failed to update clubs: $e'),
-        //     backgroundColor: Colors.red,
-        //   ),
-        // );
+        // Silent fail
       }
     }
   }
@@ -334,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppTheme.kAccent, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.kAccent.withOpacity(0.3),
+                color: AppTheme.kAccent.withValues(alpha: 0.3),
                 blurRadius: 10,
               ),
             ],
@@ -346,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? Image.network(
                     _user!.avatarUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
@@ -528,11 +489,12 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (_, i) {
             final cat = displayCategories[i];
             final isAll = cat.id == 0;
-            final sel = _selectedCat == (isAll ? 'all' : cat.id.toString());
+            final catId = isAll ? 'all' : cat.id.toString();
+            final sel = _selectedCat == catId;
 
             return GestureDetector(
               onTap: () => setState(() {
-                _selectedCat = isAll ? 'all' : cat.id.toString();
+                _selectedCat = catId;
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),

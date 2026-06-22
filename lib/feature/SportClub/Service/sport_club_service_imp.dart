@@ -101,7 +101,9 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
 
     return _allClubs
         .where(
-          (club) => club.categories.any((cat) => cat.toString() == categoryId),
+          (club) => club.categories.any(
+            (cat) => cat.id.toString() == categoryId || cat.name == categoryId,
+          ),
         )
         .toList();
   }
@@ -214,7 +216,7 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
         // Remove from favorited IDs
         _favoritedClubIds.remove(clubId);
 
-        // IMPORTANT: Remove from favoriteClubs list
+        // Remove from favoriteClubs list
         _favoriteClubs.removeWhere((club) => club.id == clubId);
 
         print('Club $clubId removed from favorites');
@@ -222,7 +224,7 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
         // Add to favorited IDs
         _favoritedClubIds.add(clubId);
 
-        // IMPORTANT: Add to favoriteClubs list if not already present
+        // Add to favoriteClubs list if not already present
         final club = _allClubs.firstWhere(
           (c) => c.id == clubId,
           orElse: () => throw Exception('Club not found'),

@@ -206,15 +206,26 @@ class UserApiRepository {
   }
 
   // ✅ FIXED: Avatar upload with proper multipart handling
+  // feature/User/repositories/user_api_repository.dart
+  // ✅ FIXED: Avatar upload with proper multipart handling
   Future<UserModel> updateAvatar(File avatar) async {
     try {
       print('🟢 [API] updateAvatar STARTED');
       print('   └─ File path: ${avatar.path}');
-      print('   └─ File size: ${await avatar.length()} bytes');
+      print('   └─ File exists: ${await avatar.exists()}');
 
       // Check if file exists
       if (!await avatar.exists()) {
         throw Exception('File does not exist: ${avatar.path}');
+      }
+
+      // Get file size
+      final fileSize = await avatar.length();
+      print('   └─ File size: $fileSize bytes');
+
+      // Check file size (max 5MB)
+      if (fileSize > 5 * 1024 * 1024) {
+        throw Exception('File too large. Maximum size is 5MB.');
       }
 
       // Create multipart file with proper naming
@@ -229,6 +240,7 @@ class UserApiRepository {
       final formData = FormData.fromMap({'avatar': multipartFile});
 
       print('📤 [API] Uploading avatar...');
+      print('   └─ Filename: $fileName');
 
       final response = await dio.post(
         '/users/me/avatar',
@@ -237,6 +249,10 @@ class UserApiRepository {
           headers: {'Content-Type': 'multipart/form-data'},
           followRedirects: true,
           maxRedirects: 5,
+          validateStatus: (status) {
+            // Allow all status codes to be handled in code
+            return status != null && status < 500;
+          },
         ),
       );
 
@@ -244,34 +260,41 @@ class UserApiRepository {
       print('📥 [API] Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Handle different response formats
+        // Try to parse the response
+        UserModel? updatedUser;
+
         if (response.data is Map<String, dynamic>) {
+          final data = response.data as Map<String, dynamic>;
+
           // If response contains user data directly
-          if (response.data.containsKey('id') ||
-              response.data.containsKey('full_name')) {
-            return UserModel.fromJson(response.data);
+          if (data.containsKey('id') || data.containsKey('full_name')) {
+            updatedUser = UserModel.fromJson(data);
           }
           // If response contains user wrapped in data field
-          else if (response.data.containsKey('data')) {
-            return UserModel.fromJson(response.data['data']);
+          else if (data.containsKey('data')) {
+            final userData = data['data'];
+            if (userData is Map<String, dynamic>) {
+              updatedUser = UserModel.fromJson(userData);
+            }
           }
           // If response just contains avatar URL
-          else if (response.data.containsKey('avatar_url')) {
-            // Get current user and update avatar URL
-            final currentUser = await getProfile();
-            return currentUser;
+          else if (data.containsKey('avatar_url')) {
+            print('📥 [API] Response contains avatar_url only');
+            // Fetch full user data
+            updatedUser = await getProfile();
           }
         }
-        // If response is just a string (URL or message)
-        else if (response.data is String) {
-          // Get fresh user data
-          final currentUser = await getProfile();
-          return currentUser;
+
+        // If we couldn't parse the response, fetch fresh user data
+        if (updatedUser == null) {
+          print(
+            '📥 [API] Could not parse response, fetching fresh user data...',
+          );
+          updatedUser = await getProfile();
         }
 
-        // Fallback: fetch fresh user data
-        final freshUser = await getProfile();
-        return freshUser;
+        print('✅ [API] Avatar updated successfully');
+        return updatedUser;
       } else {
         throw Exception('Upload failed: ${response.statusCode}');
       }
@@ -282,7 +305,8 @@ class UserApiRepository {
       print('   └─ Response: ${e.response?.data}');
       print('   └─ Status Code: ${e.response?.statusCode}');
 
-      String errorMessage = e.message ?? 'Network error';
+      // Try to extract error message
+      String errorMessage = 'Upload failed';
       if (e.response?.data != null) {
         try {
           final data = e.response!.data;
@@ -291,7 +315,7 @@ class UserApiRepository {
                 data['message'] ??
                 data['error'] ??
                 data['detail'] ??
-                errorMessage;
+                'Upload failed';
           } else if (data is String) {
             errorMessage = data;
           }
@@ -300,18 +324,19 @@ class UserApiRepository {
         }
       }
 
-      if (e.type == DioExceptionType.connectionTimeout) {
-        throw Exception(
-          'Connection timeout. Please check your internet connection.',
-        );
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        throw Exception('Receive timeout. Server is not responding.');
-      } else if (e.response?.statusCode == 400) {
+      // Handle specific error codes
+      if (e.response?.statusCode == 400) {
         throw Exception('Invalid file format. Please upload a valid image.');
       } else if (e.response?.statusCode == 413) {
         throw Exception('File too large. Maximum size is 5MB.');
       } else if (e.response?.statusCode == 401) {
         throw Exception('Please login again to upload avatar.');
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception(
+          'Connection timeout. Please check your internet connection.',
+        );
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('Receive timeout. Server is not responding.');
       } else {
         throw Exception(errorMessage);
       }
@@ -344,7 +369,7 @@ class UserApiRepository {
   // ✅ FIXED: Change Password Method with proper response handling
   Future<void> changePassword(ChangePasswordRequestDto request) async {
     try {
-      final response = await dio.post(
+      final response = await dio.put(
         '/users/me/password',
         data: request.toJson(),
       );
@@ -411,6 +436,44 @@ class UserApiRepository {
     } catch (e) {
       print('❌ [API] Unexpected error: $e');
       throw Exception('Unexpected error: ${e.toString()}');
+    }
+  }
+
+  // feature/User/repositories/user_api_repository.dart
+  Future<void> forgotPassword({
+    required String firebaseToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/auth/forgot-password',
+        data: {
+          'firebase_token': firebaseToken,
+          'new_password': newPassword,
+          'confirm_password': confirmPassword,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return;
+      } else {
+        throw Exception('Failed to reset password: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(
+          'Server error: ${e.response?.data['message'] ?? e.message}',
+        );
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception(
+          'Connection timeout. Please check your internet connection.',
+        );
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('Receive timeout. Server is not responding.');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
     }
   }
 }

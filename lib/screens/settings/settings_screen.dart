@@ -1,8 +1,8 @@
 // screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/di/service_locator.dart';
-import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
@@ -43,10 +43,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Repositories and services
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
-  final _clubService = getIt<SportClubService>();
 
   // Language state
   late String _currentLanguage;
+
+  // Notification settings key
+  static const String _notificationsKey = 'notifications_enabled';
 
   @override
   void initState() {
@@ -55,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadUserProfile();
     _loadSampleHistoryBookings();
     _loadCurrentLanguage();
+    _loadNotificationSettings();
   }
 
   @override
@@ -74,15 +77,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  Future<void> _loadNotificationSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool(_notificationsKey) ?? true;
+      setState(() {
+        _isNotificationsEnabled = enabled;
+      });
+    } catch (e) {}
+  }
+
+  Future<void> _saveNotificationSettings(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_notificationsKey, enabled);
+    } catch (e) {}
+  }
+
+  Future<void> _toggleNotifications(bool value) async {
+    setState(() {
+      _isNotificationsEnabled = value;
+    });
+
+    await _saveNotificationSettings(value);
+  }
+
   Future<void> _loadUserProfile() async {
     try {
       setState(() => _isLoading = true);
 
-      // Check if user has valid token
       final hasValidToken = await _tokenService.hasValidTokenAsync();
 
       if (hasValidToken) {
-        // Fetch user profile from API
         await _userService.getProfile();
         setState(() {
           _user = _userService.currentUser;
@@ -90,10 +116,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       } else {
         setState(() => _isLoading = false);
-        // Optionally redirect to login
       }
     } catch (e) {
-      print('Error loading profile: $e');
       setState(() => _isLoading = false);
 
       if (mounted) {
@@ -109,7 +133,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadSampleHistoryBookings() {
     // Add sample history bookings - replace with your actual data
-    // You can also fetch from API here
   }
 
   void _loadCurrentLanguage() {
@@ -143,13 +166,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _navigateToEditProfile() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const EditProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
     );
 
     if (result != null && mounted) {
-      // Refresh user profile after edit
       await _loadUserProfile();
 
       ScaffoldMessenger.of(
@@ -177,7 +197,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _currentLanguage = selectedLanguage.toUpperCase();
       });
-      // Rebuild the UI to update all translations
       setState(() {});
     }
   }
@@ -223,13 +242,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
 
-              // Clear tokens
               await _tokenService.clearToken();
-
-              // Clear user data
               _userService.clearUser();
 
-              // Navigate to login
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 '/login',
@@ -366,7 +381,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       alignment: Alignment.center,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(50),
-                        child: _user!.avatarUrl != null && _user!.avatarUrl!.isNotEmpty
+                        child:
+                            _user!.avatarUrl != null &&
+                                _user!.avatarUrl!.isNotEmpty
                             ? Image.network(
                                 _user!.avatarUrl!,
                                 fit: BoxFit.cover,
@@ -526,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: ElevatedButton(
                     onPressed: _navigateToEditProfile,
                     style: AppTheme.elevatedButtonStyle(
-                      backgroundColor: AppTheme.kAccent.withOpacity(0.5),
+                      backgroundColor: AppTheme.kAccent.withValues(alpha: 0.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -632,7 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           Column(
             children: [
-              // Notification
+              // Notification - With real toggle functionality
               Container(
                 width: double.infinity,
                 height: 60,
@@ -678,9 +695,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Switch(
                         value: _isNotificationsEnabled,
-                        onChanged: (value) => setState(() {
-                          _isNotificationsEnabled = value;
-                        }),
+                        onChanged: _toggleNotifications,
                         activeColor: AppTheme.kAccent,
                       ),
                     ],

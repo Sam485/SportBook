@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/User/service/user_service.dart';
+import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'verify_screen.dart'; // ✅ Add this import
 
 class ForgetPasswordScreen extends StatefulWidget {
   const ForgetPasswordScreen({super.key});
@@ -15,7 +17,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
-  final _userService = getIt<UserService>();
+  final _firebaseOtpService = getIt<FirebaseOtpService>();
 
   @override
   void dispose() {
@@ -23,44 +25,83 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
     super.dispose();
   }
 
-  Future<void> _handleResetPassword() async {
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your phone number';
+    }
+    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.length < 9) {
+      return 'Please enter a valid phone number';
+    }
+    return null;
+  }
+
+  String _formatPhoneNumber(String phone) {
+    String cleaned = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '+855${cleaned.substring(1)}';
+    } else if (!cleaned.startsWith('+')) {
+      if (cleaned.startsWith('855')) {
+        cleaned = '+$cleaned';
+      } else {
+        cleaned = '+855$cleaned';
+      }
+    }
+    return cleaned;
+  }
+
+  Future<void> _handleSendOtp() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final rawPhone = _phoneController.text.trim();
+    final fullPhoneNumber = _formatPhoneNumber(rawPhone);
 
     setState(() => _isLoading = true);
 
     try {
-      // Simulate API call to reset password
-      await Future.delayed(const Duration(seconds: 2));
+      await _firebaseOtpService.sendOtp(
+        phoneNumber: fullPhoneNumber,
+        onCodeSent: (verificationId) {
+          if (!mounted) return;
+          setState(() => _isLoading = false);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Password reset instructions sent to your phone'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navigate back to login after successful reset
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.login,
-          (route) => false,
-        );
-      }
+          // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const VerifyScreen(),
+              settings: RouteSettings(
+                name: AppRoutes.otpVerify,
+                arguments: {
+                  'flow': 'forgetPassword',
+                  'phoneNumber': fullPhoneNumber,
+                  'verificationId': verificationId,
+                },
+              ),
+            ),
+          );
+        },
+        onFailed: (FirebaseAuthException e) {
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          _showError(e.message ?? 'Verification failed (${e.code})');
+        },
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to reset password: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showError(e.toString());
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -79,13 +120,12 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Header
                   _buildHeader(isDark),
+                  const SizedBox(height: 8),
+                  _buildSubHeader(isDark),
                   const SizedBox(height: 32),
-                  // Form Card
                   _buildFormCard(isDark),
                   const SizedBox(height: 20),
-                  // Footer
                   _buildFooter(isDark),
                 ],
               ),
@@ -105,7 +145,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
             color: AppTheme.kAccent.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.lock_reset_rounded,
             color: AppTheme.kAccent,
             size: 32,
@@ -119,6 +159,49 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "We'll send a verification code to reset your password",
+          style: TextStyle(
+            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubHeader(bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: AppTheme.kAccent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Enter your phone number to receive OTP',
+            style: TextStyle(
+              color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+              fontSize: 13,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: AppTheme.kAccent,
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
       ],
@@ -148,7 +231,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Phone Number Field
             Text(
               'Phone Number',
               style: TextStyle(
@@ -165,18 +247,9 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your phone number';
-                }
-                final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
-                if (cleaned.length < 9) {
-                  return 'Please enter a valid phone number';
-                }
-                return null;
-              },
+              validator: _validatePhone,
               decoration: InputDecoration(
-                hintText: '+855 12 345 678',
+                hintText: '012 345 678',
                 hintStyle: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
@@ -217,8 +290,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               ),
             ),
             const SizedBox(height: 8),
-
-            // Info text about reset
             Row(
               children: [
                 Icon(
@@ -229,7 +300,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'A password reset link will be sent to this number',
+                    'A 6-digit verification code will be sent to this number',
                     style: TextStyle(
                       color: isDark ? Colors.grey[500] : Colors.grey[400],
                       fontSize: 12,
@@ -239,13 +310,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               ],
             ),
             const SizedBox(height: 24),
-
-            // Send Reset Link Button
             SizedBox(
               height: 52,
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleResetPassword,
+                onPressed: _isLoading ? null : _handleSendOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.kAccent,
                   foregroundColor: const Color(0xFF0A1828),
@@ -270,7 +339,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Send Reset Link',
+                            'Send Code',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,

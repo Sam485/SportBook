@@ -1,4 +1,3 @@
-// lib/screens/auth/verify_screen.dart
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -11,6 +10,9 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'reset_password_screen.dart'; // ✅ Import for direct navigation
+
+enum VerifyFlow { otpLogin, signup, forgetPassword }
 
 class VerifyScreen extends StatefulWidget {
   const VerifyScreen({super.key});
@@ -35,9 +37,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
   int _secondsLeft = _resendCooldown;
   Timer? _timer;
   bool _isLoading = false;
-  String _flow = '';
+
+  // Flow state variables
+  VerifyFlow _flow = VerifyFlow.otpLogin;
   String _phoneNumber = '';
   RegisterRequestDto? _userData;
+  String? _verificationId;
+  bool _isResend = false;
+  String? _cachedFirebaseToken;
 
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
@@ -49,21 +56,58 @@ class _VerifyScreenState extends State<VerifyScreen> {
     _startTimer();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments;
+      final route = ModalRoute.of(context);
+      final args = route?.settings.arguments;
+
+      print('🔵 VerifyScreen - Args received: $args');
+
       if (args is Map<String, dynamic>) {
+        final flowString = args['flow'] as String? ?? '';
+        final phone = args['phoneNumber'] as String? ?? '';
+        final userData = args['userData'];
+        final verificationId = args['verificationId'] as String?;
+
         setState(() {
-          _flow = args['flow'] ?? '';
-          _userData = args['userData'];
-          _phoneNumber = args['phoneNumber'] ?? '';
+          _flow = _parseFlow(flowString);
+          _phoneNumber = phone;
+          _userData = userData is RegisterRequestDto ? userData : null;
+          _verificationId = verificationId;
         });
+
+        print('🔵 VerifyScreen - Flow: $_flow');
+        print('🔵 VerifyScreen - Phone: $_phoneNumber');
       } else if (args is RegisterRequestDto) {
         setState(() {
-          _flow = 'signup';
+          _flow = VerifyFlow.signup;
           _userData = args;
+          _phoneNumber = args.phone ?? '';
         });
+      } else {
+        print('⚠️ VerifyScreen - No arguments received or wrong type');
       }
-      _focusNodes[0].requestFocus();
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _focusNodes[0].requestFocus();
+        }
+      });
     });
+  }
+
+  VerifyFlow _parseFlow(String flow) {
+    switch (flow.toLowerCase()) {
+      case 'signup':
+        return VerifyFlow.signup;
+      case 'forgetpassword':
+      case 'forget_password':
+      case 'resetpassword':
+      case 'reset_password':
+        return VerifyFlow.forgetPassword;
+      case 'otplogin':
+      case 'otp_login':
+      default:
+        return VerifyFlow.otpLogin;
+    }
   }
 
   @override
@@ -133,7 +177,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
   Future<void> _resendOtp() async {
     if (_secondsLeft > 0 || _isLoading) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isResend = true;
+    });
 
     try {
       await _firebaseOtpService.sendOtp(
@@ -141,7 +188,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
         isResend: true,
         onCodeSent: (verificationId) {
           if (!mounted) return;
-          setState(() => _isLoading = false);
+          setState(() {
+            _verificationId = verificationId;
+            _isLoading = false;
+            _isResend = false;
+          });
           _startTimer();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -152,19 +203,26 @@ class _VerifyScreenState extends State<VerifyScreen> {
         },
         onFailed: (FirebaseAuthException e) {
           if (!mounted) return;
-          setState(() => _isLoading = false);
+          setState(() {
+            _isLoading = false;
+            _isResend = false;
+          });
           _showError(e.message ?? 'Failed to resend OTP (${e.code})');
         },
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _isResend = false;
+      });
       _showError(e.toString());
     }
   }
 
   Future<void> _verifyOtp() async {
     if (!_isComplete) return;
+
     setState(() => _isLoading = true);
 
     try {
@@ -185,57 +243,28 @@ class _VerifyScreenState extends State<VerifyScreen> {
         throw Exception('Failed to get Firebase token');
       }
 
-      // 3. Get FCM token
-      String? fcmToken;
-      try {
-        fcmToken = await FirebaseMessaging.instance.getToken();
-      } catch (e) {
-        fcmToken = '';
-      }
+      _cachedFirebaseToken = firebaseToken;
 
       print('🔵 Flow: $_flow');
-      print('🔵 UserData: $_userData');
+      print('🔵 Phone Number: $_phoneNumber');
+      print('🔵 Firebase Token: ${firebaseToken.substring(0, 30)}...');
 
-      if (mounted) {
-        // Check the flow
-        if (_flow == 'signup' && _userData != null) {
-          // Sign up flow - register the user
-          print('📝 Sign up flow - registering user...');
-          final response = await _userService.registerUserWithFirebase(
-            userData: _userData!,
-            firebaseToken: firebaseToken,
-            fcmToken: fcmToken ?? '',
-          );
-          await _tokenService.saveTokens(response.tokenModel);
+      if (!mounted) return;
 
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Account created successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
-          }
-        } else {
-          // OTP Login flow - call /auth/phone-login
-          print('📝 OTP Login flow - calling /auth/phone-login...');
-          final response = await _userService.loginWithFirebase(
-            firebaseToken: firebaseToken,
-            fcmToken: fcmToken ?? '',
-          );
-          await _tokenService.saveTokens(response.tokenModel);
+      // Handle different flows
+      switch (_flow) {
+        case VerifyFlow.signup:
+          await _handleSignupFlow(firebaseToken);
+          break;
 
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login successful!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
-          }
-        }
+        case VerifyFlow.forgetPassword:
+          await _handleForgetPasswordFlow(firebaseToken);
+          break;
+
+        case VerifyFlow.otpLogin:
+        default:
+          await _handleOtpLoginFlow(firebaseToken);
+          break;
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -244,19 +273,108 @@ class _VerifyScreenState extends State<VerifyScreen> {
           errorMessage = 'Invalid OTP code. Please try again.';
         } else if (e.code == 'session-expired') {
           errorMessage = 'OTP session expired. Please request a new code.';
+        } else if (e.code == 'too-many-requests') {
+          errorMessage = 'Too many attempts. Please try again later.';
         }
         _showError(errorMessage);
         _clearFields();
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
         _showError('Verification failed: ${e.toString()}');
         _clearFields();
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _handleSignupFlow(String firebaseToken) async {
+    print('📝 Sign up flow - registering user...');
+
+    if (_userData == null) {
+      throw Exception('User data is missing for signup');
+    }
+
+    String? fcmToken;
+    try {
+      fcmToken = await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      fcmToken = '';
+    }
+
+    final response = await _userService.registerUserWithFirebase(
+      userData: _userData!,
+      firebaseToken: firebaseToken,
+      fcmToken: fcmToken ?? '',
+    );
+
+    await _tokenService.saveTokens(response.tokenModel);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() => _isLoading = false);
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
+    }
+  }
+
+  // ✅ FIXED: Use pushReplacement with MaterialPageRoute
+  Future<void> _handleForgetPasswordFlow(String firebaseToken) async {
+    print('📝 Forget Password flow - navigating to reset password...');
+    print('📝 Firebase Token: ${firebaseToken.substring(0, 30)}...');
+
+    if (mounted) {
+      _clearFields();
+      setState(() => _isLoading = false);
+
+      // ✅ Use pushReplacement with MaterialPageRoute to pass arguments
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ResetPasswordScreen(),
+          settings: RouteSettings(
+            name: AppRoutes.resetPassword,
+            arguments: {
+              'phoneNumber': _phoneNumber,
+              'firebaseToken': firebaseToken,
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleOtpLoginFlow(String firebaseToken) async {
+    print('📝 OTP Login flow - calling /auth/phone-login...');
+
+    String? fcmToken;
+    try {
+      fcmToken = await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      fcmToken = '';
+    }
+
+    final response = await _userService.loginWithFirebase(
+      firebaseToken: firebaseToken,
+      fcmToken: fcmToken ?? '',
+    );
+
+    await _tokenService.saveTokens(response.tokenModel);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login successful!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() => _isLoading = false);
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
   }
 
@@ -270,23 +388,36 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
+  String _getButtonText() {
+    switch (_flow) {
+      case VerifyFlow.signup:
+        return 'Verify & Create Account';
+      case VerifyFlow.forgetPassword:
+        return 'Verify & Reset Password';
+      case VerifyFlow.otpLogin:
+      default:
+        return 'Verify & Sign In';
+    }
+  }
+
+  String _getHeaderSubtitle() {
+    switch (_flow) {
+      case VerifyFlow.signup:
+        return 'Enter the 6-digit code sent to verify your account';
+      case VerifyFlow.forgetPassword:
+        return 'Enter the 6-digit code sent to reset your password';
+      case VerifyFlow.otpLogin:
+      default:
+        return 'Enter the 6-digit code sent to sign in';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayPhoneNumber = _phoneNumber.isNotEmpty
         ? _phoneNumber
         : _userData?.phone ?? '+855968877203';
-
-    String getButtonText() {
-      if (_flow == 'signup') {
-        return 'Verify & Create Account';
-      } else if (_flow == 'otpLogin') {
-        return 'Verify & Sign In';
-      } else if (_flow == 'forgetPassword') {
-        return 'Verify & Reset Password';
-      }
-      return 'Verify';
-    }
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -302,7 +433,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 children: [
                   _buildHeader(isDark, displayPhoneNumber),
                   const SizedBox(height: 32),
-                  _buildFormCard(isDark, getButtonText()),
+                  _buildFormCard(isDark),
                   const SizedBox(height: 20),
                   _buildFooter(isDark),
                 ],
@@ -323,15 +454,23 @@ class _VerifyScreenState extends State<VerifyScreen> {
             color: AppTheme.kAccent.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.verified_user_rounded,
+          child: Icon(
+            _flow == VerifyFlow.forgetPassword
+                ? Icons.lock_reset_rounded
+                : _flow == VerifyFlow.signup
+                ? Icons.person_add_rounded
+                : Icons.verified_user_rounded,
             color: AppTheme.kAccent,
             size: 32,
           ),
         ),
         const SizedBox(height: 16),
         Text(
-          'Enter OTP',
+          _flow == VerifyFlow.forgetPassword
+              ? 'Reset Password'
+              : _flow == VerifyFlow.signup
+              ? 'Create Account'
+              : 'Enter OTP',
           style: TextStyle(
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
@@ -341,25 +480,35 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Enter the 6-digit code sent to',
+          _getHeaderSubtitle(),
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
         ),
-        Text(
-          phoneNumber,
-          style: TextStyle(
-            color: isDark ? Colors.white : AppTheme.kLightText,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.kAccent.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.kAccent.withOpacity(0.2)),
+          ),
+          child: Text(
+            phoneNumber,
+            style: TextStyle(
+              color: AppTheme.kAccent,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFormCard(bool isDark, String buttonText) {
+  Widget _buildFormCard(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -413,7 +562,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          buttonText,
+                          _getButtonText(),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -514,7 +663,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         const SizedBox(width: 8),
         canResend
             ? GestureDetector(
-                onTap: _resendOtp,
+                onTap: _isLoading ? null : _resendOtp,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -525,7 +674,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    _isLoading ? 'Resending...' : 'Resend',
+                    _isLoading ? 'Sending...' : 'Resend',
                     style: TextStyle(
                       color: isDark ? Colors.black : Colors.white,
                       fontSize: 14,

@@ -29,7 +29,14 @@ abstract class UserService extends ChangeNotifier {
   // Change Password
   Future<void> changePassword(ChangePasswordRequestDto request);
 
-  // ✅ NEW: Refresh current user data from server
+  // ✅ NEW: Forgot Password - Reset password with Firebase token
+  Future<void> forgotPassword({
+    required String firebaseToken,
+    required String newPassword,
+    required String confirmPassword,
+  });
+
+  // Refresh current user
   Future<UserModel> refreshCurrentUser();
 
   // State getters

@@ -1,10 +1,10 @@
-// lib/screens/auth/sign_in_with_otp_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/screens/auth/verify_screen.dart';
 
 class SignInWithOtpScreen extends StatefulWidget {
   const SignInWithOtpScreen({super.key});
@@ -64,10 +64,21 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
         onCodeSent: (verificationId) {
           if (!mounted) return;
           setState(() => _isLoading = false);
-          Navigator.pushNamed(
+
+          // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
+          Navigator.push(
             context,
-            AppRoutes.otpVerify,
-            arguments: {'flow': 'otpLogin', 'phoneNumber': fullPhoneNumber},
+            MaterialPageRoute(
+              builder: (context) => const VerifyScreen(),
+              settings: RouteSettings(
+                name: AppRoutes.otpVerify,
+                arguments: {
+                  'flow': 'otpLogin',
+                  'phoneNumber': fullPhoneNumber,
+                  'verificationId': verificationId,
+                },
+              ),
+            ),
           );
         },
         onFailed: (FirebaseAuthException e) {

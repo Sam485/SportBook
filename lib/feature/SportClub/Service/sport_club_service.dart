@@ -1,4 +1,3 @@
-// feature/SportClub/Service/sport_club_service.dart
 import 'package:sportbook/feature/SportClub/model/dto/favorite_response_dto.dart';
 import 'package:sportbook/feature/SportClub/model/dto/get_all_sport_club_dto.dart';
 import '../model/sport_club_model.dart';
@@ -41,7 +40,7 @@ abstract class SportClubService {
   bool isClubFavorited(int clubId);
   Set<int> get favoritedClubIds;
 
-  void removeListener(void Function() onServiceChanged) {}
-
   void addListener(void Function() onServiceChanged) {}
+
+  void removeListener(void Function() onServiceChanged) {}
 }

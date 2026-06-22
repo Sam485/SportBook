@@ -1,4 +1,3 @@
-// feature/SportClub/repository/sport_club_repository.dart
 import 'package:dio/dio.dart';
 import 'package:sportbook/feature/SportClub/model/dto/favorite_response_dto.dart';
 import 'package:sportbook/feature/SportClub/model/dto/get_all_sport_club_dto.dart';
@@ -36,7 +35,7 @@ class SportClubRepository {
   // Get all favorites
   Future<GetAllSportClubDto> getAllFavorite() async {
     try {
-      final response = await _dio.get('/users/me/favorites?page=1&limit=10');
+      final response = await _dio.get('/users/me/favorites');
       return GetAllSportClubDto.fromJson(response.data);
     } on DioException catch (e) {
       throw Exception(
@@ -53,7 +52,6 @@ class SportClubRepository {
     bool isCurrentlyFavorited,
   ) async {
     try {
-
       if (isCurrentlyFavorited) {
         // If currently favorited, DELETE to remove
         final response = await _dio.delete('/users/me/favorites/$clubId');

@@ -7,6 +7,7 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'verify_screen.dart'; // ✅ Add this import
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -85,14 +86,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
             password: _passwordController.text.trim(),
           );
 
-          Navigator.pushNamed(
+          // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
+          Navigator.push(
             context,
-            AppRoutes.otpVerify,
-            arguments: {
-              'userData': registerRequest,
-              'flow': 'signup',
-              'phoneNumber': formattedPhone,
-            },
+            MaterialPageRoute(
+              builder: (context) => const VerifyScreen(),
+              settings: RouteSettings(
+                name: AppRoutes.otpVerify,
+                arguments: {
+                  'userData': registerRequest,
+                  'flow': 'signup',
+                  'phoneNumber': formattedPhone,
+                  'verificationId': verificationId,
+                },
+              ),
+            ),
           );
         },
         onFailed: (FirebaseAuthException e) {

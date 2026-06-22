@@ -1,13 +1,14 @@
-// feature/Category/model/category_model.dart
 class CategoryModel {
   final int id;
   final String name;
+  final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   CategoryModel({
     required this.id,
     required this.name,
+    this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -16,6 +17,7 @@ class CategoryModel {
     return CategoryModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
+      imageUrl: json['image_url'],
       createdAt: DateTime.parse(
         json['created_at'] ?? DateTime.now().toIso8601String(),
       ),
@@ -29,11 +31,11 @@ class CategoryModel {
     return {
       'id': id,
       'name': name,
+      'image_url': imageUrl,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
   }
 
-  // Helper method to get lowercase name for comparison
   String get nameLowerCase => name.toLowerCase();
 }
