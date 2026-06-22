@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import '../../../core/theme.dart';
-import '../../../providers/booking_provider.dart';
 import '../../../translations/app_translations.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
   final VoidCallback onGoHome;
   final VoidCallback onViewBooking;
+  final Map<String, dynamic>? bookingData;
 
   const PaymentSuccessPage({
     super.key,
     required this.onGoHome,
     required this.onViewBooking,
+    this.bookingData,
   });
 
   @override
@@ -37,10 +37,67 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   late Animation<double> _buttonFade;
   late Animation<Offset> _buttonSlide;
 
+  // Booking data
+  late String _sportName;
+  late String _courtName;
+  late String _date;
+  late String _timeRange;
+  late double _totalPrice;
+  late String _bookingId;
+
   @override
   void initState() {
     super.initState();
     HapticFeedback.heavyImpact();
+
+    // Extract booking data
+    final data = widget.bookingData ?? {};
+    _sportName = data['category'] ?? '—';
+    _courtName = data['court'] != null ? 'Court ${data['court']! + 1}' : '—';
+    _totalPrice = data['totalPrice'] ?? 0.0;
+
+    // Format date
+    final date = data['date'] as DateTime?;
+    if (date != null) {
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      final weekdays = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      _date =
+          '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
+    } else {
+      _date = '—';
+    }
+
+    // Format time
+    final startTime = data['startTime'] as TimeOfDay?;
+    final endTime = data['endTime'] as TimeOfDay?;
+    if (startTime != null && endTime != null) {
+      _timeRange = '${_formatTime(startTime)} – ${_formatTime(endTime)}';
+    } else {
+      _timeRange = '—';
+    }
+
+    _bookingId = _generateId();
 
     _checkController = AnimationController(
       vsync: this,
@@ -139,10 +196,20 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     super.dispose();
   }
 
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:00 $period';
+  }
+
+  String _generateId() {
+    final now = DateTime.now();
+    return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final p = context.watch<BookingProvider>();
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -194,7 +261,15 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 32),
 
-                      _BookingPillCard(p: p, isDark: isDark),
+                      _BookingPillCard(
+                        bookingId: _bookingId,
+                        sportName: _sportName,
+                        courtName: _courtName,
+                        date: _date,
+                        timeRange: _timeRange,
+                        totalPrice: _totalPrice,
+                        isDark: isDark,
+                      ),
                     ],
                   ),
                 ),
@@ -211,16 +286,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            final booking = p.confirmedBooking;
-                            if (booking != null) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.bookedDetailed,
-                                arguments: booking,
-                              );
-                            }
-                          },
+                          onPressed: widget.onViewBooking,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.kAccent,
                             foregroundColor: Colors.black,
@@ -306,6 +372,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     );
   }
 }
+
+// ... (rest of the widgets remain the same: _SuccessAnimation, _RippleRing, _BookingPillCard, _DetailRow, _CardDivider)
 
 class _SuccessAnimation extends StatelessWidget {
   final Animation<double> checkScale;
@@ -433,51 +501,26 @@ class _RippleRing extends StatelessWidget {
 }
 
 class _BookingPillCard extends StatelessWidget {
-  final BookingProvider p;
+  final String bookingId;
+  final String sportName;
+  final String courtName;
+  final String date;
+  final String timeRange;
+  final double totalPrice;
   final bool isDark;
 
-  const _BookingPillCard({required this.p, required this.isDark});
-
-  static String _fmtH(int h) {
-    final period = h >= 12 ? 'PM' : 'AM';
-    final hr = h % 12 == 0 ? 12 : h % 12;
-    return '$hr:00 $period';
-  }
-
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  static const _weekdays = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
+  const _BookingPillCard({
+    required this.bookingId,
+    required this.sportName,
+    required this.courtName,
+    required this.date,
+    required this.timeRange,
+    required this.totalPrice,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final date = p.selectedDate;
-    final dateStr = date != null
-        ? '${_weekdays[date.weekday - 1]}, ${_months[date.month - 1]} ${date.day}'
-        : '—';
-    final timeStr = (p.startHour != null && p.endHour != null)
-        ? '${_fmtH(p.startHour!)} – ${_fmtH(p.endHour!)}'
-        : '—';
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -507,7 +550,7 @@ class _BookingPillCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${'booking'.tr(context)} #${_generateId()}',
+                  '${'booking'.tr(context)} #$bookingId',
                   style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 12,
@@ -522,35 +565,35 @@ class _BookingPillCard extends StatelessWidget {
 
           _DetailRow(
             icon: Icons.sports_rounded,
-            label: p.selectedSport ?? '—',
+            label: sportName,
             sub: 'sport'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.grid_view_rounded,
-            label: p.target?.name ?? '—',
+            label: courtName,
             sub: 'court'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.calendar_month_rounded,
-            label: dateStr,
+            label: date,
             sub: 'date'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.access_time_filled_rounded,
-            label: timeStr,
+            label: timeRange,
             sub: 'time'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.payments_rounded,
-            label: '\$${p.totalPrice.toStringAsFixed(2)}',
+            label: '\$${totalPrice.toStringAsFixed(2)}',
             sub: 'total_paid'.tr(context),
             valueColor: AppTheme.kAccent,
             isDark: isDark,
@@ -558,11 +601,6 @@ class _BookingPillCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _generateId() {
-    final now = DateTime.now();
-    return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
   }
 }
 

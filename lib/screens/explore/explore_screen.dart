@@ -5,6 +5,7 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
 import 'package:sportbook/widgets/common/section_header.dart';
@@ -32,37 +33,37 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   List<CategoryModel> _categories = [];
 
-  // Get clubs from service
-  List<SportClubModel> get _clubs => _clubService.clubs;
+  // Get nearby clubs from service
+  List<SportClubModel> get _clubs => _clubService.nearbyClubs;
 
   // Get filtered clubs based on selected category or search query
   List<SportClubModel> get _filteredClubs {
-    List<SportClubModel> result = _clubs;
+    List<SportClubModel> result = List.from(_clubs);
+
+    // ✅ FIXED: Filter by category if not 'all'
+    if (_selectedCat != 'all') {
+      result = result.where((club) {
+        return club.categories.any((cat) {
+          // ✅ Compare by ID as string since _selectedCat is a string
+          return cat.id.toString() == _selectedCat;
+        });
+      }).toList();
+    }
 
     // Filter by search query if present
     if (_query.isNotEmpty) {
-      result = result
-          .where(
-            (club) =>
-                club.name.toLowerCase().contains(_query.toLowerCase()) ||
-                club.location.toLowerCase().contains(_query.toLowerCase()) ||
-                club.categories.any(
-                  (cat) => cat.toString().toLowerCase().contains(
-                    _query.toLowerCase(),
-                  ),
-                ),
-          )
-          .toList();
-    }
-
-    // Filter by category if not 'all'
-    if (_selectedCat != 'all') {
-      result = result
-          .where(
-            (club) =>
-                club.categories.any((cat) => cat.toString() == _selectedCat),
-          )
-          .toList();
+      result = result.where((club) {
+        final nameMatch = club.name.toLowerCase().contains(
+          _query.toLowerCase(),
+        );
+        final locationMatch = club.location.toLowerCase().contains(
+          _query.toLowerCase(),
+        );
+        final categoryMatch = club.categories.any(
+          (cat) => cat.name.toLowerCase().contains(_query.toLowerCase()),
+        );
+        return nameMatch || locationMatch || categoryMatch;
+      }).toList();
     }
 
     return result;
@@ -95,8 +96,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
       await _categoryService.fetchCategories(limit: 100);
       _categories = _categoryService.categories;
 
-      // Load clubs
-      await _clubService.fetchClubs();
+      // ✅ FIXED: Use fetchNearbyClubs with default location
+      // Try to get user location from UserService if available
+      final userService = getIt<UserService>();
+      await userService.getProfile();
+      final user = userService.currentUser;
+
+      if (user != null && user.lat != null && user.lng != null) {
+        await _clubService.fetchNearbyClubs(
+          lat: user.lat!,
+          lng: user.lng!,
+          radius: 10,
+        );
+      } else {
+        // Default to Phnom Penh coordinates
+        await _clubService.fetchNearbyClubs(
+          lat: 11.5564,
+          lng: 104.9282,
+          radius: 10,
+        );
+      }
 
       setState(() {
         _isLoading = false;
@@ -373,6 +392,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       CategoryModel(
         id: 0,
         name: 'all'.tr(context),
+        imageUrl: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
@@ -390,12 +410,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
           itemBuilder: (_, i) {
             final cat = displayCategories[i];
             final isAll = cat.id == 0;
-            final sel = _selectedCat == (isAll ? 'all' : cat.id.toString());
+            final catId = isAll ? 'all' : cat.id.toString();
+            final sel = _selectedCat == catId;
 
             return GestureDetector(
               onTap: () {
                 setState(() {
-                  _selectedCat = isAll ? 'all' : cat.id.toString();
+                  _selectedCat = catId;
                 });
               },
               child: AnimatedContainer(

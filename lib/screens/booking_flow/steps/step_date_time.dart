@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import '../../../core/theme.dart';
 import '../../../translations/app_translations.dart';
 
@@ -10,6 +11,7 @@ class StepDateAndTime extends StatefulWidget {
   final TimeOfDay? selectedEndTime;
   final int? selectedCourt;
   final String? selectedCategory;
+  final SportClubModel? club;
 
   const StepDateAndTime({
     super.key,
@@ -20,6 +22,7 @@ class StepDateAndTime extends StatefulWidget {
     this.selectedEndTime,
     this.selectedCourt,
     this.selectedCategory,
+    this.club,
   });
 
   @override
@@ -37,6 +40,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   int? _startHour;
   int? _endHour;
   bool _hasAutoConfirmed = false;
+
+  // Selected court slot info
+  int _selectedCourtPrice = 0;
+  String _selectedCourtName = '';
 
   static DateTime get _startOfWeek {
     final now = DateTime.now();
@@ -95,6 +102,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       _endHour = widget.selectedEndTime!.hour;
     }
 
+    // Get selected court info
+    _updateSelectedCourtInfo();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animController.forward(from: 0);
       _autoConfirmIfComplete();
@@ -105,6 +115,63 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   void dispose() {
     _animController.dispose();
     super.dispose();
+  }
+
+  void _updateSelectedCourtInfo() {
+    if (widget.club == null || widget.club!.slots == null) return;
+
+    final slots = widget.club!.slots!;
+    final courtIndex = (widget.selectedCourt ?? 1) - 1;
+
+    if (courtIndex >= 0 && courtIndex < slots.length) {
+      final slot = slots[courtIndex];
+      _selectedCourtPrice = slot.price;
+      _selectedCourtName = slot.name;
+    }
+  }
+
+  // Generate available hours based on club opening hours
+  List<int> _getAvailableHours() {
+    if (widget.club == null) {
+      return List.generate(17, (i) => i + 6); // 6 AM to 10 PM
+    }
+
+    final openTime = widget.club!.openTime;
+    final closeTime = widget.club!.closeTime;
+
+    try {
+      final openParts = openTime.split(':');
+      final closeParts = closeTime.split(':');
+
+      int openHour = int.parse(openParts[0]);
+      int closeHour = int.parse(closeParts[0]);
+
+      // Adjust for overnight hours
+      if (closeHour < openHour) {
+        closeHour += 24;
+      }
+
+      final hours = <int>[];
+      for (int h = openHour; h < closeHour; h++) {
+        if (h < 24) {
+          hours.add(h);
+        }
+      }
+
+      return hours;
+    } catch (_) {
+      return List.generate(17, (i) => i + 6);
+    }
+  }
+
+  List<int> _getAvailableEndHours(int startHour) {
+    final allHours = _getAvailableHours();
+    return allHours.where((h) => h > startHour).toList();
+  }
+
+  int _getPriceForSlot(int startHour, int endHour) {
+    // Use the selected court's price
+    return _selectedCourtPrice * (endHour - startHour);
   }
 
   void _autoConfirmIfComplete() {
@@ -187,25 +254,20 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     return 0;
   }
 
-  double get _totalPrice {
-    // Calculate based on hours
-    final hours = _durationHours;
-    final pricePerHour = 10.0; // Default price, you can make this dynamic
-    return hours * pricePerHour;
+  num get _totalPrice {
+    if (_startHour != null && _endHour != null) {
+      return _getPriceForSlot(_startHour!, _endHour!);
+    }
+    return 0.0;
   }
 
   List<int> get _availableHours {
-    // Generate available hours from 6 AM to 10 PM
-    return List.generate(17, (i) => i + 6);
-  }
-
-  List<int> get _fromHours {
-    return _availableHours;
+    return _getAvailableHours();
   }
 
   List<int> get _toHours {
     if (_startHour == null) return [];
-    return _availableHours.where((h) => h > _startHour!).toList();
+    return _getAvailableEndHours(_startHour!);
   }
 
   @override
@@ -444,16 +506,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                           color: AppTheme.kAccent,
                         ),
                       ),
-                    if (isPast && !sel)
-                      Container(
-                        width: 4,
-                        height: 4,
-                        margin: const EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey.withOpacity(0.5),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -577,7 +629,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   ),
                   const SizedBox(height: 10),
                   _horizontalChips(
-                    hours: _fromHours,
+                    hours: _availableHours,
                     selected: _startHour,
                     selColor: const Color(0xFF4CAF50),
                     isDark: isDark,
@@ -663,7 +715,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                 ),
                               ),
                               Text(
-                                '\$10/hr',
+                                '\$${_selectedCourtPrice.toStringAsFixed(0)}/hr',
                                 style: TextStyle(
                                   color: isDark
                                       ? AppTheme.kTextSub

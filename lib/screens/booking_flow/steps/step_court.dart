@@ -1,34 +1,120 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
-import '../../../translations/app_translations.dart';
+import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/SportClub/model/dto/slot_dto.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class StepCourt extends StatelessWidget {
   final VoidCallback onNext;
   final Function(int) onCourtSelected;
   final int? selectedCourt;
+  final SportClubModel? club;
   final String? selectedCategory;
-  final List<String>? categories;
 
   const StepCourt({
     super.key,
     required this.onNext,
     required this.onCourtSelected,
     this.selectedCourt,
+    this.club,
     this.selectedCategory,
-    this.categories,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Get total courts - default to 4 if not available
-    final total = 4; // You can make this dynamic if needed
+    // Get courts from club slots - ONLY from API
+    List<SlotDto> slots = [];
+    List<int> courtIds = [];
+    List<String> courtImages = [];
+    List<String> courtNames = [];
+    List<int> courtPrices = [];
+    List<bool> courtAvailability = [];
+
+    if (club != null && club!.slots != null && club!.slots!.isNotEmpty) {
+      slots = club!.slots!;
+
+      // Extract court info from slots
+      for (var slot in slots) {
+        courtIds.add(slot.id);
+        courtNames.add(slot.name);
+        courtPrices.add(slot.price);
+        courtAvailability.add(slot.isAvailalbe);
+        if (slot.imageUrl.isNotEmpty) {
+          courtImages.add(slot.imageUrl);
+        }
+      }
+    }
+
+    // If no slots from API, show empty state
+    if (courtIds.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        children: [
+          Text(
+            'select_court'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.white : AppTheme.kLightText,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'select_court_desc'.tr(context),
+            style: TextStyle(
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 40),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.sports,
+                  color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+                  size: 48,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'no_courts_available'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'please_check_back_later'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     final sport = selectedCategory ?? '';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
+        // Header
         Text(
           'select_court'.tr(context),
           style: TextStyle(
@@ -45,22 +131,67 @@ class StepCourt extends StatelessWidget {
             fontSize: 13,
           ),
         ),
-        const SizedBox(height: 20),
-        _courtGrid(context, total, sport, isDark),
+        const SizedBox(height: 8),
+
+        // Availability info if there are unavailable courts
+        if (courtAvailability.contains(false)) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.orange,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'some_courts_unavailable'.tr(context),
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Court Grid
+        _courtGrid(
+          context,
+          courtIds,
+          sport,
+          courtImages,
+          courtNames,
+          courtPrices,
+          courtAvailability,
+          isDark,
+        ),
       ],
     );
   }
 
   // ── Court grid (2-col with image) ──────────────────────────────────────────
-  Widget _courtGrid(BuildContext ctx, int total, String sport, bool isDark) {
-    // Default images if no sport-specific images
-    final defaultImages = [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop',
-    ];
-
+  Widget _courtGrid(
+    BuildContext ctx,
+    List<int> courtIds,
+    String sport,
+    List<String> images,
+    List<String> names,
+    List<int> prices,
+    List<bool> availability,
+    bool isDark,
+  ) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -70,17 +201,22 @@ class StepCourt extends StatelessWidget {
         mainAxisSpacing: 12,
         childAspectRatio: 1.4,
       ),
-      itemCount: total,
+      itemCount: courtIds.length,
       itemBuilder: (_, i) {
-        final num = i + 1;
-        final sel = selectedCourt == num;
-        final img = defaultImages[i % defaultImages.length];
+        final courtId = courtIds[i];
+        final sel = selectedCourt == courtId;
+        final img = images.isNotEmpty ? images[i % images.length] : '';
+        final name = names.isNotEmpty ? names[i] : 'Court ${i + 1}';
+        final price = prices.isNotEmpty ? prices[i] : 0.0;
+        final isAvailable = availability.isNotEmpty ? availability[i] : true;
 
         return GestureDetector(
-          onTap: () {
-            onCourtSelected(num);
-            Future.delayed(const Duration(milliseconds: 200), onNext);
-          },
+          onTap: isAvailable
+              ? () {
+                  onCourtSelected(courtId);
+                  Future.delayed(const Duration(milliseconds: 200), onNext);
+                }
+              : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
@@ -88,6 +224,8 @@ class StepCourt extends StatelessWidget {
               border: Border.all(
                 color: sel
                     ? AppTheme.kAccent
+                    : !isAvailable
+                    ? Colors.grey.withOpacity(0.3)
                     : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 width: sel ? 2.5 : 1,
               ),
@@ -100,26 +238,64 @@ class StepCourt extends StatelessWidget {
                       ),
                     ]
                   : null,
+              color: !isAvailable
+                  ? (isDark
+                        ? Colors.grey.withOpacity(0.15)
+                        : Colors.grey.withOpacity(0.1))
+                  : null,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14.5),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    img,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                  // Image - only show if image exists
+                  if (img.isNotEmpty)
+                    Image.network(
+                      img,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                        child: Icon(
+                          Icons.sports,
+                          color: isAvailable
+                              ? AppTheme.kAccent
+                              : Colors.grey.withOpacity(0.5),
+                          size: 32,
+                        ),
+                      ),
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppTheme.kAccent,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    Container(
                       color: isDark
                           ? AppTheme.kCardAlt
                           : AppTheme.kLightCardAlt,
-                      child: const Icon(
+                      child: Icon(
                         Icons.sports,
-                        color: AppTheme.kAccent,
+                        color: isAvailable
+                            ? AppTheme.kAccent
+                            : Colors.grey.withOpacity(0.5),
                         size: 32,
                       ),
                     ),
-                  ),
+
+                  // Gradient overlay
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -139,8 +315,35 @@ class StepCourt extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Check mark
-                  if (sel)
+
+                  // Unavailable overlay
+                  if (!isAvailable)
+                    Container(
+                      color: Colors.black.withOpacity(0.5),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'unavailable'.tr(ctx),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Check mark (selected)
+                  if (sel && isAvailable)
                     Positioned(
                       top: 8,
                       right: 8,
@@ -158,52 +361,71 @@ class StepCourt extends StatelessWidget {
                         ),
                       ),
                     ),
-                  // Expand icon
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: GestureDetector(
-                      onTap: () => _openFullImage(
-                        ctx,
-                        img,
-                        'court_label'.tr(ctx).replaceAll('{number}', '$num'),
-                      ),
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.5),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: const Icon(
-                          Icons.open_in_full_rounded,
-                          color: Colors.white70,
-                          size: 13,
+
+                  // Expand icon (only if available and has image)
+                  if (isAvailable && img.isNotEmpty)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: GestureDetector(
+                        onTap: () => _openFullImage(ctx, img, name),
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withOpacity(0.5),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Icon(
+                            Icons.open_in_full_rounded,
+                            color: Colors.white70,
+                            size: 13,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+
                   // Label
                   Positioned(
                     bottom: 8,
                     left: 10,
+                    right: 10,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'court_label'.tr(ctx).replaceAll('{number}', '$num'),
+                          name,
                           style: TextStyle(
-                            color: sel ? AppTheme.kAccent : Colors.white,
+                            color: !isAvailable
+                                ? Colors.grey
+                                : sel
+                                ? AppTheme.kAccent
+                                : Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            shadows: const [
-                              Shadow(color: Colors.black87, blurRadius: 4),
+                            shadows: [
+                              const Shadow(
+                                color: Colors.black87,
+                                blurRadius: 4,
+                              ),
                             ],
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (sport.isNotEmpty)
+                        if (price > 0 && isAvailable)
+                          Text(
+                            '\$${price.toStringAsFixed(0)}/hr',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 10,
+                              shadows: [
+                                Shadow(color: Colors.black87, blurRadius: 3),
+                              ],
+                            ),
+                          ),
+                        if (sport.isNotEmpty && price == 0 && isAvailable)
                           Text(
                             sport,
                             style: const TextStyle(
@@ -288,12 +510,15 @@ class _SingleImageViewer extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

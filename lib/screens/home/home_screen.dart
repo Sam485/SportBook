@@ -1,4 +1,4 @@
-// home_screen.dart - Fixed version
+// home_screen.dart - COMPLETE FIXED VERSION
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
@@ -35,6 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _refreshCounter = 0;
 
+  // Location for nearby search
+  double? _currentLat;
+  double? _currentLng;
+  int _radius = 10; // Default radius in km
+
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
   final _categoryService = getIt<CategoryService>();
@@ -45,9 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<CategoryModel> _categories = [];
   bool _isCategoriesLoading = true;
 
-  List<SportClubModel> get _clubs => List.from(_clubService.clubs);
+  // ✅ FIXED: Use nearbyClubs from service
+  List<SportClubModel> get _clubs => List.from(_clubService.nearbyClubs);
 
-  // Fixed: Filter clubs by category ID
+  // Filter clubs by category ID
   List<SportClubModel> get _filteredClubs {
     if (_selectedCat == 'all') {
       return _clubs;
@@ -67,20 +73,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> initialLoad() async {
     try {
+      // Get user profile first
       await _userService.getProfile();
+      _user = _userService.currentUser;
 
+      // Get user location from profile
+      if (_user != null) {
+        _currentLat = _user!.lat;
+        _currentLng = _user!.lng;
+        _locationLabel = _user!.location ?? 'New York';
+      }
+
+      // Load all data in parallel
       final results = await Future.wait([
         _bannerService.getAllActiveBanner(),
-        _clubService.fetchClubs(),
         _categoryService.fetchCategories(limit: 100),
       ]);
+
+      // ✅ FIXED: Load nearby clubs using user location
+      if (_currentLat != null && _currentLng != null) {
+        await _clubService.fetchNearbyClubs(
+          lat: _currentLat!,
+          lng: _currentLng!,
+          radius: _radius,
+        );
+      } else {
+        // ✅ FIXED: If no location, use default coordinates (Phnom Penh)
+        await _clubService.fetchNearbyClubs(
+          lat: 11.5564,
+          lng: 104.9282,
+          radius: _radius,
+        );
+      }
 
       if (!_isDisposed && mounted) {
         setState(() {
           _banners = results[0] as List<BannerModel>?;
-          _user = _userService.currentUser;
-          _locationLabel = _user?.location ?? 'New York';
-          _categories = results[2] as List<CategoryModel>;
+          _categories = results[1] as List<CategoryModel>;
           _isCategoriesLoading = false;
           _isLoading = false;
           _refreshCounter++;
@@ -103,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _clubService = getIt<SportClubService>();
 
-    // Only SportClubService is a ChangeNotifier
+    // Listen to service changes
     _clubService.addListener(_onServiceChanged);
 
     initialLoad();
@@ -157,8 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
           width: double.infinity,
           decoration: const BoxDecoration(color: Colors.transparent),
           child: MapPickerScreen(
-            initialLat: _user?.lat,
-            initialLng: _user?.lng,
+            initialLat: _currentLat,
+            initialLng: _currentLng,
             initialLabel: _locationLabel,
           ),
         );
@@ -171,7 +200,11 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       await _updateUserLocation(result);
-      await _refreshClubsWithLocation(result);
+
+      // Refresh nearby clubs with new location
+      if (_currentLat != null && _currentLng != null) {
+        await _refreshNearbyClubs(_currentLat!, _currentLng!);
+      }
     }
   }
 
@@ -184,16 +217,18 @@ class _HomeScreenState extends State<HomeScreen> {
       final updateDto = UpdateDto(
         fullName: _user?.fullName ?? '',
         location: location,
-        lat: _user?.lat ?? 0.0,
-        lng: _user?.lng ?? 0.0,
+        lat: _currentLat ?? 0.0,
+        lng: _currentLng ?? 0.0,
       );
 
       await _userService.updateProfile(updateDto);
 
-      // Manually update user after profile update
+      // Update user after profile update
       setState(() {
         _user = _userService.currentUser;
         _locationLabel = _user?.location ?? location;
+        _currentLat = _user?.lat;
+        _currentLng = _user?.lng;
         _isLoading = false;
       });
 
@@ -222,9 +257,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _refreshClubsWithLocation(String location) async {
+  Future<void> _refreshNearbyClubs(double lat, double lng) async {
     try {
-      await _clubService.fetchClubs(search: location);
+      await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
       if (!_isDisposed && mounted) {
         setState(() {
           _refreshCounter++;
@@ -232,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
-        // Silent fail
+        print('Failed to refresh nearby clubs: $e');
       }
     }
   }
@@ -295,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppTheme.kAccent, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.kAccent.withValues(alpha: 0.3),
+                color: AppTheme.kAccent.withOpacity(0.3),
                 blurRadius: 10,
               ),
             ],
@@ -472,6 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
       CategoryModel(
         id: 0,
         name: 'all'.tr(context),
+        imageUrl: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
@@ -583,7 +619,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _clubsList(bool isDark) {
-    if (_clubService.isLoading || _isLoading) {
+    // ✅ FIXED: Use isLoadingNearby instead of isLoading
+    if (_clubService.isLoadingNearby || _isLoading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Container(
@@ -596,7 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 CircularProgressIndicator(color: AppTheme.kAccent),
                 SizedBox(height: 16),
                 Text(
-                  'Loading clubs...',
+                  'Loading nearby clubs...',
                   style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
                 ),
               ],
@@ -606,7 +643,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_clubService.error.isNotEmpty) {
+    // ✅ FIXED: Use errorNearby instead of error
+    if (_clubService.errorNearby.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         child: Container(
@@ -630,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                _clubService.error,
+                _clubService.errorNearby,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
@@ -640,7 +678,19 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () async {
-                  await _clubService.fetchClubs();
+                  if (_currentLat != null && _currentLng != null) {
+                    await _clubService.fetchNearbyClubs(
+                      lat: _currentLat!,
+                      lng: _currentLng!,
+                      radius: _radius,
+                    );
+                  } else {
+                    await _clubService.fetchNearbyClubs(
+                      lat: 11.5564,
+                      lng: 104.9282,
+                      radius: _radius,
+                    );
+                  }
                   if (!_isDisposed && mounted) setState(() {});
                 },
                 style: ElevatedButton.styleFrom(
@@ -680,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'no_clubs_for_sport'.tr(context),
+                'no_clubs_nearby'.tr(context),
                 style: TextStyle(
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
@@ -689,12 +739,69 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try selecting a different category or location',
+                'Try expanding your search radius or changing location',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
+              ),
+              const SizedBox(height: 16),
+              // Radius selector
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Radius: ',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                      fontSize: 14,
+                    ),
+                  ),
+                  DropdownButton<int>(
+                    value: _radius,
+                    dropdownColor: isDark
+                        ? AppTheme.kCard
+                        : AppTheme.kLightCard,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 5, child: Text('5 km')),
+                      DropdownMenuItem(value: 10, child: Text('10 km')),
+                      DropdownMenuItem(value: 20, child: Text('20 km')),
+                      DropdownMenuItem(value: 50, child: Text('50 km')),
+                    ],
+                    onChanged: (newRadius) async {
+                      if (newRadius != null && mounted) {
+                        setState(() {
+                          _radius = newRadius;
+                          _isLoading = true;
+                        });
+
+                        if (_currentLat != null && _currentLng != null) {
+                          await _clubService.fetchNearbyClubs(
+                            lat: _currentLat!,
+                            lng: _currentLng!,
+                            radius: _radius,
+                          );
+                        } else {
+                          await _clubService.fetchNearbyClubs(
+                            lat: 11.5564,
+                            lng: 104.9282,
+                            radius: _radius,
+                          );
+                        }
+
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),

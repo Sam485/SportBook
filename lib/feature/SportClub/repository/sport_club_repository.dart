@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:sportbook/feature/SportClub/model/dto/favorite_response_dto.dart';
 import 'package:sportbook/feature/SportClub/model/dto/get_all_sport_club_dto.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 
 class SportClubRepository {
   final Dio _dio;
@@ -65,6 +66,37 @@ class SportClubRepository {
       throw Exception('Server error: ${e.response?.data ?? e.message}');
     } catch (e) {
       throw Exception('Failed to toggle favorite: $e');
+    }
+  }
+
+  // Get nearby sport clubs (distance filtering on backend)
+  Future<GetAllSportClubDto> getAllSportClubNearBy(
+    double lat,
+    double lng,
+    int radius,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/sport-clubs/nearby',
+        queryParameters: {'lat': lat, 'lng': lng, 'radius': radius},
+      );
+      return GetAllSportClubDto.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Server error: ${e.response?.data ?? e.message}');
+    } catch (e) {
+      throw Exception('Failed to retrieve data: $e');
+    }
+  }
+
+  // Get single sport club by ID
+  Future<SportClubModel> getSportClubById(int id) async {
+    try {
+      final response = await _dio.get('/sport-clubs/$id');
+      return SportClubModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Server error: ${e.response?.data ?? e.message}');
+    } catch (e) {
+      throw Exception('Failed to retrieve club: $e');
     }
   }
 }

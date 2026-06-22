@@ -7,6 +7,9 @@ import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/feature/Banner/repositories/banner_repository.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
 import 'package:sportbook/feature/Banner/service/banner_service_imp.dart';
+import 'package:sportbook/feature/Booking/repository/booking_repository.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
+import 'package:sportbook/feature/Booking/service/booking_service_imp.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/Category/service/category_service_imp.dart';
 import 'package:sportbook/feature/Category/repository/category_repository.dart';
@@ -123,5 +126,15 @@ Future<void> setupServiceLocator() async {
   // Register BannerService
   getIt.registerLazySingleton<BannerService>(
     () => BannerServiceImp(getIt<BannerRepository>()),
+  );
+
+  // Booking Repository
+  getIt.registerLazySingleton<BookingRepository>(
+    () => BookingRepository(getIt<Dio>()),
+  );
+
+  // Booking Service
+  getIt.registerLazySingleton<BookingService>(
+    () => BookingServiceImp(getIt<BookingRepository>()),
   );
 }

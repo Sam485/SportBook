@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
-import '../../../providers/booking_provider.dart';
 import '../../../translations/app_translations.dart';
 
 enum PaymentMethod { khqr, cash }
 
 class StepPayment extends StatefulWidget {
   final VoidCallback onConfirm;
-  const StepPayment({super.key, required this.onConfirm});
+  final Function(String) onPaymentMethodSelected;
+  final String? selectedPaymentMethod;
+  final int totalPrice;
+  final String? selectedSport;
+  final String? courtName;
+  final String? date;
+  final String? timeRange;
+
+  const StepPayment({
+    super.key,
+    required this.onConfirm,
+    required this.onPaymentMethodSelected,
+    this.selectedPaymentMethod,
+    required this.totalPrice,
+    this.selectedSport,
+    this.courtName,
+    this.date,
+    this.timeRange,
+  });
 
   @override
   State<StepPayment> createState() => StepPaymentState();
@@ -33,6 +49,16 @@ class StepPaymentState extends State<StepPayment>
   @override
   void initState() {
     super.initState();
+
+    // Set initial selection if provided
+    if (widget.selectedPaymentMethod != null) {
+      if (widget.selectedPaymentMethod == 'khqr') {
+        _selected = PaymentMethod.khqr;
+      } else if (widget.selectedPaymentMethod == 'cash') {
+        _selected = PaymentMethod.cash;
+      }
+    }
+
     _khqrAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -50,6 +76,15 @@ class StepPaymentState extends State<StepPayment>
       begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _detailAnim, curve: Curves.easeOut));
+
+    // If a method was pre-selected, animate it
+    if (_selected == PaymentMethod.khqr) {
+      _khqrAnim.forward();
+      _detailAnim.forward(from: 0);
+    } else if (_selected == PaymentMethod.cash) {
+      _cashAnim.forward();
+      _detailAnim.forward(from: 0);
+    }
   }
 
   @override
@@ -65,7 +100,13 @@ class StepPaymentState extends State<StepPayment>
   void _selectMethod(PaymentMethod method) {
     if (_selected == method) return;
     HapticFeedback.selectionClick();
-    setState(() => _selected = method);
+    setState(() {
+      _selected = method;
+      // Notify parent
+      widget.onPaymentMethodSelected(
+        method == PaymentMethod.khqr ? 'khqr' : 'cash',
+      );
+    });
     if (method == PaymentMethod.khqr) {
       _khqrAnim.forward();
       _cashAnim.reverse();
@@ -87,11 +128,6 @@ class StepPaymentState extends State<StepPayment>
       return;
     }
     if (_formKey.currentState!.validate()) {
-      final p = context.read<BookingProvider>();
-      p.setUserInfo(
-        name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
-      );
       widget.onConfirm();
     }
   }
@@ -99,7 +135,6 @@ class StepPaymentState extends State<StepPayment>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final p = context.watch<BookingProvider>();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -121,7 +156,14 @@ class StepPaymentState extends State<StepPayment>
           ),
         ),
         const SizedBox(height: 24),
-        _BookingSummaryCard(p: p, isDark: isDark),
+        _BookingSummaryCard(
+          totalPrice: widget.totalPrice,
+          selectedSport: widget.selectedSport,
+          courtName: widget.courtName,
+          date: widget.date,
+          timeRange: widget.timeRange,
+          isDark: isDark,
+        ),
         const SizedBox(height: 28),
         _UserInfoForm(
           formKey: _formKey,
@@ -161,8 +203,14 @@ class StepPaymentState extends State<StepPayment>
               child: Column(
                 children: [
                   _selected == PaymentMethod.khqr
-                      ? _KhqrDetail(totalPrice: p.totalPrice, isDark: isDark)
-                      : _CashDetail(totalPrice: p.totalPrice, isDark: isDark),
+                      ? _KhqrDetail(
+                          totalPrice: widget.totalPrice,
+                          isDark: isDark,
+                        )
+                      : _CashDetail(
+                          totalPrice: widget.totalPrice,
+                          isDark: isDark,
+                        ),
                 ],
               ),
             ),
@@ -348,42 +396,24 @@ class _UserInfoForm extends StatelessWidget {
 
 // ── Booking Summary Card ──────────────────────────────────────────────────────
 class _BookingSummaryCard extends StatelessWidget {
-  final BookingProvider p;
+  final int totalPrice;
+  final String? selectedSport;
+  final String? courtName;
+  final String? date;
+  final String? timeRange;
   final bool isDark;
 
-  const _BookingSummaryCard({required this.p, required this.isDark});
-
-  static String _fmtH(int h) {
-    final period = h >= 12 ? 'PM' : 'AM';
-    final hr = h % 12 == 0 ? 12 : h % 12;
-    return '$hr:00 $period';
-  }
-
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+  const _BookingSummaryCard({
+    required this.totalPrice,
+    this.selectedSport,
+    this.courtName,
+    this.date,
+    this.timeRange,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final date = p.selectedDate;
-    final dateStr = date != null
-        ? '${_months[date.month - 1]} ${date.day}, ${date.year}'
-        : '—';
-    final timeStr = (p.startHour != null && p.endHour != null)
-        ? '${_fmtH(p.startHour!)} – ${_fmtH(p.endHour!)}'
-        : '—';
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -398,28 +428,28 @@ class _BookingSummaryCard extends StatelessWidget {
           _SummaryRow(
             icon: Icons.sports_rounded,
             label: 'sport'.tr(context),
-            value: p.selectedSport ?? '—',
+            value: selectedSport ?? '—',
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.grid_view_rounded,
             label: 'court'.tr(context),
-            value: p.target?.name ?? '—',
+            value: courtName ?? '—',
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.calendar_today_rounded,
             label: 'date'.tr(context),
-            value: dateStr,
+            value: date ?? '—',
             isDark: isDark,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             icon: Icons.access_time_rounded,
             label: 'time'.tr(context),
-            value: timeStr,
+            value: timeRange ?? '—',
             isDark: isDark,
           ),
           Padding(
@@ -441,7 +471,7 @@ class _BookingSummaryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '\$${p.totalPrice.toStringAsFixed(2)}',
+                '\$${totalPrice.toStringAsFixed(2)}',
                 style: const TextStyle(
                   color: AppTheme.kAccent,
                   fontSize: 20,
@@ -649,7 +679,7 @@ class _PaymentCard extends StatelessWidget {
 
 // ── KHQR Detail Panel ─────────────────────────────────────────────────────────
 class _KhqrDetail extends StatelessWidget {
-  final double totalPrice;
+  final int totalPrice;
   final bool isDark;
 
   const _KhqrDetail({required this.totalPrice, required this.isDark});
@@ -823,7 +853,7 @@ class _KhqrDetail extends StatelessWidget {
 
 // ── Cash Detail Panel ─────────────────────────────────────────────────────────
 class _CashDetail extends StatelessWidget {
-  final double totalPrice;
+  final int totalPrice;
   final bool isDark;
 
   const _CashDetail({required this.totalPrice, required this.isDark});

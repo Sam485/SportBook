@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/feature/Category/model/category_model.dart';
+import 'package:sportbook/feature/SportClub/model/dto/slot_dto.dart';
 
 class SportClubModel {
   final int id;
@@ -17,6 +18,7 @@ class SportClubModel {
   final CreatorModel createdBy;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<SlotDto>? slots;
 
   // COMPUTED PROPERTIES
   String get initials {
@@ -89,6 +91,7 @@ class SportClubModel {
     required this.createdBy,
     required this.createdAt,
     required this.updatedAt,
+    this.slots,
   });
 
   factory SportClubModel.fromJson(Map<String, dynamic> json) {
@@ -98,6 +101,12 @@ class SportClubModel {
       categories = (json['categories'] as List)
           .map((cat) => CategoryModel.fromJson(cat))
           .toList();
+    }
+
+    // Handle slots - properly check for null
+    List<SlotDto> slots = [];
+    if (json['slots'] != null && json['slots'] is List) {
+      slots = (json['slots'] as List).map((e) => SlotDto.fromJson(e)).toList();
     }
 
     return SportClubModel(
@@ -122,6 +131,7 @@ class SportClubModel {
       updatedAt: DateTime.parse(
         json['updated_at'] ?? DateTime.now().toIso8601String(),
       ),
+      slots: slots,
     );
   }
 
