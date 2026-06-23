@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/screens/auth/forget_password_screen.dart';
 import 'package:sportbook/screens/auth/login_screen.dart';
@@ -77,7 +78,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
 
       case bookedDetailed:
-        final target = settings.arguments as SportBooking;
+        final target = settings.arguments as BookingModel;
         return MaterialPageRoute(
           builder: (_) => BookedDetailed(booking: target),
         );

@@ -78,9 +78,17 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
   // ============================================================================
 
   @override
-  Future<GetAllSportClubDto> getAllSportClub() async {
+  Future<GetAllSportClubDto> getAllSportClub({
+    int page = 1,
+    int limit = 10,
+    String search = '',
+  }) async {
     try {
-      return await _repository.getAllSportClub();
+      return await _repository.getAllSportClub(
+        page: page,
+        limit: limit,
+        search: search,
+      );
     } catch (e) {
       throw Exception('Retrieve data failed: $e');
     }
@@ -157,8 +165,6 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
     }
 
     if (_nearbyClubs.isEmpty) {
-      // If nearby clubs are empty, we need to fetch them first
-      // You might want to handle this differently based on your use case
       return [];
     }
 

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme.dart';
 import '../../../translations/app_translations.dart';
 
-enum PaymentMethod { khqr, cash }
+enum PaymentMethod { khqr, cash, aba, wing, pi_pay, true_money }
 
 class StepPayment extends StatefulWidget {
   final VoidCallback onConfirm;
@@ -41,10 +41,66 @@ class StepPaymentState extends State<StepPayment>
 
   late AnimationController _khqrAnim;
   late AnimationController _cashAnim;
+  late AnimationController _abaAnim;
+  late AnimationController _wingAnim;
+  late AnimationController _piPayAnim;
+  late AnimationController _trueMoneyAnim;
   late AnimationController _detailAnim;
 
   late Animation<double> _detailFade;
   late Animation<Offset> _detailSlide;
+
+  // Map of payment methods with their details
+  final List<PaymentMethodConfig> _paymentMethods = [
+    PaymentMethodConfig(
+      method: PaymentMethod.khqr,
+      label: 'KHQR',
+      icon: Icons.qr_code_rounded,
+      accentColor: const Color(0xFF0072CE),
+      badge: 'instant',
+      badgeColor: const Color(0xFF4CAF50),
+    ),
+    PaymentMethodConfig(
+      method: PaymentMethod.aba,
+      label: 'ABA',
+      icon: Icons.account_balance_rounded,
+      accentColor: const Color(0xFF0033A0),
+      badge: 'popular',
+      badgeColor: const Color(0xFF2196F3),
+    ),
+    PaymentMethodConfig(
+      method: PaymentMethod.wing,
+      label: 'Wing',
+      icon: Icons.phone_android_rounded,
+      accentColor: const Color(0xFFE31E24),
+      badge: 'fast',
+      badgeColor: const Color(0xFFFF5722),
+    ),
+    PaymentMethodConfig(
+      method: PaymentMethod.pi_pay,
+      label: 'Pi Pay',
+      icon: Icons.payment_rounded,
+      accentColor: const Color(0xFF00A651),
+      badge: 'secure',
+      badgeColor: const Color(0xFF4CAF50),
+    ),
+    PaymentMethodConfig(
+      method: PaymentMethod.true_money,
+      label: 'True Money',
+      icon: Icons.wallet_rounded,
+      accentColor: const Color(0xFFF57C00),
+      badge: 'trusted',
+      badgeColor: const Color(0xFFFF9800),
+    ),
+    PaymentMethodConfig(
+      method: PaymentMethod.cash,
+      label: 'Cash',
+      icon: Icons.payments_rounded,
+      accentColor: const Color(0xFFF59E0B),
+      badge: 'onsite',
+      badgeColor: const Color(0xFFFF9800),
+    ),
+  ];
 
   @override
   void initState() {
@@ -52,11 +108,7 @@ class StepPaymentState extends State<StepPayment>
 
     // Set initial selection if provided
     if (widget.selectedPaymentMethod != null) {
-      if (widget.selectedPaymentMethod == 'khqr') {
-        _selected = PaymentMethod.khqr;
-      } else if (widget.selectedPaymentMethod == 'cash') {
-        _selected = PaymentMethod.cash;
-      }
+      _selected = _getPaymentMethodFromString(widget.selectedPaymentMethod!);
     }
 
     _khqrAnim = AnimationController(
@@ -64,6 +116,22 @@ class StepPaymentState extends State<StepPayment>
       duration: const Duration(milliseconds: 200),
     );
     _cashAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _abaAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _wingAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _piPayAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _trueMoneyAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
@@ -78,11 +146,8 @@ class StepPaymentState extends State<StepPayment>
     ).animate(CurvedAnimation(parent: _detailAnim, curve: Curves.easeOut));
 
     // If a method was pre-selected, animate it
-    if (_selected == PaymentMethod.khqr) {
-      _khqrAnim.forward();
-      _detailAnim.forward(from: 0);
-    } else if (_selected == PaymentMethod.cash) {
-      _cashAnim.forward();
+    if (_selected != null) {
+      _getAnimationController(_selected!).forward();
       _detailAnim.forward(from: 0);
     }
   }
@@ -93,31 +158,103 @@ class StepPaymentState extends State<StepPayment>
     _phoneController.dispose();
     _khqrAnim.dispose();
     _cashAnim.dispose();
+    _abaAnim.dispose();
+    _wingAnim.dispose();
+    _piPayAnim.dispose();
+    _trueMoneyAnim.dispose();
     _detailAnim.dispose();
     super.dispose();
+  }
+
+  PaymentMethod _getPaymentMethodFromString(String method) {
+    switch (method.toLowerCase()) {
+      case 'khqr':
+        return PaymentMethod.khqr;
+      case 'cash':
+        return PaymentMethod.cash;
+      case 'aba':
+        return PaymentMethod.aba;
+      case 'wing':
+        return PaymentMethod.wing;
+      case 'pi_pay':
+        return PaymentMethod.pi_pay;
+      case 'true_money':
+        return PaymentMethod.true_money;
+      default:
+        return PaymentMethod.khqr;
+    }
+  }
+
+  AnimationController _getAnimationController(PaymentMethod method) {
+    switch (method) {
+      case PaymentMethod.khqr:
+        return _khqrAnim;
+      case PaymentMethod.cash:
+        return _cashAnim;
+      case PaymentMethod.aba:
+        return _abaAnim;
+      case PaymentMethod.wing:
+        return _wingAnim;
+      case PaymentMethod.pi_pay:
+        return _piPayAnim;
+      case PaymentMethod.true_money:
+        return _trueMoneyAnim;
+    }
   }
 
   void _selectMethod(PaymentMethod method) {
     if (_selected == method) return;
     HapticFeedback.selectionClick();
+
+    // Reset all animations
+    for (var anim in _getAllAnimationControllers()) {
+      if (anim != _getAnimationController(method)) {
+        anim.reverse();
+      }
+    }
+
     setState(() {
       _selected = method;
-      // Notify parent
-      widget.onPaymentMethodSelected(
-        method == PaymentMethod.khqr ? 'khqr' : 'cash',
-      );
+      // Pass the payment method in API format
+      widget.onPaymentMethodSelected(_getPaymentMethodString(method));
     });
-    if (method == PaymentMethod.khqr) {
-      _khqrAnim.forward();
-      _cashAnim.reverse();
-    } else {
-      _cashAnim.forward();
-      _khqrAnim.reverse();
-    }
+
+    _getAnimationController(method).forward();
     _detailAnim.forward(from: 0);
   }
 
+  String _getPaymentMethodString(PaymentMethod method) {
+    switch (method) {
+      case PaymentMethod.khqr:
+        return 'khqr';
+      case PaymentMethod.cash:
+        return 'cash';
+      case PaymentMethod.aba:
+        return 'aba';
+      case PaymentMethod.wing:
+        return 'wing';
+      case PaymentMethod.pi_pay:
+        return 'pi_pay';
+      case PaymentMethod.true_money:
+        return 'true_money';
+    }
+  }
+
+  List<AnimationController> _getAllAnimationControllers() {
+    return [
+      _khqrAnim,
+      _cashAnim,
+      _abaAnim,
+      _wingAnim,
+      _piPayAnim,
+      _trueMoneyAnim,
+    ];
+  }
+
   void handleConfirm() {
+    // Check if mounted before using context
+    if (!mounted) return;
+
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -182,40 +319,262 @@ class StepPaymentState extends State<StepPayment>
           ),
         ),
         const SizedBox(height: 12),
-        _PaymentCard(
-          selected: _selected == PaymentMethod.khqr,
-          animController: _khqrAnim,
-          onTap: () => _selectMethod(PaymentMethod.khqr),
-          icon: _KhqrIcon(),
-          title: 'khqr_title'.tr(context),
-          subtitle: 'khqr_subtitle'.tr(context),
-          badge: 'instant'.tr(context),
-          badgeColor: const Color(0xFF4CAF50),
-          accentColor: const Color(0xFF0072CE),
-          isDark: isDark,
+        ..._paymentMethods.map(
+          (config) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _PaymentCard(
+              selected: _selected == config.method,
+              animController: _getAnimationController(config.method),
+              onTap: () => _selectMethod(config.method),
+              icon: _PaymentIcon(icon: config.icon, color: config.accentColor),
+              title: config.label,
+              subtitle: _getSubtitle(config.method, context),
+              badge: config.badge,
+              badgeColor: config.badgeColor,
+              accentColor: config.accentColor,
+              isDark: isDark,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
         if (_selected != null)
           FadeTransition(
             opacity: _detailFade,
             child: SlideTransition(
               position: _detailSlide,
-              child: Column(
-                children: [
-                  _selected == PaymentMethod.khqr
-                      ? _KhqrDetail(
-                          totalPrice: widget.totalPrice,
-                          isDark: isDark,
-                        )
-                      : _CashDetail(
-                          totalPrice: widget.totalPrice,
-                          isDark: isDark,
-                        ),
-                ],
-              ),
+              child: Column(children: [_buildPaymentDetail(context, isDark)]),
             ),
           ),
       ],
+    );
+  }
+
+  String _getSubtitle(PaymentMethod method, BuildContext context) {
+    switch (method) {
+      case PaymentMethod.khqr:
+        return 'khqr_subtitle'.tr(context);
+      case PaymentMethod.cash:
+        return 'cash_subtitle'.tr(context);
+      case PaymentMethod.aba:
+        return 'aba_subtitle'.tr(context);
+      case PaymentMethod.wing:
+        return 'wing_subtitle'.tr(context);
+      case PaymentMethod.pi_pay:
+        return 'pi_pay_subtitle'.tr(context);
+      case PaymentMethod.true_money:
+        return 'true_money_subtitle'.tr(context);
+    }
+  }
+
+  Widget _buildPaymentDetail(BuildContext context, bool isDark) {
+    switch (_selected) {
+      case PaymentMethod.khqr:
+        return _KhqrDetail(totalPrice: widget.totalPrice, isDark: isDark);
+      case PaymentMethod.cash:
+        return _CashDetail(totalPrice: widget.totalPrice, isDark: isDark);
+      case PaymentMethod.aba:
+        return _GenericPaymentDetail(
+          title: 'ABA',
+          icon: Icons.account_balance_rounded,
+          color: const Color(0xFF0033A0),
+          steps: [
+            'aba_step1'.tr(context),
+            'aba_step2'.tr(context),
+            'aba_step3'.tr(context),
+            'aba_step4'.tr(context),
+          ],
+          totalPrice: widget.totalPrice,
+          isDark: isDark,
+        );
+      case PaymentMethod.wing:
+        return _GenericPaymentDetail(
+          title: 'Wing',
+          icon: Icons.phone_android_rounded,
+          color: const Color(0xFFE31E24),
+          steps: [
+            'wing_step1'.tr(context),
+            'wing_step2'.tr(context),
+            'wing_step3'.tr(context),
+            'wing_step4'.tr(context),
+          ],
+          totalPrice: widget.totalPrice,
+          isDark: isDark,
+        );
+      case PaymentMethod.pi_pay:
+        return _GenericPaymentDetail(
+          title: 'Pi Pay',
+          icon: Icons.payment_rounded,
+          color: const Color(0xFF00A651),
+          steps: [
+            'pi_pay_step1'.tr(context),
+            'pi_pay_step2'.tr(context),
+            'pi_pay_step3'.tr(context),
+            'pi_pay_step4'.tr(context),
+          ],
+          totalPrice: widget.totalPrice,
+          isDark: isDark,
+        );
+      case PaymentMethod.true_money:
+        return _GenericPaymentDetail(
+          title: 'True Money',
+          icon: Icons.wallet_rounded,
+          color: const Color(0xFFF57C00),
+          steps: [
+            'true_money_step1'.tr(context),
+            'true_money_step2'.tr(context),
+            'true_money_step3'.tr(context),
+            'true_money_step4'.tr(context),
+          ],
+          totalPrice: widget.totalPrice,
+          isDark: isDark,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+// ── Payment Method Config ─────────────────────────────────────────────────────
+class PaymentMethodConfig {
+  final PaymentMethod method;
+  final String label;
+  final IconData icon;
+  final Color accentColor;
+  final String badge;
+  final Color badgeColor;
+
+  const PaymentMethodConfig({
+    required this.method,
+    required this.label,
+    required this.icon,
+    required this.accentColor,
+    required this.badge,
+    required this.badgeColor,
+  });
+}
+
+// ── Payment Icon ──────────────────────────────────────────────────────────────
+class _PaymentIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _PaymentIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(icon, color: color, size: 28);
+  }
+}
+
+// ── Generic Payment Detail ───────────────────────────────────────────────────
+class _GenericPaymentDetail extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<String> steps;
+  final int totalPrice;
+  final bool isDark;
+
+  const _GenericPaymentDetail({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.steps,
+    required this.totalPrice,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0A1828) : AppTheme.kLightCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    '${'pay_with'.tr(context)} $title',
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.25)),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'amount_due'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '\$${totalPrice.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...steps.asMap().entries.map((entry) {
+            final index = entry.key;
+            final step = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _InstructionRow(
+                step: '${index + 1}',
+                text: step,
+                isDark: isDark,
+              ),
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 }
@@ -607,7 +966,7 @@ class _PaymentCard extends StatelessWidget {
                         title,
                         style: TextStyle(
                           color: selected
-                              ? Colors.white
+                              ? accentColor
                               : (isDark ? Colors.white70 : AppTheme.kLightText),
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -1058,18 +1417,6 @@ class _InstructionRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ── KHQR Icon ─────────────────────────────────────────────────────────────────
-class _KhqrIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Icon(
-      Icons.qr_code_rounded,
-      color: Color(0xFF0072CE),
-      size: 28,
     );
   }
 }

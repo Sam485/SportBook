@@ -1,8 +1,11 @@
-// home_screen.dart - COMPLETE FIXED VERSION
+// home_screen.dart - COMPLETE FIXED VERSION WITH REAL BOOKINGS
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
@@ -15,10 +18,8 @@ import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
 import 'package:sportbook/widgets/common/map_picker_screen.dart';
 import '../../core/theme.dart';
-import '../../feature/static/models/models.dart';
-import '../../feature/static/services/data_service.dart';
 import '../../widgets/common/section_header.dart';
-import '../../widgets/cards/booking_card.dart';
+import '../../widgets/cards/booked_card.dart';
 import '../../widgets/cards/club_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,14 +45,32 @@ class _HomeScreenState extends State<HomeScreen> {
   final _bannerService = getIt<BannerService>();
   final _categoryService = getIt<CategoryService>();
   late final SportClubService _clubService;
+  late final BookingService _bookingService;
 
   List<BannerModel>? _banners;
   UserModel? _user;
   List<CategoryModel> _categories = [];
   bool _isCategoriesLoading = true;
 
-  // ✅ FIXED: Use nearbyClubs from service
+  // Booking data
+  GetAllBookingDto? _bookingsData;
+  bool _isBookingsLoading = true;
+  String? _bookingsError;
+
+  // Get nearby clubs from service
   List<SportClubModel> get _clubs => List.from(_clubService.nearbyClubs);
+
+  // Get upcoming bookings (filtered by status)
+  List<BookingModel> get _upcomingBookings {
+    if (_bookingsData == null) return [];
+    // Filter for upcoming bookings (pending, confirmed)
+    return _bookingsData!.data.where((booking) {
+      final status = booking.status.toLowerCase();
+      return status == 'pending' || status == 'confirmed';
+    }).toList();
+  }
+
+  // Get all bookings for display
 
   // Filter clubs by category ID
   List<SportClubModel> get _filteredClubs {
@@ -67,9 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
         )
         .toList();
   }
-
-  List<SportBooking> get _bookings =>
-      DataService.filteredBookings(_selectedCat);
 
   Future<void> initialLoad() async {
     try {
@@ -88,9 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final results = await Future.wait([
         _bannerService.getAllActiveBanner(),
         _categoryService.fetchCategories(limit: 100),
+        _bookingService.getAllBookings(page: 1, limit: 10),
       ]);
 
-      // ✅ FIXED: Load nearby clubs using user location
+      // Load nearby clubs using user location
       if (_currentLat != null && _currentLng != null) {
         await _clubService.fetchNearbyClubs(
           lat: _currentLat!,
@@ -98,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
           radius: _radius,
         );
       } else {
-        // ✅ FIXED: If no location, use default coordinates (Phnom Penh)
+        // If no location, use default coordinates (Phnom Penh)
         await _clubService.fetchNearbyClubs(
           lat: 11.5564,
           lng: 104.9282,
@@ -110,6 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _banners = results[0] as List<BannerModel>?;
           _categories = results[1] as List<CategoryModel>;
+          _bookingsData = results[2] as GetAllBookingDto;
+          _isBookingsLoading = false;
           _isCategoriesLoading = false;
           _isLoading = false;
           _refreshCounter++;
@@ -121,6 +140,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _isLoading = false;
           _isCategoriesLoading = false;
+          _isBookingsLoading = false;
+          _bookingsError = e.toString();
           _refreshCounter++;
         });
       }
@@ -131,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _clubService = getIt<SportClubService>();
+    _bookingService = getIt<BookingService>();
 
     // Listen to service changes
     _clubService.addListener(_onServiceChanged);
@@ -304,12 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   isDark: isDark,
                 ),
               ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) => BookingCard(booking: _bookings[i]),
-                  childCount: _bookings.length,
-                ),
-              ),
+              SliverToBoxAdapter(child: _bookingsList(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
@@ -330,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppTheme.kAccent, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.kAccent.withOpacity(0.3),
+                color: AppTheme.kAccent.withValues(alpha: 0.3),
                 blurRadius: 10,
               ),
             ],
@@ -619,7 +636,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _clubsList(bool isDark) {
-    // ✅ FIXED: Use isLoadingNearby instead of isLoading
     if (_clubService.isLoadingNearby || _isLoading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -643,7 +659,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // ✅ FIXED: Use errorNearby instead of error
     if (_clubService.errorNearby.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -821,6 +836,141 @@ class _HomeScreenState extends State<HomeScreen> {
           club: clubs[i],
         ),
       ),
+    );
+  }
+
+  // ── Bookings List ──────────────────────────────────────────────────────────
+  Widget _bookingsList(bool isDark) {
+    if (_isBookingsLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Container(
+          height: 120,
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: AppTheme.kAccent,
+                  strokeWidth: 2,
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Loading bookings...',
+                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_bookingsError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Column(
+            children: [
+              Icon(Icons.error_outline, color: Colors.orange, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                'Failed to load bookings',
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _bookingsError!,
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final upcoming = _upcomingBookings;
+
+    if (upcoming.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Column(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+                size: 40,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'no_upcoming_bookings'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'book_a_club_to_get_started'.tr(context),
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  // Navigate to clubs or home
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.kAccent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: Text(
+                  'browse_clubs'.tr(context),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show only first 3 upcoming bookings
+    final displayBookings = upcoming.length > 3
+        ? upcoming.sublist(0, 3)
+        : upcoming;
+
+    return Column(
+      children: displayBookings.map((booking) {
+        return BookedCard(
+          key: ValueKey('booking_${booking.id}_$_refreshCounter'),
+          booking: booking,
+        );
+      }).toList(),
     );
   }
 }

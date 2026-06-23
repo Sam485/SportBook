@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Booking/model/create_booking_model.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import '../../../core/theme.dart';
-import '../../../translations/app_translations.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
   final VoidCallback onGoHome;
@@ -22,6 +25,8 @@ class PaymentSuccessPage extends StatefulWidget {
 
 class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with TickerProviderStateMixin {
+  final BookingService _bookingService = getIt<BookingService>();
+
   late AnimationController _checkController;
   late AnimationController _rippleController;
   late AnimationController _contentController;
@@ -43,7 +48,16 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   late String _date;
   late String _timeRange;
   late double _totalPrice;
+  late int _slotId;
+  late int _clubId;
+  late DateTime _selectedDate;
+  late String _startTime;
+  late String _endTime;
+  late String _paymentMethod;
   late String _bookingId;
+
+  bool _isCreatingBooking = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -53,12 +67,16 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     // Extract booking data
     final data = widget.bookingData ?? {};
     _sportName = data['category'] ?? '—';
-    _courtName = data['court'] != null ? 'Court ${data['court']! + 1}' : '—';
-    _totalPrice = data['totalPrice'] ?? 0.0;
+    _courtName = data['courtName'] ?? '—';
+    _totalPrice = (data['totalPrice'] ?? 0.0).toDouble();
+    _slotId = data['court'] ?? 0;
+    _clubId = (data['club'] as dynamic)?.id ?? 0;
+    _paymentMethod = data['paymentMethod'] ?? 'qr_code';
 
-    // Format date
+    // Get date
     final date = data['date'] as DateTime?;
     if (date != null) {
+      _selectedDate = date;
       final months = [
         'Jan',
         'Feb',
@@ -85,20 +103,21 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       _date =
           '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
     } else {
+      _selectedDate = DateTime.now();
       _date = '—';
     }
 
-    // Format time
-    final startTime = data['startTime'] as TimeOfDay?;
-    final endTime = data['endTime'] as TimeOfDay?;
-    if (startTime != null && endTime != null) {
-      _timeRange = '${_formatTime(startTime)} – ${_formatTime(endTime)}';
-    } else {
-      _timeRange = '—';
-    }
+    // Get time - use the String format from bookingData (already in 24-hour format)
+    _startTime = data['startTime'] as String? ?? '00:00';
+    _endTime = data['endTime'] as String? ?? '00:00';
+
+    // Format time range for display (convert to 12-hour for display)
+    _timeRange =
+        '${_formatTimeForDisplay(_startTime)} – ${_formatTimeForDisplay(_endTime)}';
 
     _bookingId = _generateId();
 
+    // Setup animations
     _checkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -175,6 +194,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           CurvedAnimation(parent: _buttonController, curve: Curves.easeOut),
         );
 
+    // Start animations
     _checkController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _rippleController.forward();
@@ -185,6 +205,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     Future.delayed(const Duration(milliseconds: 650), () {
       if (mounted) _buttonController.forward();
     });
+
+    // Create the booking after animations start
+    _createBooking();
   }
 
   @override
@@ -196,15 +219,116 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     super.dispose();
   }
 
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour:00 $period';
+  String _formatTimeForDisplay(String time24) {
+    try {
+      final parts = time24.split(':');
+      int hour = int.parse(parts[0]);
+      final minute = parts[1];
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+      return '$hour12:$minute $period';
+    } catch (_) {
+      return time24;
+    }
+  }
+
+  String _formatDateForApi(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   String _generateId() {
     final now = DateTime.now();
     return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
+  }
+
+  // ============================================================
+  // _createBooking() method
+  // ============================================================
+  Future<void> _createBooking() async {
+    // Check if already creating or widget is unmounted
+    if (_isCreatingBooking || !mounted) return;
+
+    // Validate slot ID
+    if (_slotId == 0) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Invalid slot selected';
+          _isCreatingBooking = false;
+        });
+      }
+      return;
+    }
+
+    // Validate club ID
+    if (_clubId == 0) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Invalid club selected';
+          _isCreatingBooking = false;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _isCreatingBooking = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Generate transaction ID
+      final transactionId = CreateBookingModel.generateTransactionId();
+
+      // Use the String times directly (already in 24-hour format)
+      final booking = CreateBookingModel(
+        slotId: _slotId,
+        sportClubId: _clubId,
+        bookingDate: _selectedDate,
+        startTime:
+            _startTime, // Already in 24-hour format from BookingFlowScreen
+        endTime: _endTime, // Already in 24-hour format from BookingFlowScreen
+        note: 'Booking from app',
+        paymentMethod: _paymentMethod,
+        transactionRef: transactionId,
+      );
+
+      // Print the request for debugging
+      print('Creating booking with data: ${booking.toJson()}');
+
+      final result = await _bookingService.createBooking(booking);
+
+      // Check if widget is still mounted after async operation
+      if (mounted) {
+        setState(() {
+          _isCreatingBooking = false;
+          // Store the created booking ID
+          _bookingId = '#BK-${result.id.toString().padLeft(6, '0')}';
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Check if widget is still mounted before showing error
+      if (mounted) {
+        setState(() {
+          _isCreatingBooking = false;
+          _errorMessage = e.toString();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Booking creation failed: ${e.toString()}'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -250,7 +374,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'payment_success_desc'.tr(context),
+                        _errorMessage != null
+                            ? 'booking_created_with_issues'.tr(context)
+                            : 'payment_success_desc'.tr(context),
                         style: TextStyle(
                           color: (isDark ? Colors.white : AppTheme.kLightText)
                               .withOpacity(0.5),
@@ -259,6 +385,14 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         ),
                         textAlign: TextAlign.center,
                       ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(color: Colors.orange, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                       const SizedBox(height: 32),
 
                       _BookingPillCard(
@@ -269,6 +403,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         timeRange: _timeRange,
                         totalPrice: _totalPrice,
                         isDark: isDark,
+                        isLoading: _isCreatingBooking,
                       ),
                     ],
                   ),
@@ -286,7 +421,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: widget.onViewBooking,
+                          onPressed: _isCreatingBooking
+                              ? null
+                              : widget.onViewBooking,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.kAccent,
                             foregroundColor: Colors.black,
@@ -296,21 +433,33 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             ),
                             elevation: 0,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.receipt_long_rounded, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'view_my_booking'.tr(context),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2,
+                          child: _isCreatingBooking
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.black,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.receipt_long_rounded,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'view_my_booking'.tr(context),
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -318,7 +467,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed: widget.onGoHome,
+                          onPressed: _isCreatingBooking
+                              ? null
+                              : widget.onGoHome,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: isDark
                                 ? Colors.white70
@@ -373,8 +524,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   }
 }
 
-// ... (rest of the widgets remain the same: _SuccessAnimation, _RippleRing, _BookingPillCard, _DetailRow, _CardDivider)
-
+// ── Success Animation ────────────────────────────────────────────────────────
 class _SuccessAnimation extends StatelessWidget {
   final Animation<double> checkScale;
   final Animation<double> checkOpacity;
@@ -500,6 +650,7 @@ class _RippleRing extends StatelessWidget {
   }
 }
 
+// ── Booking Pill Card ──────────────────────────────────────────────────────
 class _BookingPillCard extends StatelessWidget {
   final String bookingId;
   final String sportName;
@@ -508,6 +659,7 @@ class _BookingPillCard extends StatelessWidget {
   final String timeRange;
   final double totalPrice;
   final bool isDark;
+  final bool isLoading;
 
   const _BookingPillCard({
     required this.bookingId,
@@ -517,6 +669,7 @@ class _BookingPillCard extends StatelessWidget {
     required this.timeRange,
     required this.totalPrice,
     required this.isDark,
+    this.isLoading = false,
   });
 
   @override
@@ -543,14 +696,26 @@ class _BookingPillCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.tag_rounded,
+                if (isLoading)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      color: AppTheme.kAccent,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                if (isLoading) const SizedBox(width: 6),
+                Icon(
+                  isLoading ? Icons.hourglass_empty : Icons.tag_rounded,
                   color: AppTheme.kAccent,
                   size: 13,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${'booking'.tr(context)} #$bookingId',
+                  isLoading
+                      ? 'processing_booking'.tr(context)
+                      : '${'booking'.tr(context)} #$bookingId',
                   style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 12,

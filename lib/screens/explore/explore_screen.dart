@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
@@ -5,7 +7,6 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
-import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
 import 'package:sportbook/widgets/common/section_header.dart';
@@ -23,8 +24,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isLoading = true;
   bool _isCategoriesLoading = true;
   String _error = '';
-  String _categoriesError = '';
   bool _isDisposed = false;
+  int _currentPage = 1;
+  int _totalClubs = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+
+  // Search debounce
+  Timer? _searchDebounce;
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -32,19 +39,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
   late final SportClubService _clubService;
 
   List<CategoryModel> _categories = [];
-
-  // Get nearby clubs from service
-  List<SportClubModel> get _clubs => _clubService.nearbyClubs;
+  List<SportClubModel> _allClubs = [];
 
   // Get filtered clubs based on selected category or search query
   List<SportClubModel> get _filteredClubs {
-    List<SportClubModel> result = List.from(_clubs);
+    List<SportClubModel> result = List.from(_allClubs);
 
-    // ✅ FIXED: Filter by category if not 'all'
+    // Filter by category if not 'all'
     if (_selectedCat != 'all') {
       result = result.where((club) {
         return club.categories.any((cat) {
-          // ✅ Compare by ID as string since _selectedCat is a string
           return cat.id.toString() == _selectedCat;
         });
       }).toList();
@@ -80,6 +84,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void dispose() {
     _isDisposed = true;
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -88,7 +93,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _isLoading = true;
       _isCategoriesLoading = true;
       _error = '';
-      _categoriesError = '';
+      _allClubs = [];
+      _currentPage = 1;
+      _hasMore = true;
     });
 
     try {
@@ -96,26 +103,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
       await _categoryService.fetchCategories(limit: 100);
       _categories = _categoryService.categories;
 
-      // ✅ FIXED: Use fetchNearbyClubs with default location
-      // Try to get user location from UserService if available
-      final userService = getIt<UserService>();
-      await userService.getProfile();
-      final user = userService.currentUser;
-
-      if (user != null && user.lat != null && user.lng != null) {
-        await _clubService.fetchNearbyClubs(
-          lat: user.lat!,
-          lng: user.lng!,
-          radius: 10,
-        );
-      } else {
-        // Default to Phnom Penh coordinates
-        await _clubService.fetchNearbyClubs(
-          lat: 11.5564,
-          lng: 104.9282,
-          radius: 10,
-        );
-      }
+      // Load all clubs with pagination using fetchAllClubs
+      await _loadAllClubs(reset: true);
 
       setState(() {
         _isLoading = false;
@@ -130,8 +119,88 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
+  Future<void> _loadAllClubs({bool reset = false}) async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      // Use fetchAllClubs from the service - this updates the service state
+      final clubs = await _clubService.fetchAllClubs(
+        page: _currentPage,
+        limit: 20,
+        search: _query,
+      );
+
+      if (clubs.isNotEmpty) {
+        setState(() async {
+          if (reset) {
+            _allClubs = clubs;
+          } else {
+            _allClubs.addAll(clubs);
+          }
+          // Get total from the service or from the DTO
+          // Since fetchAllClubs returns List, we need to get total from repository
+          final dto = await _clubService.getAllSportClub();
+          _totalClubs = dto.total;
+          _hasMore = _allClubs.length < _totalClubs;
+          _currentPage++;
+        });
+      } else {
+        setState(() {
+          _hasMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _allClubs = [];
+      _currentPage = 1;
+      _hasMore = true;
+      _error = '';
+    });
+    await _loadAllClubs(reset: true);
+  }
+
   Future<void> _onRefresh() async {
     await _loadData();
+  }
+
+  void _loadMore() {
+    if (!_isLoadingMore && _hasMore) {
+      _loadAllClubs();
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _query = query;
+          _allClubs = [];
+          _currentPage = 1;
+          _hasMore = true;
+        });
+        _loadAllClubs(reset: true);
+      }
+    });
   }
 
   @override
@@ -152,7 +221,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               SliverToBoxAdapter(child: _categoriesWidget(context)),
               SliverToBoxAdapter(
                 child: SectionHeader(
-                  title: 'nearby'.tr(context),
+                  title: '${'all_clubs'.tr(context)} (${_totalClubs})',
                   isDark: isDark,
                 ),
               ),
@@ -175,7 +244,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               CircularProgressIndicator(color: AppTheme.kAccent),
               const SizedBox(height: 16),
               Text(
-                'loading'.tr(context),
+                'loading_clubs'.tr(context),
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
@@ -187,7 +256,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       );
     }
 
-    if (_error.isNotEmpty) {
+    if (_error.isNotEmpty && _allClubs.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
@@ -241,24 +310,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     final clubs = _filteredClubs;
 
-    if (clubs.isEmpty) {
+    if (clubs.isEmpty && !_isLoading) {
       return SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Column(
             children: [
               Icon(
-                Icons.search_off_rounded,
+                _query.isNotEmpty ? Icons.search_off_rounded : Icons.sports,
                 size: 64,
                 color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
               ),
               const SizedBox(height: 16),
               Text(
-                _query.isEmpty
-                    ? 'no_nearby_clubs'.tr(context)
-                    : 'no_results_for'
-                          .tr(context)
-                          .replaceAll('{query}', _query),
+                _query.isNotEmpty
+                    ? 'no_results_for'.tr(context).replaceAll('{query}', _query)
+                    : 'no_clubs_available'.tr(context),
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
@@ -268,7 +335,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               if (_query.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Try adjusting your search or filters',
+                  'try_adjusting_search'.tr(context),
                   style: TextStyle(
                     color: isDark
                         ? AppTheme.kTextSub.withOpacity(0.7)
@@ -286,11 +353,67 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
-        (_, i) => Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ClubCard(key: ValueKey('club_${clubs[i].id}'), club: clubs[i]),
-        ),
-        childCount: clubs.length,
+        (context, index) {
+          // Show loading indicator at the bottom if there are more clubs
+          if (index == clubs.length) {
+            if (_isLoadingMore) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(
+                        color: AppTheme.kAccent,
+                        strokeWidth: 2,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'loading_more'.tr(context),
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.kTextSub
+                              : AppTheme.kLightTextSub,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else if (_hasMore) {
+              // Trigger load more
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _loadMore();
+              });
+              return const SizedBox.shrink();
+            } else if (_totalClubs > 0) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    'end_of_list'.tr(context),
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ClubCard(
+              key: ValueKey('club_${clubs[index].id}'),
+              club: clubs[index],
+            ),
+          );
+        },
+        childCount: clubs.length + 1, // +1 for loading indicator
       ),
     );
   }
@@ -308,7 +431,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           fontSize: 16,
         ),
         decoration: InputDecoration(
-          hintText: 'search_hint'.tr(context),
+          hintText: 'search_clubs'.tr(context),
           hintStyle: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
@@ -328,6 +451,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       _query = '';
                       _searchController.clear();
                     });
+                    _loadAllClubs(reset: true);
                   },
                 )
               : null,
@@ -354,11 +478,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             vertical: 16,
           ),
         ),
-        onChanged: (query) {
-          setState(() {
-            _query = query;
-          });
-        },
+        onChanged: _onSearchChanged,
       ),
     );
   }

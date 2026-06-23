@@ -130,7 +130,28 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     }
   }
 
-  // Generate available hours based on club opening hours
+  // Check if a date is in the past (before today)
+  bool _isDateInPast(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateToCheck = DateTime(date.year, date.month, date.day);
+    return dateToCheck.isBefore(today);
+  }
+
+  // Check if a date is today
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  // Get the current hour
+  int _getCurrentHour() {
+    return DateTime.now().hour;
+  }
+
+  // Generate available hours based on club opening hours and current time
   List<int> _getAvailableHours() {
     if (widget.club == null) {
       return List.generate(17, (i) => i + 6); // 6 AM to 10 PM
@@ -152,8 +173,16 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       }
 
       final hours = <int>[];
+      final now = DateTime.now();
+      final isToday = _selectedDate != null && _isToday(_selectedDate!);
+      final currentHour = _getCurrentHour();
+
       for (int h = openHour; h < closeHour; h++) {
         if (h < 24) {
+          // If the selected date is today, only show future hours
+          if (isToday && h <= currentHour) {
+            continue; // Skip past hours
+          }
           hours.add(h);
         }
       }
@@ -166,7 +195,17 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
 
   List<int> _getAvailableEndHours(int startHour) {
     final allHours = _getAvailableHours();
-    return allHours.where((h) => h > startHour).toList();
+
+    // Filter end hours that are greater than start hour
+    final availableEndHours = allHours.where((h) => h > startHour).toList();
+
+    // If selected date is today, also filter out end hours that are in the past
+    if (_selectedDate != null && _isToday(_selectedDate!)) {
+      final currentHour = _getCurrentHour();
+      return availableEndHours.where((h) => h > currentHour).toList();
+    }
+
+    return availableEndHours;
   }
 
   int _getPriceForSlot(int startHour, int endHour) {
@@ -182,6 +221,18 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   void _onDateSelected(DateTime date) {
+    // Check if date is in the past
+    if (_isDateInPast(date)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('cannot_select_past_date'.tr(context)),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _selectedDate = date;
       _startHour = null;
@@ -199,6 +250,21 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   void _onStartHourSelected(int hour) {
+    // Validate that the start hour is not in the past for today
+    if (_selectedDate != null && _isToday(_selectedDate!)) {
+      final currentHour = _getCurrentHour();
+      if (hour <= currentHour) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('cannot_select_past_time'.tr(context)),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _startHour = hour;
       _endHour = null;
@@ -214,6 +280,33 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   void _onEndHourSelected(int hour) {
+    // Validate that the end hour is greater than start hour
+    if (_startHour != null && hour <= _startHour!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('end_time_must_be_after_start'.tr(context)),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Validate that the end hour is not in the past for today
+    if (_selectedDate != null && _isToday(_selectedDate!)) {
+      final currentHour = _getCurrentHour();
+      if (hour <= currentHour) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('cannot_select_past_time'.tr(context)),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _endHour = hour;
     });
@@ -418,7 +511,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
             final isToday = DateUtils.isSameDay(d, DateTime.now());
             final isWeekend =
                 d.weekday == DateTime.saturday || d.weekday == DateTime.sunday;
-            final isPast = d.isBefore(DateTime.now()) && !isToday;
+            final isPast = _isDateInPast(d);
 
             return GestureDetector(
               onTap: isPast ? null : () => _onDateSelected(d),
@@ -505,6 +598,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                           shape: BoxShape.circle,
                           color: AppTheme.kAccent,
                         ),
+                      ),
+                    if (isPast && !sel)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.block, color: Colors.grey, size: 10),
                       ),
                   ],
                 ),
@@ -615,45 +713,103 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             fontWeight: FontWeight.w700,
                           ),
                         ),
+                        if (_isToday(_selectedDate!))
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.orange.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Text(
+                              'today'.tr(context),
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  _sectionLabel(
-                    'from_label'.tr(context).toUpperCase(),
-                    Icons.play_arrow_rounded,
-                    const Color(0xFF4CAF50),
-                    isDark,
-                  ),
-                  const SizedBox(height: 10),
-                  _horizontalChips(
-                    hours: _availableHours,
-                    selected: _startHour,
-                    selColor: const Color(0xFF4CAF50),
-                    isDark: isDark,
-                    onTap: _onStartHourSelected,
-                  ),
-                  const SizedBox(height: 20),
+                  if (_availableHours.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _isToday(_selectedDate!)
+                                  ? 'no_available_slots_today'.tr(context)
+                                  : 'no_available_slots'.tr(context),
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    _sectionLabel(
+                      'from_label'.tr(context).toUpperCase(),
+                      Icons.play_arrow_rounded,
+                      const Color(0xFF4CAF50),
+                      isDark,
+                    ),
+                    const SizedBox(height: 10),
+                    _horizontalChips(
+                      hours: _availableHours,
+                      selected: _startHour,
+                      selColor: const Color(0xFF4CAF50),
+                      isDark: isDark,
+                      onTap: _onStartHourSelected,
+                    ),
+                    const SizedBox(height: 20),
 
-                  _sectionLabel(
-                    'to_label'.tr(context).toUpperCase(),
-                    Icons.stop_rounded,
-                    Colors.redAccent,
-                    isDark,
-                  ),
-                  const SizedBox(height: 10),
-                  _horizontalChips(
-                    hours: _toHours,
-                    selected: _endHour,
-                    selColor: Colors.redAccent,
-                    isDark: isDark,
-                    emptyMessage: _startHour == null
-                        ? 'pick_start_time_first'.tr(context)
-                        : 'no_available_end_times'.tr(context),
-                    onTap: _onEndHourSelected,
-                  ),
+                    _sectionLabel(
+                      'to_label'.tr(context).toUpperCase(),
+                      Icons.stop_rounded,
+                      Colors.redAccent,
+                      isDark,
+                    ),
+                    const SizedBox(height: 10),
+                    _horizontalChips(
+                      hours: _toHours,
+                      selected: _endHour,
+                      selColor: Colors.redAccent,
+                      isDark: isDark,
+                      emptyMessage: _startHour == null
+                          ? 'pick_start_time_first'.tr(context)
+                          : 'no_available_end_times'.tr(context),
+                      onTap: _onEndHourSelected,
+                    ),
+                  ],
 
                   if (_canConfirm) ...[
                     const SizedBox(height: 20),

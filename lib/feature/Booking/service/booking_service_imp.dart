@@ -1,4 +1,5 @@
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/model/create_booking_model.dart';
 import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
 import 'package:sportbook/feature/Booking/repository/booking_repository.dart';
 import 'package:sportbook/feature/Booking/service/booking_service.dart';
@@ -24,6 +25,11 @@ class BookingServiceImp implements BookingService {
   @override
   Future<BookingModel> getBookingById(int id) async {
     return await _repository.getBookingById(id);
+  }
+
+  @override
+  Future<BookingModel> createBooking(CreateBookingModel booking) async {
+    return await _repository.createBooking(booking);
   }
 
   @override

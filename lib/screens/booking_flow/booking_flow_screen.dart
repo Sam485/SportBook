@@ -165,6 +165,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   Future<void> _fetchClubWithSlots() async {
+    // Check if widget is still mounted before updating state
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -172,6 +175,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
     try {
       final clubData = await _clubService.getClubById(widget.target.id);
+
+      // Check if widget is still mounted after async operation
+      if (!mounted) return;
 
       if (clubData?.slots == null || clubData!.slots!.isEmpty) {
         setState(() {
@@ -194,6 +200,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         }
       });
     } catch (e) {
+      // Check if widget is still mounted before updating state
+      if (!mounted) return;
+
       setState(() {
         _clubWithSlots = widget.target;
         _isLoading = false;
@@ -235,16 +244,64 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   void _onPaymentConfirmed() {
+    if (!mounted) return;
+
+    if (_selectedSlot == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a valid court'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Format times in 24-hour format for API
+    final startTimeStr = _selectedStartTime != null
+        ? '${_selectedStartTime!.hour.toString().padLeft(2, '0')}:${_selectedStartTime!.minute.toString().padLeft(2, '0')}'
+        : '00:00';
+    final endTimeStr = _selectedEndTime != null
+        ? '${_selectedEndTime!.hour.toString().padLeft(2, '0')}:${_selectedEndTime!.minute.toString().padLeft(2, '0')}'
+        : '00:00';
+
+    // Get payment method in API format
+    String paymentMethodApi = 'qr_code';
+    switch (_selectedPaymentMethod?.toLowerCase()) {
+      case 'khqr':
+        paymentMethodApi = 'qr_code';
+        break;
+      case 'cash':
+        paymentMethodApi = 'cash';
+        break;
+      case 'aba':
+        paymentMethodApi = 'aba';
+        break;
+      case 'wing':
+        paymentMethodApi = 'wing';
+        break;
+      case 'pi_pay':
+        paymentMethodApi = 'pi_pay';
+        break;
+      case 'true_money':
+        paymentMethodApi = 'true_money';
+        break;
+      default:
+        paymentMethodApi = 'qr_code';
+    }
+
     final bookingData = {
       'club': _clubWithSlots ?? widget.target,
       'category': _selectedCategory,
-      'court': _selectedCourtId,
+      'court': _selectedSlot!.id,
       'courtName': _courtName,
       'slot': _selectedSlot,
       'date': _selectedDate,
-      'startTime': _selectedStartTime,
-      'endTime': _selectedEndTime,
-      'paymentMethod': _selectedPaymentMethod,
+      'startTime': startTimeStr, // Store as String (24-hour format)
+      'endTime': endTimeStr, // Store as String (24-hour format)
+      'startTimeOfDay':
+          _selectedStartTime, // Store original TimeOfDay for display
+      'endTimeOfDay': _selectedEndTime, // Store original TimeOfDay for display
+      'paymentMethod': paymentMethodApi,
       'totalPrice': _totalPrice,
       'pricePerHour': _pricePerHour,
     };
@@ -253,9 +310,15 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       MaterialPageRoute(
         builder: (_) => PaymentSuccessPage(
           bookingData: bookingData,
-          onGoHome: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onGoHome: () {
+            if (Navigator.of(context, rootNavigator: true).canPop()) {
+              Navigator.of(context).popUntil((r) => r.isFirst);
+            }
+          },
           onViewBooking: () {
-            Navigator.of(context).popUntil((r) => r.isFirst);
+            if (Navigator.of(context, rootNavigator: true).canPop()) {
+              Navigator.of(context).popUntil((r) => r.isFirst);
+            }
           },
         ),
       ),

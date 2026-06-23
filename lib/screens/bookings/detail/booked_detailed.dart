@@ -1,13 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/static/models/models.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
-class BookedDetailed extends StatelessWidget {
-  final SportBooking booking;
+class BookedDetailed extends StatefulWidget {
+  final BookingModel booking;
 
   const BookedDetailed({super.key, required this.booking});
+
+  @override
+  State<BookedDetailed> createState() => _BookedDetailedState();
+}
+
+class _BookedDetailedState extends State<BookedDetailed> {
+  final BookingService _bookingService = getIt<BookingService>();
+  bool _isCancelling = false;
+
+  // Computed properties
+  String get _bookingId =>
+      '#BK-${widget.booking.id.toString().padLeft(6, '0')}';
+  String get _formattedDate => _formatDate(widget.booking.bookingDate);
+  String get _timeRange =>
+      '${widget.booking.startTime} - ${widget.booking.endTime}';
+  String get _status => widget.booking.status;
+  String get _paymentStatus => widget.booking.paymentStatus;
+  double get _totalAmount => widget.booking.totalAmount.toDouble();
+
+  bool get _isCancellable =>
+      _status.toLowerCase() == 'pending' ||
+      _status.toLowerCase() == 'confirmed';
+
+  Color get _statusColor {
+    switch (_status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Color get _clubColor {
+    final colors = [
+      const Color(0xFFE74C3C),
+      const Color(0xFF2ECC71),
+      const Color(0xFFF39C12),
+      const Color(0xFF9B59B6),
+      const Color(0xFF1ABC9C),
+      const Color(0xFF3498DB),
+      const Color(0xFFE67E22),
+      const Color(0xFF2C3E50),
+      const Color(0xFF16A085),
+      const Color(0xFF8E44AD),
+    ];
+    return colors[widget.booking.sportClub.id % colors.length];
+  }
+
+  String get _initials {
+    final parts = widget.booking.sportClub.name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return widget.booking.sportClub.name.isNotEmpty
+        ? widget.booking.sportClub.name[0].toUpperCase()
+        : '?';
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  String _formatDateTime(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final day = date.day;
+    final month = months[date.month - 1];
+    final year = date.year;
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$month $day, $year at $hour:$minute';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +129,7 @@ class BookedDetailed extends StatelessWidget {
             SliverToBoxAdapter(child: _bookingDetailed(context)),
             SliverToBoxAdapter(child: _policy(context)),
             SliverToBoxAdapter(child: _entryPass(context)),
-            SliverToBoxAdapter(child: _buttons(context)),
+            if (_isCancellable) SliverToBoxAdapter(child: _buttons(context)),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
@@ -41,6 +147,10 @@ class BookedDetailed extends StatelessWidget {
   }
 
   Widget _header(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = _clubColor;
+    final hasImage = widget.booking.slot.imageUrl.isNotEmpty;
+
     return Stack(
       children: [
         // Background Image Container
@@ -49,8 +159,8 @@ class BookedDetailed extends StatelessWidget {
           width: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: booking.imageUrls.isNotEmpty
-                  ? NetworkImage(booking.imageUrls.first) as ImageProvider
+              image: hasImage
+                  ? NetworkImage(widget.booking.slot.imageUrl) as ImageProvider
                   : const AssetImage('assets/images/default_club.jpg'),
               fit: BoxFit.cover,
             ),
@@ -89,7 +199,7 @@ class BookedDetailed extends StatelessWidget {
                 color: Colors.black.withOpacity(0.5),
                 shape: BoxShape.circle,
               ),
-              padding: const EdgeInsets.fromLTRB(15, 10, 10, 10),
+              padding: const EdgeInsets.all(12),
               child: const Icon(
                 Icons.arrow_back_ios,
                 color: Colors.white,
@@ -115,9 +225,7 @@ class BookedDetailed extends StatelessWidget {
                 size: 20,
               ),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('share_coming_soon'.tr(context))),
-                );
+                _shareBooking(context);
               },
               padding: const EdgeInsets.all(8),
             ),
@@ -138,34 +246,87 @@ class BookedDetailed extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Sport Type Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: booking.ownerColor.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    booking.sportTypes.first.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                // Status Badges
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _statusColor.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _status.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        widget.booking.slot.name.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _paymentStatus.toLowerCase() == 'paid'
+                            ? Colors.green.withOpacity(0.9)
+                            : Colors.orange.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _paymentStatus.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
                 // Title
                 Text(
-                  booking.title,
+                  widget.booking.slot.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.booking.sportClub.name,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -181,7 +342,7 @@ class BookedDetailed extends StatelessWidget {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        booking.venue,
+                        widget.booking.sportClub.location,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
@@ -203,7 +364,7 @@ class BookedDetailed extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      booking.formattedBookingDate,
+                      _formattedDate,
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
@@ -217,7 +378,7 @@ class BookedDetailed extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      booking.formattedTimeRange,
+                      _timeRange,
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
@@ -227,49 +388,18 @@ class BookedDetailed extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Owner Info
+                // Booking ID
                 Row(
                   children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: booking.ownerColor.withOpacity(0.3),
-                        border: Border.all(color: booking.ownerColor, width: 1),
+                    const Icon(Icons.tag, color: Colors.white70, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      _bookingId,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        booking.ownerInitials,
-                        style: TextStyle(
-                          color: booking.ownerColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'hosted_by'
-                              .tr(context)
-                              .replaceAll('{name}', booking.ownerName),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          'response_rate'.tr(context),
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -283,6 +413,8 @@ class BookedDetailed extends StatelessWidget {
 
   Widget _paymentSummary(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final slotPrice = widget.booking.slot.price;
+    final total = _totalAmount;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 5),
@@ -307,19 +439,24 @@ class BookedDetailed extends StatelessWidget {
               children: [
                 _buildPaymentRow(
                   context,
-                  'field_booking'.tr(context),
-                  '\$15.00',
+                  'slot_booking'.tr(context),
+                  '\$${slotPrice.toStringAsFixed(2)}',
                   false,
                 ),
                 _divider(context),
                 _buildPaymentRow(
                   context,
                   'service_fee'.tr(context),
-                  '\$2.50',
+                  '\$0.00',
                   false,
                 ),
                 _divider(context),
-                _buildPaymentRow(context, 'total'.tr(context), '\$17.50', true),
+                _buildPaymentRow(
+                  context,
+                  'total'.tr(context),
+                  '\$${total.toStringAsFixed(2)}',
+                  true,
+                ),
               ],
             ),
           ),
@@ -330,6 +467,7 @@ class BookedDetailed extends StatelessWidget {
 
   Widget _bookingDetailed(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final payment = widget.booking.payment;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 5),
@@ -355,30 +493,69 @@ class BookedDetailed extends StatelessWidget {
                 _buildPaymentRow(
                   context,
                   'booking_id'.tr(context),
-                  '#SPB-20482',
+                  _bookingId,
                   false,
                 ),
                 _divider(context),
                 _buildPaymentRow(
                   context,
                   'status'.tr(context),
-                  _buildStatusBadge('confirmed'.tr(context), Colors.green),
+                  _buildStatusBadge(_status, _statusColor),
                   false,
                 ),
                 _divider(context),
                 _buildPaymentRow(
                   context,
-                  'payment_method'.tr(context),
-                  'ABA',
+                  'payment_status'.tr(context),
+                  _buildStatusBadge(
+                    _paymentStatus,
+                    _paymentStatus.toLowerCase() == 'paid'
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
                   false,
                 ),
+                if (payment != null) ...[
+                  _divider(context),
+                  _buildPaymentRow(
+                    context,
+                    'payment_method'.tr(context),
+                    payment.method.toUpperCase(),
+                    false,
+                  ),
+                  _divider(context),
+                  _buildPaymentRow(
+                    context,
+                    'transaction_ref'.tr(context),
+                    payment.transactionRef,
+                    false,
+                  ),
+                ],
                 _divider(context),
                 _buildPaymentRow(
                   context,
-                  'booked_on_date'.tr(context),
-                  'Jun 4, 2026',
+                  'booked_on'.tr(context),
+                  _formatDateTime(widget.booking.createdAt),
                   false,
                 ),
+                if (widget.booking.note.isNotEmpty) ...[
+                  _divider(context),
+                  _buildPaymentRow(
+                    context,
+                    'note'.tr(context),
+                    widget.booking.note,
+                    false,
+                  ),
+                ],
+                if (widget.booking.cancelledAt != null) ...[
+                  _divider(context),
+                  _buildPaymentRow(
+                    context,
+                    'cancelled_at'.tr(context),
+                    _formatDateTime(widget.booking.cancelledAt!),
+                    false,
+                  ),
+                ],
               ],
             ),
           ),
@@ -395,7 +572,7 @@ class BookedDetailed extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        text,
+        text.toUpperCase(),
         style: TextStyle(
           color: color,
           fontSize: 12,
@@ -493,7 +670,7 @@ class BookedDetailed extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: QrImageView(
-                    data: '#SPB-20482',
+                    data: _buildQrData(),
                     version: QrVersions.auto,
                     size: 100.0,
                     backgroundColor: Colors.white,
@@ -524,11 +701,7 @@ class BookedDetailed extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _badge(
-                        context,
-                        'expires_in_days'.tr(context),
-                        const Color.fromARGB(255, 255, 193, 7),
-                      ),
+                      _badge(context, _bookingId, AppTheme.kAccent),
                     ],
                   ),
                 ),
@@ -538,6 +711,15 @@ class BookedDetailed extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _buildQrData() {
+    return 'BOOKING:${widget.booking.id}\n'
+        'SLOT:${widget.booking.slot.name}\n'
+        'CLUB:${widget.booking.sportClub.name}\n'
+        'DATE:$_formattedDate\n'
+        'TIME:$_timeRange\n'
+        'TOTAL:\$${_totalAmount.toStringAsFixed(2)}';
   }
 
   Widget _badge(BuildContext context, String text, Color color) {
@@ -675,9 +857,9 @@ class BookedDetailed extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {
-                _showCancelDialog(context);
-              },
+              onPressed: _isCancelling
+                  ? null
+                  : () => _showCancelDialog(context),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.red),
@@ -686,7 +868,16 @@ class BookedDetailed extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text('cancel_booking'.tr(context)),
+              child: _isCancelling
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.red,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text('cancel_booking'.tr(context)),
             ),
           ),
           const SizedBox(width: 12),
@@ -725,7 +916,9 @@ class BookedDetailed extends StatelessWidget {
           style: TextStyle(color: isDark ? Colors.white : AppTheme.kLightText),
         ),
         content: Text(
-          'cancel_booking_warning'.tr(context),
+          'cancel_booking_confirmation'
+              .tr(context)
+              .replaceAll('{title}', widget.booking.slot.name),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
@@ -741,12 +934,7 @@ class BookedDetailed extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('booking_cancelled'.tr(context))),
-              );
-            },
+            onPressed: () => _cancelBooking(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
@@ -756,5 +944,49 @@ class BookedDetailed extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _cancelBooking(BuildContext context) async {
+    setState(() {
+      _isCancelling = true;
+    });
+
+    try {
+      await _bookingService.cancelBooking(widget.booking.id);
+
+      if (mounted) {
+        Navigator.pop(context); // Close dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking cancelled successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // Go back to bookings list
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel booking: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCancelling = false;
+        });
+      }
+    }
+  }
+
+  void _shareBooking(BuildContext context) {
+    // Implement share functionality
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('share_coming_soon'.tr(context))));
   }
 }

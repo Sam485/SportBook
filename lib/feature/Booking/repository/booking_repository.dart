@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/model/create_booking_model.dart';
 import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
 
 class BookingRepository {
@@ -43,6 +44,34 @@ class BookingRepository {
       );
     } catch (e) {
       throw Exception('Failed to get booking: $e');
+    }
+  }
+
+  // Create a new booking
+  Future<BookingModel> createBooking(CreateBookingModel booking) async {
+    try {
+      final data = booking.toJson();
+      print('📤 Sending booking request:');
+      print('📤 URL: /bookings');
+      print('📤 Data: $data');
+
+      final response = await _dio.post('/bookings', data: data);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response data: ${response.data}');
+
+      return BookingModel.fromJson(response.data);
+    } on DioException catch (e) {
+      print('❌ Dio Error:');
+      print('❌ Status: ${e.response?.statusCode}');
+      print('❌ Data: ${e.response?.data}');
+      print('❌ Message: ${e.message}');
+      throw Exception(
+        'Failed to create booking: ${e.response?.data ?? e.message}',
+      );
+    } catch (e) {
+      print('❌ Unexpected Error: $e');
+      throw Exception('Failed to create booking: $e');
     }
   }
 

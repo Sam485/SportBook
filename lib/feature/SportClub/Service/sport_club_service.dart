@@ -8,12 +8,18 @@ abstract class SportClubService extends ChangeNotifier {
   // ALL Clubs Methods
   // ============================================================================
 
-  Future<GetAllSportClubDto> getAllSportClub();
+  Future<GetAllSportClubDto> getAllSportClub({
+    int page = 1,
+    int limit = 10,
+    String search = '',
+  });
+
   Future<List<SportClubModel>> fetchAllClubs({
     int page = 1,
     int limit = 10,
     String search = '',
   });
+
   Future<void> refreshAllClubs();
 
   // Getters for ALL clubs
@@ -30,7 +36,9 @@ abstract class SportClubService extends ChangeNotifier {
     required double lng,
     int radius = 10,
   });
+
   Future<List<SportClubModel>> getFilteredNearbyClubs(String categoryId);
+
   Future<void> refreshNearbyClubs({
     required double lat,
     required double lng,
