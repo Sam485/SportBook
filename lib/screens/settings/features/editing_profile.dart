@@ -1,26 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
-import 'package:sportbook/feature/User/model/user_model.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:sportbook/widgets/common/map_picker_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final UserModel user;
-  final UserService userService;
-
-  const EditProfileScreen({
-    super.key,
-    required this.user,
-    required this.userService,
-  });
+  const EditProfileScreen({super.key});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -33,377 +23,325 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = false;
   bool _isAvatarLoading = false;
   String? _uploadedAvatarUrl;
+  bool _isDisposed = false;
 
   // Location variables
-  LatLng? _selectedLocation;
+  double? _selectedLat;
+  double? _selectedLng;
   String _selectedAddress = '';
-  bool _isLocationPickerOpen = false;
+
+  late final UserService _userService;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.user.fullName);
-    _locationController = TextEditingController(
-      text: widget.user.location ?? '',
-    );
+    _userService = getIt<UserService>();
+
+    final user = _userService.currentUser;
+
+    _nameController = TextEditingController(text: user?.fullName ?? '');
+    _locationController = TextEditingController(text: user?.location ?? '');
 
     // Initialize location from user data
-    if (widget.user.lat != null && widget.user.lng != null) {
-      _selectedLocation = LatLng(widget.user.lat!, widget.user.lng!);
-      _selectedAddress = widget.user.location ?? '';
+    if (user?.lat != null && user?.lng != null) {
+      _selectedLat = user!.lat;
+      _selectedLng = user.lng;
+      _selectedAddress = user.location ?? '';
     }
+
+    // Listen to user service changes
+    _userService.addListener(_onUserServiceChanged);
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
+    _userService.removeListener(_onUserServiceChanged);
     _nameController.dispose();
     _locationController.dispose();
     super.dispose();
   }
 
+  void _onUserServiceChanged() {
+    if (!_isDisposed && mounted) {
+      final user = _userService.currentUser;
+      if (user != null) {
+        setState(() {
+          _uploadedAvatarUrl = user.avatarUrl;
+        });
+      }
+    }
+  }
+
   Future<void> _uploadAvatar(File imageFile) async {
+    // Prevent multiple uploads
+    if (_isAvatarLoading) return;
+
     setState(() {
       _isAvatarLoading = true;
+      // Show the selected image immediately for better UX
+      _selectedImage = imageFile;
     });
 
     try {
-      // Upload the avatar and get the URL
-      final avatarUrl = await widget.userService.updateAvatar(imageFile);
+      // Upload avatar
+      final updatedUser = await _userService.updateAvatar(imageFile);
 
-      setState(() {
-        _uploadedAvatarUrl = avatarUrl.avatarUrl;
-        _selectedImage = null; // Clear temp selected image
-        _isAvatarLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('avatar_updated_successfully'.tr(context)),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${'avatar_update_failed'.tr(context)}: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      setState(() {
-        _isAvatarLoading = false;
-      });
-    }
-  }
-
-  Future<void> _getCurrentLocation(MapController controller) async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location services are disabled'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location permissions are denied'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permissions are permanently denied'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      setState(() {
-        _selectedLocation = LatLng(position.latitude, position.longitude);
-      });
-
-      await _updateAddressFromCoordinates();
-
-      // Move map
-      controller.move(_selectedLocation!, 15);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error getting location: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _updateAddressFromCoordinates() async {
-    if (_selectedLocation == null) return;
-
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        _selectedLocation!.latitude,
-        _selectedLocation!.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
-        String address = [
-          place.name,
-          place.subLocality,
-          place.locality,
-          place.administrativeArea,
-          place.country,
-        ].where((element) => element != null && element.isNotEmpty).join(', ');
-
+      if (!_isDisposed && mounted) {
         setState(() {
-          _selectedAddress = address;
-          _locationController.text = address;
+          _uploadedAvatarUrl = updatedUser.avatarUrl;
+          _selectedImage = null;
+          _isAvatarLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Error getting address: $e');
+      if (!_isDisposed && mounted) {
+        String errorMessage = e.toString();
+        if (errorMessage.contains('Exception:')) {
+          errorMessage = errorMessage.replaceAll('Exception: ', '');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${'avatar_update_failed'.tr(context)}: $errorMessage',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        setState(() {
+          _selectedImage = null;
+          _isAvatarLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _searchLocation(String query, MapController controller) async {
-    if (query.isEmpty) return;
+  // ✅ FIXED: This method now properly handles image picking
+  Future<void> _pickImage() async {
+    if (_isAvatarLoading) return;
 
+    final ImagePicker picker = ImagePicker();
     try {
-      List<Location> locations = await locationFromAddress(query);
-      if (locations.isNotEmpty) {
-        Location location = locations.first;
-        setState(() {
-          _selectedLocation = LatLng(location.latitude, location.longitude);
-        });
-
-        await _updateAddressFromCoordinates();
-
-        // Move map
-        controller.move(_selectedLocation!, 15);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location not found'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null) {
+        final file = File(image.path);
+        await _uploadAvatar(file);
       }
     } catch (e) {
-      if (mounted) {
+      if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error searching location: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
     }
   }
 
-  Future<void> _openLocationPicker() async {
-    setState(() {
-      _isLocationPickerOpen = true;
-    });
+  // ✅ FIXED: This method now properly handles taking a photo
+  Future<void> _takePhoto() async {
+    if (_isAvatarLoading) return;
 
-    // Create a new MapController for the bottom sheet
-    final mapController = MapController();
-
-    // Set initial location if available
-    if (_selectedLocation != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        mapController.move(_selectedLocation!, 13);
-      });
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null) {
+        final file = File(image.path);
+        await _uploadAvatar(file);
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to take photo: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
+  }
 
-    await showModalBottomSheet(
+  // ✅ FIXED: This method now properly shows the image picker options
+  Future<void> _showImagePickerDialog() async {
+    if (_isAvatarLoading) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Show custom bottom sheet
+    showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return DraggableScrollableSheet(
-            initialChildSize: 0.9,
-            minChildSize: 0.5,
-            maxChildSize: 0.95,
-            builder: (context, scrollController) {
-              return Container(
+      backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppTheme.kBg
-                      : AppTheme.kLightBg,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
+                  color: (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub)
+                      .withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'choose_photo'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.kAccent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.photo_library_rounded,
+                    color: AppTheme.kAccent,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.all(12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              onSubmitted: (query) async {
-                                await _searchLocation(query, mapController);
-                                setModalState(() {});
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'search_location'.tr(context),
-                                prefixIcon: const Icon(Icons.search),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                filled: true,
-                                fillColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? AppTheme.kCard
-                                    : AppTheme.kLightCard,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: () async {
-                              await _getCurrentLocation(mapController);
-                              setModalState(() {});
-                            },
-                            icon: const Icon(Icons.my_location),
-                            tooltip: 'current_location'.tr(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: FlutterMap(
-                        mapController: mapController,
-                        options: MapOptions(
-                          initialCenter:
-                              _selectedLocation ?? const LatLng(0, 0),
-                          initialZoom: 13,
-                          onTap: (tapPosition, point) {
-                            setModalState(() {
-                              _selectedLocation = point;
-                            });
-                            _updateAddressFromCoordinates();
-                          },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.sportbook.app',
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              if (_selectedLocation != null)
-                                Marker(
-                                  point: _selectedLocation!,
-                                  width: 80,
-                                  height: 80,
-                                  child: const Icon(
-                                    Icons.location_pin,
-                                    color: Colors.red,
-                                    size: 40,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _selectedAddress.isNotEmpty
-                                  ? _selectedAddress
-                                  : 'tap_on_map_to_select_location'.tr(context),
-                              style: TextStyle(
-                                color: _selectedAddress.isNotEmpty
-                                    ? Colors.green
-                                    : Colors.grey,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          ElevatedButton(
-                            onPressed: _selectedLocation != null
-                                ? () {
-                                    Navigator.pop(context);
-                                    setState(() {
-                                      _isLocationPickerOpen = false;
-                                    });
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.kAccent,
-                              foregroundColor: Colors.black,
-                            ),
-                            child: Text('confirm'.tr(context)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                title: Text(
+                  'choose_from_library'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
                 ),
-              );
-            },
-          );
-        },
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage();
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.kAccent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.camera_alt_rounded,
+                    color: AppTheme.kAccent,
+                  ),
+                ),
+                title: Text(
+                  'take_a_photo'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+              if (_uploadedAvatarUrl != null || _selectedImage != null)
+                ListTile(
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_rounded, color: Colors.red),
+                  ),
+                  title: Text(
+                    'remove_photo'.tr(context),
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeAvatar();
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
     );
   }
 
+  // ✅ FIXED: Method to remove avatar (placeholder)
+  Future<void> _removeAvatar() async {
+    // You would need an API endpoint to remove avatar
+    // For now, just show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Remove avatar feature coming soon'),
+        backgroundColor: Colors.grey,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _openLocationPicker() async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enableDrag: false,
+      isDismissible: false,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.60,
+          width: double.infinity,
+          decoration: const BoxDecoration(color: Colors.transparent),
+          child: MapPickerScreen(
+            initialLat: _selectedLat,
+            initialLng: _selectedLng,
+            initialLabel: _selectedAddress,
+          ),
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _selectedAddress = result;
+        _locationController.text = result;
+      });
+    }
+  }
+
   Future<void> _saveChanges() async {
     if (_nameController.text.isEmpty || _locationController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('fill_all_fields'.tr(context))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('fill_all_fields'.tr(context)),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -412,32 +350,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      // Update profile data
       final updateDto = UpdateDto(
-        fullName: _nameController.text,
-        location: _locationController.text,
-        lat: _selectedLocation!.latitude,
-        lng: _selectedLocation!.longitude,
+        fullName: _nameController.text.trim(),
+        location: _locationController.text.trim(),
+        lat: _selectedLat ?? 0.0,
+        lng: _selectedLng ?? 0.0,
       );
 
-      final updatedUser = await widget.userService.updateProfile(updateDto);
+      await _userService.updateProfile(updateDto);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('profile_updated_successfully'.tr(context)),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        Navigator.pop(context, updatedUser);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = e.toString();
+        if (errorMessage.contains('Exception:')) {
+          errorMessage = errorMessage.replaceAll('Exception: ', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${'update_failed'.tr(context)}: $e'),
+            content: Text('${'update_failed'.tr(context)}: $errorMessage'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -450,50 +386,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-    if (image != null) {
-      final file = File(image.path);
-      setState(() {
-        _selectedImage = file;
-      });
-      // Upload immediately
-      await _uploadAvatar(file);
-    }
-  }
-
-  Future<void> _takePhoto() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
-    if (image != null) {
-      final file = File(image.path);
-      setState(() {
-        _selectedImage = file;
-      });
-      // Upload immediately
-      await _uploadAvatar(file);
-    }
-  }
-
-  Future<void> _showImagePickerDialog() async {
-    final file = await ImagePickerBottomSheet.show(context);
-    if (file != null) {
-      setState(() => _selectedImage = file);
-      // Upload immediately
-      await _uploadAvatar(file);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = _userService.currentUser;
+
+    // Determine which avatar to show
+    String? avatarUrl;
+    if (_uploadedAvatarUrl != null && _uploadedAvatarUrl!.isNotEmpty) {
+      avatarUrl = _uploadedAvatarUrl;
+    } else if (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty) {
+      avatarUrl = user.avatarUrl;
+    }
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -542,27 +446,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _profileImage()),
-          SliverToBoxAdapter(child: _textFields()),
-          SliverToBoxAdapter(child: _saveButton()),
+          SliverToBoxAdapter(
+            child: _profileImage(avatarUrl: avatarUrl, isDark: isDark),
+          ),
+          SliverToBoxAdapter(child: _textFields(isDark: isDark)),
+          SliverToBoxAdapter(child: _saveButton(isDark: isDark)),
           const SliverToBoxAdapter(child: SizedBox(height: 30)),
         ],
       ),
     );
   }
 
-  Widget _profileImage() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Determine which avatar to show
-    String? avatarUrl;
-    if (_uploadedAvatarUrl != null && _uploadedAvatarUrl!.isNotEmpty) {
-      avatarUrl = _uploadedAvatarUrl;
-    } else if (widget.user.avatarUrl != null &&
-        widget.user.avatarUrl!.isNotEmpty) {
-      avatarUrl = widget.user.avatarUrl;
-    }
-
+  Widget _profileImage({required String? avatarUrl, required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Center(
@@ -677,9 +572,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _textFields() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _textFields({required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -703,7 +596,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildLocationField({required bool isDark}) {
     return GestureDetector(
-      onTap: _isLocationPickerOpen ? null : _openLocationPicker,
+      onTap: _openLocationPicker,
       child: AbsorbPointer(
         child: TextField(
           controller: _locationController,
@@ -782,9 +675,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _saveButton() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _saveButton({required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       child: SizedBox(

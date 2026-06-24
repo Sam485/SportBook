@@ -1,4 +1,3 @@
-// ─── Step 1: Category ─────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
 import '../../../translations/app_translations.dart';

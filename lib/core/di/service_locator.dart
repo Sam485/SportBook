@@ -1,11 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get_it/get_it.dart';
 import 'package:sportbook/core/config/app_config.dart';
+import 'package:sportbook/core/interceptors/auth_interceptor.dart';
+import 'package:sportbook/feature/Auth/service/auth_service.dart';
+import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/feature/Banner/repositories/banner_repository.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
 import 'package:sportbook/feature/Banner/service/banner_service_imp.dart';
+import 'package:sportbook/feature/Booking/repository/booking_repository.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
+import 'package:sportbook/feature/Booking/service/booking_service_imp.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/Category/service/category_service_imp.dart';
 import 'package:sportbook/feature/Category/repository/category_repository.dart';
@@ -20,7 +26,6 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/feature/User/service/user_service_imp.dart';
 import 'package:sportbook/feature/User/repositories/user_api_repository.dart';
-import 'package:sportbook/core/interceptors/auth_interceptor.dart'; // Create this
 
 final getIt = GetIt.instance;
 
@@ -30,13 +35,16 @@ Future<void> setupServiceLocator() async {
     () => const FlutterSecureStorage(),
   );
 
-  // Register Dio with interceptors
+  // ============================================================
+  // REGISTER DIO FIRST (no dependencies)
+  // ============================================================
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -44,12 +52,13 @@ Future<void> setupServiceLocator() async {
       ),
     );
 
-    // Add interceptors
     dio.interceptors.add(AuthInterceptor());
     dio.interceptors.add(
       LogInterceptor(
         request: true,
+        requestHeader: true,
         requestBody: true,
+        responseHeader: true,
         responseBody: true,
         error: true,
       ),
@@ -58,65 +67,85 @@ Future<void> setupServiceLocator() async {
     return dio;
   });
 
-  // Register TokenApi
+  // ============================================================
+  // REGISTER TOKEN (depends on Dio)
+  // ============================================================
   getIt.registerLazySingleton<TokenApi>(() => TokenApi(getIt<Dio>()));
-
-  // Register TokenService
   getIt.registerLazySingleton<TokenService>(
     () => TokenService(getIt<TokenApi>()),
   );
 
-  // Register UserRepository
+  // ============================================================
+  // REGISTER AUTH SERVICE (depends on TokenService)
+  // ============================================================
+  getIt.registerLazySingleton<AuthService>(() => AuthService());
+
+  // ============================================================
+  // REGISTER NAVIGATOR KEY (to be set in main.dart)
+  // ============================================================
+  // Don't create it here - it will be registered in main.dart
+  if (!getIt.isRegistered<GlobalKey<NavigatorState>>()) {
+    getIt.registerSingleton<GlobalKey<NavigatorState>>(
+      GlobalKey<NavigatorState>(),
+    );
+  }
+
+  // ============================================================
+  // REGISTER FIREBASE OTP SERVICE
+  // ============================================================
+  getIt.registerLazySingleton<FirebaseOtpService>(
+    () => FirebaseOtpService.instance,
+  );
+
+  // ============================================================
+  // REGISTER REPOSITORIES AND SERVICES
+  // ============================================================
+
+  // User
   getIt.registerLazySingleton<UserApiRepository>(
     () => UserApiRepository(getIt<Dio>()),
   );
-
-  // Register UserService
   getIt.registerLazySingleton<UserService>(
     () => UserServiceImp(getIt<UserApiRepository>()),
   );
 
-  // Register NotificationRepository
+  // Notification
   getIt.registerLazySingleton<NotificationRepository>(
     () => NotificationRepository(getIt<Dio>()),
   );
-
-  // Register NotificationService
   getIt.registerLazySingleton<NotificationService>(
     () => NotificationServiceImp(getIt<NotificationRepository>()),
   );
 
-  // Register CategoryRepository
+  // Category
   getIt.registerLazySingleton<CategoryRepository>(
     () => CategoryRepository(getIt<Dio>()),
   );
-
-  // Register CategoryService - FIXED: Use CategoryServiceImp with CategoryRepository
   getIt.registerLazySingleton<CategoryService>(
-    () => CategoryServiceImp(
-      getIt<CategoryRepository>(),
-    ), // Changed from CategoryService to CategoryRepository
+    () => CategoryServiceImp(getIt<CategoryRepository>()),
   );
 
-  // Register SportClubRepository
+  // Sport Club
   getIt.registerLazySingleton<SportClubRepository>(
     () => SportClubRepository(getIt<Dio>()),
   );
-
-  // Register SportClubService - FIXED: Use SportClubServiceImp with SportClubRepository
   getIt.registerLazySingleton<SportClubService>(
-    () => SportClubServiceImp(
-      getIt<SportClubRepository>(),
-    ), // Changed from SportClubRepository to SportClubService
+    () => SportClubServiceImp(getIt<SportClubRepository>()),
   );
 
-  // Register BannerRepository
+  // Banner
   getIt.registerLazySingleton<BannerRepository>(
     () => BannerRepository(getIt<Dio>()),
   );
-
-  // Register BannerService - FIXED: Use BannerServiceImp with BannerRepository
   getIt.registerLazySingleton<BannerService>(
     () => BannerServiceImp(getIt<BannerRepository>()),
+  );
+
+  // Booking
+  getIt.registerLazySingleton<BookingRepository>(
+    () => BookingRepository(getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<BookingService>(
+    () => BookingServiceImp(getIt<BookingRepository>()),
   );
 }

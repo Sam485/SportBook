@@ -1,30 +1,22 @@
 class RegisterRequestDto {
   final String name;
-  final String email;
   final String phone;
   final String password;
 
   RegisterRequestDto({
     required this.name,
-    required this.email,
     required this.phone,
     required this.password,
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'full_name': name,
-      'email': email,
-      'phone': phone,
-      'password': password,
-    };
+    return {'full_name': name, 'phone': phone, 'password': password};
   }
 
   factory RegisterRequestDto.fromInput(RegisterRequestDto register) {
     final normalizedPhone = _normalizePhoneNumber(register.phone);
     return RegisterRequestDto(
       name: register.name,
-      email: register.email,
       phone: normalizedPhone,
       password: register.password,
     );

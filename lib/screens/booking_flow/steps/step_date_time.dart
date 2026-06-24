@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import '../../../core/theme.dart';
 import '../../../translations/app_translations.dart';
 
@@ -10,6 +14,7 @@ class StepDateAndTime extends StatefulWidget {
   final TimeOfDay? selectedEndTime;
   final int? selectedCourt;
   final String? selectedCategory;
+  final SportClubModel? club;
 
   const StepDateAndTime({
     super.key,
@@ -20,6 +25,7 @@ class StepDateAndTime extends StatefulWidget {
     this.selectedEndTime,
     this.selectedCourt,
     this.selectedCategory,
+    this.club,
   });
 
   @override
@@ -37,6 +43,15 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   int? _startHour;
   int? _endHour;
   bool _hasAutoConfirmed = false;
+
+  // Selected court slot info
+  int _selectedCourtPrice = 0;
+  String _selectedCourtName = '';
+
+  // Booked slots from API
+  List<BookingModel> _userBookings = [];
+  bool _isLoadingBookings = false;
+  final BookingService _bookingService = getIt<BookingService>();
 
   static DateTime get _startOfWeek {
     final now = DateTime.now();
@@ -95,6 +110,12 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       _endHour = widget.selectedEndTime!.hour;
     }
 
+    // Get selected court info
+    _updateSelectedCourtInfo();
+
+    // Fetch user's existing bookings
+    _fetchUserBookings();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animController.forward(from: 0);
       _autoConfirmIfComplete();
@@ -107,6 +128,205 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     super.dispose();
   }
 
+  void _updateSelectedCourtInfo() {
+    if (widget.club == null || widget.club!.slots == null) return;
+
+    final slots = widget.club!.slots!;
+    final courtIndex = (widget.selectedCourt ?? 1) - 1;
+
+    if (courtIndex >= 0 && courtIndex < slots.length) {
+      final slot = slots[courtIndex];
+      _selectedCourtPrice = slot.price;
+      _selectedCourtName = slot.name;
+    }
+  }
+
+  // Fetch user's existing bookings
+  Future<void> _fetchUserBookings() async {
+    if (_isLoadingBookings) return;
+
+    setState(() {
+      _isLoadingBookings = true;
+    });
+
+    try {
+      final result = await _bookingService.getAllBookings(
+        page: 1,
+        limit: 100, // Get all bookings
+      );
+
+      if (mounted) {
+        setState(() {
+          _userBookings = result.data;
+          _isLoadingBookings = false;
+        });
+      }
+    } catch (e) {
+      print('Failed to fetch bookings: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingBookings = false;
+        });
+      }
+    }
+  }
+
+  // Check if a specific time slot is already booked
+  bool _isTimeSlotBooked(DateTime date, int startHour, int endHour) {
+    // Filter bookings for the selected court and date
+    final bookingsForCourt = _userBookings.where((booking) {
+      // Check if booking is for the same slot/court
+      final isSameSlot = booking.slot.id == widget.selectedCourt;
+
+      // Check if booking is for the same date
+      final isSameDate = DateUtils.isSameDay(booking.bookingDate, date);
+
+      // Check if booking is not cancelled
+      final isNotCancelled = booking.status.toLowerCase() != 'cancelled';
+
+      return isSameSlot && isSameDate && isNotCancelled;
+    }).toList();
+
+    // Check if any booking overlaps with the requested time
+    for (final booking in bookingsForCourt) {
+      final bookingStartHour = _parseTimeToHour(booking.startTime);
+      final bookingEndHour = _parseTimeToHour(booking.endTime);
+
+      // Check if the requested time overlaps with an existing booking
+      final overlaps =
+          (startHour < bookingEndHour && endHour > bookingStartHour);
+      if (overlaps) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  int _parseTimeToHour(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      return int.parse(parts[0]);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  // Check if a date is in the past (before today)
+  bool _isDateInPast(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateToCheck = DateTime(date.year, date.month, date.day);
+    return dateToCheck.isBefore(today);
+  }
+
+  // Check if a date is today
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  // Get the current hour
+  int _getCurrentHour() {
+    return DateTime.now().hour;
+  }
+
+  // Generate available hours based on club opening hours and current time
+  List<int> _getAvailableHours() {
+    if (widget.club == null) {
+      return List.generate(17, (i) => i + 6); // 6 AM to 10 PM
+    }
+
+    final openTime = widget.club!.openTime;
+    final closeTime = widget.club!.closeTime;
+
+    try {
+      final openParts = openTime.split(':');
+      final closeParts = closeTime.split(':');
+
+      int openHour = int.parse(openParts[0]);
+      int closeHour = int.parse(closeParts[0]);
+
+      // Adjust for overnight hours
+      if (closeHour < openHour) {
+        closeHour += 24;
+      }
+
+      final hours = <int>[];
+      final now = DateTime.now();
+      final isToday = _selectedDate != null && _isToday(_selectedDate!);
+      final currentHour = _getCurrentHour();
+
+      for (int h = openHour; h < closeHour; h++) {
+        if (h < 24) {
+          // If the selected date is today, only show future hours
+          if (isToday && h <= currentHour) {
+            continue; // Skip past hours
+          }
+
+          // Check if this start hour is already booked for the selected date
+          if (_selectedDate != null && widget.selectedCourt != null) {
+            // Check if booking exists for this start hour
+            final isBooked = _userBookings.any((booking) {
+              final isSameSlot = booking.slot.id == widget.selectedCourt;
+              final isSameDate = DateUtils.isSameDay(
+                booking.bookingDate,
+                _selectedDate!,
+              );
+              final isNotCancelled =
+                  booking.status.toLowerCase() != 'cancelled';
+              final bookingStartHour = _parseTimeToHour(booking.startTime);
+
+              return isSameSlot &&
+                  isSameDate &&
+                  isNotCancelled &&
+                  bookingStartHour == h;
+            });
+
+            if (isBooked) {
+              continue; // Skip booked hours
+            }
+          }
+
+          hours.add(h);
+        }
+      }
+
+      return hours;
+    } catch (_) {
+      return List.generate(17, (i) => i + 6);
+    }
+  }
+
+  List<int> _getAvailableEndHours(int startHour) {
+    final allHours = _getAvailableHours();
+
+    // Filter end hours that are greater than start hour
+    final availableEndHours = allHours.where((h) => h > startHour).toList();
+
+    // If selected date is today, also filter out end hours that are in the past
+    if (_selectedDate != null && _isToday(_selectedDate!)) {
+      final currentHour = _getCurrentHour();
+      availableEndHours.removeWhere((h) => h <= currentHour);
+    }
+
+    // Check if the time slot is already booked
+    if (_selectedDate != null && widget.selectedCourt != null) {
+      availableEndHours.removeWhere((endHour) {
+        return _isTimeSlotBooked(_selectedDate!, startHour, endHour);
+      });
+    }
+
+    return availableEndHours;
+  }
+
+  int _getPriceForSlot(int startHour, int endHour) {
+    // Use the selected court's price
+    return _selectedCourtPrice * (endHour - startHour);
+  }
+
   void _autoConfirmIfComplete() {
     if (!_hasAutoConfirmed && _canConfirm) {
       _hasAutoConfirmed = true;
@@ -115,6 +335,18 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   void _onDateSelected(DateTime date) {
+    // Check if date is in the past
+    if (_isDateInPast(date)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('cannot_select_past_date'.tr(context)),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _selectedDate = date;
       _startHour = null;
@@ -132,6 +364,50 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   void _onStartHourSelected(int hour) {
+    // Validate that the start hour is not in the past for today
+    if (_selectedDate != null && _isToday(_selectedDate!)) {
+      final currentHour = _getCurrentHour();
+      if (hour <= currentHour) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('cannot_select_past_time'.tr(context)),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
+    // Check if this start hour is already booked
+    if (_selectedDate != null && widget.selectedCourt != null) {
+      final isBooked = _userBookings.any((booking) {
+        final isSameSlot = booking.slot.id == widget.selectedCourt;
+        final isSameDate = DateUtils.isSameDay(
+          booking.bookingDate,
+          _selectedDate!,
+        );
+        final isNotCancelled = booking.status.toLowerCase() != 'cancelled';
+        final bookingStartHour = _parseTimeToHour(booking.startTime);
+
+        return isSameSlot &&
+            isSameDate &&
+            isNotCancelled &&
+            bookingStartHour == hour;
+      });
+
+      if (isBooked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This time slot is already booked'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _startHour = hour;
       _endHour = null;
@@ -147,6 +423,49 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
   }
 
   void _onEndHourSelected(int hour) {
+    // Validate that the end hour is greater than start hour
+    if (_startHour != null && hour <= _startHour!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('end_time_must_be_after_start'.tr(context)),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Validate that the end hour is not in the past for today
+    if (_selectedDate != null && _isToday(_selectedDate!)) {
+      final currentHour = _getCurrentHour();
+      if (hour <= currentHour) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('cannot_select_past_time'.tr(context)),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
+    // Check if this time slot is already booked
+    if (_selectedDate != null &&
+        widget.selectedCourt != null &&
+        _startHour != null) {
+      if (_isTimeSlotBooked(_selectedDate!, _startHour!, hour)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This time slot is already booked'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _endHour = hour;
     });
@@ -187,25 +506,20 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     return 0;
   }
 
-  double get _totalPrice {
-    // Calculate based on hours
-    final hours = _durationHours;
-    final pricePerHour = 10.0; // Default price, you can make this dynamic
-    return hours * pricePerHour;
+  num get _totalPrice {
+    if (_startHour != null && _endHour != null) {
+      return _getPriceForSlot(_startHour!, _endHour!);
+    }
+    return 0.0;
   }
 
   List<int> get _availableHours {
-    // Generate available hours from 6 AM to 10 PM
-    return List.generate(17, (i) => i + 6);
-  }
-
-  List<int> get _fromHours {
-    return _availableHours;
+    return _getAvailableHours();
   }
 
   List<int> get _toHours {
     if (_startHour == null) return [];
-    return _availableHours.where((h) => h > _startHour!).toList();
+    return _getAvailableEndHours(_startHour!);
   }
 
   @override
@@ -356,10 +670,15 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
             final isToday = DateUtils.isSameDay(d, DateTime.now());
             final isWeekend =
                 d.weekday == DateTime.saturday || d.weekday == DateTime.sunday;
-            final isPast = d.isBefore(DateTime.now()) && !isToday;
+            final isPast = _isDateInPast(d);
+
+            // Check if this date has any available slots
+            final hasAvailableSlots = _getAvailableHoursForDate(d).isNotEmpty;
 
             return GestureDetector(
-              onTap: isPast ? null : () => _onDateSelected(d),
+              onTap: isPast || !hasAvailableSlots
+                  ? null
+                  : () => _onDateSelected(d),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 decoration: BoxDecoration(
@@ -367,7 +686,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       ? AppTheme.kAccent
                       : isToday
                       ? AppTheme.kAccent.withOpacity(0.15)
-                      : isPast
+                      : isPast || !hasAvailableSlots
                       ? (isDark
                             ? AppTheme.kCardAlt.withOpacity(0.5)
                             : AppTheme.kLightCardAlt.withOpacity(0.5))
@@ -378,7 +697,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         ? AppTheme.kAccent
                         : isToday
                         ? AppTheme.kAccent.withOpacity(0.5)
-                        : isPast
+                        : isPast || !hasAvailableSlots
                         ? Colors.grey.withOpacity(0.3)
                         : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                     width: sel ? 1.5 : 1,
@@ -392,9 +711,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       style: TextStyle(
                         color: sel
                             ? const Color(0xFF0A1828)
-                            : isWeekend && !isPast
+                            : isWeekend && !isPast && hasAvailableSlots
                             ? AppTheme.kAccent.withOpacity(0.7)
-                            : isPast
+                            : isPast || !hasAvailableSlots
                             ? Colors.grey.withOpacity(0.5)
                             : (isDark
                                   ? AppTheme.kTextSub
@@ -411,7 +730,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             ? const Color(0xFF0A1828)
                             : isToday
                             ? AppTheme.kAccent
-                            : isPast
+                            : isPast || !hasAvailableSlots
                             ? Colors.grey.withOpacity(0.5)
                             : (isDark ? Colors.white : AppTheme.kLightText),
                         fontSize: 16,
@@ -426,7 +745,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       style: TextStyle(
                         color: sel
                             ? const Color(0xFF0A1828).withOpacity(0.7)
-                            : isPast
+                            : isPast || !hasAvailableSlots
                             ? Colors.grey.withOpacity(0.5)
                             : (isDark
                                   ? AppTheme.kTextSub
@@ -434,7 +753,12 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         fontSize: 8,
                       ),
                     ),
-                    if (isToday && !sel)
+                    if (!hasAvailableSlots && !sel && !isPast)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.block, color: Colors.grey, size: 8),
+                      ),
+                    if (isToday && !sel && hasAvailableSlots)
                       Container(
                         width: 4,
                         height: 4,
@@ -442,16 +766,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppTheme.kAccent,
-                        ),
-                      ),
-                    if (isPast && !sel)
-                      Container(
-                        width: 4,
-                        height: 4,
-                        margin: const EdgeInsets.only(top: 2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey.withOpacity(0.5),
                         ),
                       ),
                   ],
@@ -563,45 +877,136 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             fontWeight: FontWeight.w700,
                           ),
                         ),
+                        if (_isToday(_selectedDate!))
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.orange.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Text(
+                              'today'.tr(context),
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  _sectionLabel(
-                    'from_label'.tr(context).toUpperCase(),
-                    Icons.play_arrow_rounded,
-                    const Color(0xFF4CAF50),
-                    isDark,
-                  ),
-                  const SizedBox(height: 10),
-                  _horizontalChips(
-                    hours: _fromHours,
-                    selected: _startHour,
-                    selColor: const Color(0xFF4CAF50),
-                    isDark: isDark,
-                    onTap: _onStartHourSelected,
-                  ),
-                  const SizedBox(height: 20),
+                  if (_isLoadingBookings)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: AppTheme.kAccent,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Loading your bookings...',
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white70
+                                    : AppTheme.kLightTextSub,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (_availableHours.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _isToday(_selectedDate!)
+                                  ? 'no_available_slots_today'.tr(context)
+                                  : 'no_available_slots'.tr(context),
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    _sectionLabel(
+                      'from_label'.tr(context).toUpperCase(),
+                      Icons.play_arrow_rounded,
+                      const Color(0xFF4CAF50),
+                      isDark,
+                    ),
+                    const SizedBox(height: 10),
+                    _horizontalChips(
+                      hours: _availableHours,
+                      selected: _startHour,
+                      selColor: const Color(0xFF4CAF50),
+                      isDark: isDark,
+                      onTap: _onStartHourSelected,
+                    ),
+                    const SizedBox(height: 20),
 
-                  _sectionLabel(
-                    'to_label'.tr(context).toUpperCase(),
-                    Icons.stop_rounded,
-                    Colors.redAccent,
-                    isDark,
-                  ),
-                  const SizedBox(height: 10),
-                  _horizontalChips(
-                    hours: _toHours,
-                    selected: _endHour,
-                    selColor: Colors.redAccent,
-                    isDark: isDark,
-                    emptyMessage: _startHour == null
-                        ? 'pick_start_time_first'.tr(context)
-                        : 'no_available_end_times'.tr(context),
-                    onTap: _onEndHourSelected,
-                  ),
+                    _sectionLabel(
+                      'to_label'.tr(context).toUpperCase(),
+                      Icons.stop_rounded,
+                      Colors.redAccent,
+                      isDark,
+                    ),
+                    const SizedBox(height: 10),
+                    _horizontalChips(
+                      hours: _toHours,
+                      selected: _endHour,
+                      selColor: Colors.redAccent,
+                      isDark: isDark,
+                      emptyMessage: _startHour == null
+                          ? 'pick_start_time_first'.tr(context)
+                          : 'no_available_end_times'.tr(context),
+                      onTap: _onEndHourSelected,
+                    ),
+                  ],
 
                   if (_canConfirm) ...[
                     const SizedBox(height: 20),
@@ -663,7 +1068,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                 ),
                               ),
                               Text(
-                                '\$10/hr',
+                                '\$${_selectedCourtPrice.toStringAsFixed(0)}/hr',
                                 style: TextStyle(
                                   color: isDark
                                       ? AppTheme.kTextSub
@@ -685,6 +1090,16 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         ],
       ],
     );
+  }
+
+  // Helper method to check available hours for a specific date
+  List<int> _getAvailableHoursForDate(DateTime date) {
+    // Temporarily set selected date to check availability
+    final originalDate = _selectedDate;
+    _selectedDate = date;
+    final hours = _getAvailableHours();
+    _selectedDate = originalDate;
+    return hours;
   }
 
   String _getTranslatedDay(String day, BuildContext context) {

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
+import 'package:sportbook/feature/SportClub/model/dto/slot_dto.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/booking_flow/steps/step_payment.dart';
 import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
@@ -21,14 +25,23 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   int _step = 0;
   final _paymentKey = GlobalKey<StepPaymentState>();
 
+  late final SportClubService _clubService;
+
+  // State variables
+  SportClubModel? _clubWithSlots;
+  bool _isLoading = true;
+  String? _errorMessage;
+
   // Local state for booking
   String? _selectedCategory;
-  int? _selectedCourt;
+  int? _selectedCourtId; // This stores the slot ID
+  SlotDto? _selectedSlot; // This stores the full slot object
   DateTime? _selectedDate;
   TimeOfDay? _selectedStartTime;
   TimeOfDay? _selectedEndTime;
+  String? _selectedPaymentMethod;
 
-  bool get _skipCategory => widget.target.categories.length <= 1;
+  bool get _skipCategory => (_clubWithSlots?.categories ?? []).length <= 1;
   int get _totalSteps => _skipCategory ? 3 : 4;
   List<String> get _stepLabels => _skipCategory
       ? ['court'.tr(context), 'date_time'.tr(context), 'payment'.tr(context)]
@@ -46,13 +59,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       case 0:
         return _selectedCategory != null;
       case 1:
-        return _selectedCourt != null;
+        return _selectedCourtId != null;
       case 2:
         return _selectedDate != null &&
             _selectedStartTime != null &&
             _selectedEndTime != null;
       case 3:
-        return true;
+        return _selectedPaymentMethod != null;
       default:
         return false;
     }
@@ -60,16 +73,23 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   bool get _canConfirm {
     return _selectedCategory != null &&
-        _selectedCourt != null &&
+        _selectedCourtId != null &&
+        _selectedSlot != null &&
         _selectedDate != null &&
         _selectedStartTime != null &&
-        _selectedEndTime != null;
+        _selectedEndTime != null &&
+        _selectedPaymentMethod != null;
   }
 
-  double get _totalPrice {
-    // Calculate price based on selection
-    // Placeholder calculation
-    return (widget.target.favoriteCount + 10).toDouble();
+  int get _totalPrice {
+    if (_selectedSlot == null ||
+        _selectedStartTime == null ||
+        _selectedEndTime == null) {
+      return 0;
+    }
+
+    final durationInHours = _selectedEndTime!.hour - _selectedStartTime!.hour;
+    return _selectedSlot!.price * durationInHours;
   }
 
   String get _timeRangeLabel {
@@ -79,12 +99,63 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     return '';
   }
 
+  String get _formattedDate {
+    if (_selectedDate != null) {
+      final date = _selectedDate!;
+      final now = DateTime.now();
+      final tomorrow = now.add(const Duration(days: 1));
+
+      if (DateUtils.isSameDay(date, now)) {
+        return 'today'.tr(context);
+      } else if (DateUtils.isSameDay(date, tomorrow)) {
+        return 'tomorrow'.tr(context);
+      } else {
+        final months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        return '${months[date.month - 1]} ${date.day}, ${date.year}';
+      }
+    }
+    return '';
+  }
+
+  String get _courtName {
+    return _selectedSlot?.name ?? 'Court ${_selectedCourtId}';
+  }
+
+  int get _pricePerHour {
+    return _selectedSlot?.price ?? 0;
+  }
+
   @override
   void initState() {
     super.initState();
     _page = PageController();
-    if (_skipCategory && widget.target.categories.isNotEmpty) {
-      _selectedCategory = widget.target.categories.first.toString();
+    _clubService = getIt<SportClubService>();
+
+    // Check if we already have slots from the passed data
+    if (widget.target.slots != null && widget.target.slots!.isNotEmpty) {
+      setState(() {
+        _clubWithSlots = widget.target;
+        _isLoading = false;
+
+        if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
+          _selectedCategory = _clubWithSlots!.categories.first.name;
+        }
+      });
+    } else {
+      _fetchClubWithSlots();
     }
   }
 
@@ -92,6 +163,59 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   void dispose() {
     _page.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchClubWithSlots() async {
+    // Check if widget is still mounted before updating state
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final clubData = await _clubService.getClubByIdWithSlots(
+        widget.target.id,
+      );
+
+      // Check if widget is still mounted after async operation
+      if (!mounted) return;
+
+      if (clubData?.slots == null || clubData!.slots!.isEmpty) {
+        setState(() {
+          _clubWithSlots = widget.target;
+          _isLoading = false;
+
+          if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
+            _selectedCategory = _clubWithSlots!.categories.first.name;
+          }
+        });
+        return;
+      }
+
+      setState(() {
+        _clubWithSlots = clubData;
+        _isLoading = false;
+
+        if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
+          _selectedCategory = _clubWithSlots!.categories.first.name;
+        }
+      });
+    } catch (e) {
+      // Check if widget is still mounted before updating state
+      if (!mounted) return;
+
+      setState(() {
+        _clubWithSlots = widget.target;
+        _isLoading = false;
+        _errorMessage = null;
+
+        if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
+          _selectedCategory = _clubWithSlots!.categories.first.name;
+        }
+      });
+    }
   }
 
   void _next() {
@@ -123,36 +247,171 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   void _onPaymentConfirmed() {
-    // Handle booking confirmation
-    // You can add API call here
-    Navigator.of(context).push(
+    // ✅ Check if widget is still mounted
+    if (!mounted) return;
+
+    if (_selectedSlot == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a valid court'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Format times in 24-hour format for API
+    final startTimeStr = _selectedStartTime != null
+        ? '${_selectedStartTime!.hour.toString().padLeft(2, '0')}:${_selectedStartTime!.minute.toString().padLeft(2, '0')}'
+        : '00:00';
+    final endTimeStr = _selectedEndTime != null
+        ? '${_selectedEndTime!.hour.toString().padLeft(2, '0')}:${_selectedEndTime!.minute.toString().padLeft(2, '0')}'
+        : '00:00';
+
+    // Get payment method in API format
+    String paymentMethodApi = 'qr_code';
+    switch (_selectedPaymentMethod?.toLowerCase()) {
+      case 'khqr':
+        paymentMethodApi = 'qr_code';
+        break;
+      case 'cash':
+        paymentMethodApi = 'cash';
+        break;
+      case 'aba':
+        paymentMethodApi = 'aba';
+        break;
+      case 'wing':
+        paymentMethodApi = 'wing';
+        break;
+      case 'pi_pay':
+        paymentMethodApi = 'pi_pay';
+        break;
+      case 'true_money':
+        paymentMethodApi = 'true_money';
+        break;
+      default:
+        paymentMethodApi = 'qr_code';
+    }
+
+    final bookingData = {
+      'club': _clubWithSlots ?? widget.target,
+      'category': _selectedCategory,
+      'court': _selectedSlot!.id,
+      'courtName': _courtName,
+      'slot': _selectedSlot,
+      'date': _selectedDate,
+      'startTime': startTimeStr,
+      'endTime': endTimeStr,
+      'startTimeOfDay': _selectedStartTime,
+      'endTimeOfDay': _selectedEndTime,
+      'paymentMethod': paymentMethodApi,
+      'totalPrice': _totalPrice,
+      'pricePerHour': _pricePerHour,
+    };
+
+    // ✅ Save the current context for navigation
+    final currentContext = context;
+
+    // ✅ Navigate to success page with proper callbacks
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => PaymentSuccessPage(
-          onGoHome: () => Navigator.of(context).popUntil((r) => r.isFirst),
-          onViewBooking: () {},
+          bookingData: bookingData,
+          onGoHome: () {
+            // ✅ Pop until home screen is reached
+            Navigator.of(context).popUntil((route) {
+              return route.settings.name == AppRoutes.home;
+            });
+          },
+          onViewBooking: () {
+            // ✅ Push bookings and remove everything else
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              AppRoutes.allbookings,
+              (route) => false,
+              arguments: true,
+            );
+          },
         ),
       ),
     );
   }
 
+  // ✅ Safe navigation callback for Go Home
+  void _safeNavigateHome() {
+    // Check if mounted before navigation
+    if (!mounted) return;
+
+    try {
+      final context = this.context;
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context).popUntil((r) => r.isFirst);
+      } else {
+        // If can't pop to first, just pop
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      // If navigation fails, just pop
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {}
+    }
+  }
+
+  // ✅ Safe navigation callback for View Booking
+  void _safeNavigateBooking() {
+    // Check if mounted before navigation
+    if (!mounted) return;
+
+    try {
+      final context = this.context;
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context).popUntil((r) => r.isFirst);
+      } else {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {}
+    }
+  }
+
   // Callbacks from steps
   void _onCategorySelected(String category) {
+    if (!mounted) return;
     setState(() {
       _selectedCategory = category;
     });
   }
 
-  void _onCourtSelected(int court) {
+  void _onCourtSelected(int courtId) {
+    if (!mounted) return;
+
+    // Find the full slot object
+    final slot = _clubWithSlots?.slots?.firstWhere(
+      (s) => s.id == courtId,
+      orElse: () => _clubWithSlots!.slots!.first,
+    );
+
     setState(() {
-      _selectedCourt = court;
+      _selectedCourtId = courtId;
+      _selectedSlot = slot;
     });
   }
 
   void _onDateTimeSelected(DateTime date, TimeOfDay start, TimeOfDay end) {
+    if (!mounted) return;
     setState(() {
       _selectedDate = date;
       _selectedStartTime = start;
       _selectedEndTime = end;
+    });
+  }
+
+  void _onPaymentMethodSelected(String method) {
+    if (!mounted) return;
+    setState(() {
+      _selectedPaymentMethod = method;
     });
   }
 
@@ -163,78 +422,236 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: _buildAppBar(isDark),
-      body: Column(
+      body: _isLoading
+          ? _buildLoadingState(isDark)
+          : _errorMessage != null
+          ? _buildErrorState(isDark)
+          : _buildContent(isDark),
+    );
+  }
+
+  Widget _buildLoadingState(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _StepIndicator(
-            steps: _stepLabels,
-            currentStep: _step,
-            isDark: isDark,
+          const CircularProgressIndicator(
+            color: AppTheme.kAccent,
+            strokeWidth: 3,
           ),
-          Expanded(
-            child: PageView(
-              controller: _page,
-              physics: const NeverScrollableScrollPhysics(),
-              children: _skipCategory
-                  ? [
-                      StepCourt(
-                        onNext: _next,
-                        onCourtSelected: _onCourtSelected,
-                        selectedCourt: _selectedCourt,
-                      ),
-                      StepDateAndTime(
-                        onConfirm: _next,
-                        onDateTimeSelected: _onDateTimeSelected,
-                        selectedDate: _selectedDate,
-                        selectedStartTime: _selectedStartTime,
-                        selectedEndTime: _selectedEndTime,
-                      ),
-                      StepPayment(
-                        key: _paymentKey,
-                        onConfirm: _onPaymentConfirmed,
-                      ),
-                    ]
-                  : [
-                      StepCategory(
-                        onNext: _next,
-                        onCategorySelected: _onCategorySelected,
-                        selectedCategory: _selectedCategory,
-                        categories: widget.target.categories,
-                      ),
-                      StepCourt(
-                        onNext: _next,
-                        onCourtSelected: _onCourtSelected,
-                        selectedCourt: _selectedCourt,
-                      ),
-                      StepDateAndTime(
-                        onConfirm: _next,
-                        onDateTimeSelected: _onDateTimeSelected,
-                        selectedDate: _selectedDate,
-                        selectedStartTime: _selectedStartTime,
-                        selectedEndTime: _selectedEndTime,
-                      ),
-                      StepPayment(
-                        key: _paymentKey,
-                        onConfirm: _onPaymentConfirmed,
-                      ),
-                    ],
+          const SizedBox(height: 16),
+          Text(
+            'loading_courts'.tr(context),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+              fontSize: 14,
             ),
-          ),
-          _BottomBar(
-            step: _step,
-            totalSteps: _totalSteps,
-            canProceed: _canProceed,
-            onBack: _back,
-            onNext: _next,
-            onConfirm: _handleConfirm,
-            selectedCategory: _selectedCategory,
-            selectedCourt: _selectedCourt,
-            selectedDate: _selectedDate,
-            timeRangeLabel: _timeRangeLabel,
-            totalPrice: _totalPrice,
-            isDark: isDark,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorState(bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              color: Colors.redAccent,
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'failed_to_load_courts'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage ?? 'unknown_error'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _fetchClubWithSlots,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.kAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'retry'.tr(context),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'go_back'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(bool isDark) {
+    final hasSlots =
+        _clubWithSlots?.slots != null && _clubWithSlots!.slots!.isNotEmpty;
+
+    if (!hasSlots) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.sports,
+                color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+                size: 64,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'no_courts_available'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'please_check_back_later'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        _StepIndicator(steps: _stepLabels, currentStep: _step, isDark: isDark),
+        Expanded(
+          child: PageView(
+            controller: _page,
+            physics: const NeverScrollableScrollPhysics(),
+            children: _skipCategory
+                ? [
+                    StepCourt(
+                      onNext: _next,
+                      onCourtSelected: _onCourtSelected,
+                      selectedCourt: _selectedCourtId,
+                      club: _clubWithSlots,
+                      selectedCategory: _selectedCategory,
+                    ),
+                    StepDateAndTime(
+                      onConfirm: _next,
+                      onDateTimeSelected: _onDateTimeSelected,
+                      selectedDate: _selectedDate,
+                      selectedStartTime: _selectedStartTime,
+                      selectedEndTime: _selectedEndTime,
+                      selectedCourt: _selectedCourtId,
+                      selectedCategory: _selectedCategory,
+                      club: _clubWithSlots,
+                    ),
+                    StepPayment(
+                      key: _paymentKey,
+                      onConfirm: _onPaymentConfirmed,
+                      onPaymentMethodSelected: _onPaymentMethodSelected,
+                      selectedPaymentMethod: _selectedPaymentMethod,
+                      totalPrice: _totalPrice,
+                      selectedSport: _selectedCategory,
+                      courtName: _courtName,
+                      date: _formattedDate,
+                      timeRange: _timeRangeLabel,
+                    ),
+                  ]
+                : [
+                    StepCategory(
+                      onNext: _next,
+                      onCategorySelected: _onCategorySelected,
+                      selectedCategory: _selectedCategory,
+                      categories: _clubWithSlots?.categories ?? [],
+                    ),
+                    StepCourt(
+                      onNext: _next,
+                      onCourtSelected: _onCourtSelected,
+                      selectedCourt: _selectedCourtId,
+                      club: _clubWithSlots,
+                      selectedCategory: _selectedCategory,
+                    ),
+                    StepDateAndTime(
+                      onConfirm: _next,
+                      onDateTimeSelected: _onDateTimeSelected,
+                      selectedDate: _selectedDate,
+                      selectedStartTime: _selectedStartTime,
+                      selectedEndTime: _selectedEndTime,
+                      selectedCourt: _selectedCourtId,
+                      selectedCategory: _selectedCategory,
+                      club: _clubWithSlots,
+                    ),
+                    StepPayment(
+                      key: _paymentKey,
+                      onConfirm: _onPaymentConfirmed,
+                      onPaymentMethodSelected: _onPaymentMethodSelected,
+                      selectedPaymentMethod: _selectedPaymentMethod,
+                      totalPrice: _totalPrice,
+                      selectedSport: _selectedCategory,
+                      courtName: _courtName,
+                      date: _formattedDate,
+                      timeRange: _timeRangeLabel,
+                    ),
+                  ],
+          ),
+        ),
+        _BottomBar(
+          step: _step,
+          totalSteps: _totalSteps,
+          canProceed: _canProceed,
+          onBack: _back,
+          onNext: _next,
+          onConfirm: _handleConfirm,
+          selectedCategory: _selectedCategory,
+          selectedCourt: _selectedCourtId,
+          selectedDate: _selectedDate,
+          timeRangeLabel: _timeRangeLabel,
+          totalPrice: _totalPrice,
+          isDark: isDark,
+          canConfirm: _canConfirm,
+          courtName: _courtName,
+        ),
+      ],
     );
   }
 
@@ -409,8 +826,10 @@ class _BottomBar extends StatelessWidget {
   final int? selectedCourt;
   final DateTime? selectedDate;
   final String timeRangeLabel;
-  final double totalPrice;
+  final int totalPrice;
   final bool isDark;
+  final bool canConfirm;
+  final String? courtName;
 
   const _BottomBar({
     required this.step,
@@ -425,14 +844,11 @@ class _BottomBar extends StatelessWidget {
     required this.timeRangeLabel,
     required this.totalPrice,
     required this.isDark,
+    required this.canConfirm,
+    this.courtName,
   });
 
   bool get isLastStep => step == totalSteps - 1;
-  bool get canConfirm =>
-      selectedCategory != null &&
-      selectedCourt != null &&
-      selectedDate != null &&
-      timeRangeLabel.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -466,61 +882,93 @@ class _BottomBar extends StatelessWidget {
                   color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
                 ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  if (selectedCategory != null) ...[
-                    Text(
-                      selectedCategory!,
-                      style: const TextStyle(
-                        color: AppTheme.kAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                  Row(
+                    children: [
+                      if (selectedCategory != null) ...[
+                        Text(
+                          selectedCategory!,
+                          style: const TextStyle(
+                            color: AppTheme.kAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        _dot(),
+                      ],
+                      if (courtName != null && courtName!.isNotEmpty) ...[
+                        Text(
+                          courtName!,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppTheme.kLightText,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        _dot(),
+                      ] else if (selectedCourt != null) ...[
+                        Text(
+                          'Court ${selectedCourt}',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : AppTheme.kLightText,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        _dot(),
+                      ],
+                      if (selectedDate != null) ...[
+                        Text(
+                          _formatDate(selectedDate!, context),
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white70
+                                : AppTheme.kLightTextSub,
+                            fontSize: 12,
+                          ),
+                        ),
+                        _dot(),
+                      ],
+                      Expanded(
+                        child: Text(
+                          timeRangeLabel,
+                          style: const TextStyle(
+                            color: AppTheme.kAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    _dot(),
-                  ],
-                  if (selectedCourt != null) ...[
-                    Text(
-                      'court_label'
-                          .tr(context)
-                          .replaceAll('{number}', '$selectedCourt'),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : AppTheme.kLightText,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                      Text(
+                        '\$${totalPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppTheme.kLightText,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    _dot(),
-                  ],
-                  if (selectedDate != null) ...[
-                    Text(
-                      _fmtDate(selectedDate!, context),
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-                        fontSize: 12,
-                      ),
-                    ),
-                    _dot(),
-                  ],
-                  Expanded(
-                    child: Text(
-                      timeRangeLabel,
-                      style: const TextStyle(
-                        color: AppTheme.kAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    ],
                   ),
-                  Text(
-                    '\$${totalPrice.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : AppTheme.kLightText,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                  if (selectedDate != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${totalPrice.toStringAsFixed(2)} ${"usd".tr(context)}',
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white54
+                                  : AppTheme.kLightTextSub,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -556,11 +1004,11 @@ class _BottomBar extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     height: 52,
                     decoration: BoxDecoration(
-                      color: canProceed || (isLastStep && canConfirm)
+                      color: (isLastStep ? canConfirm : canProceed)
                           ? AppTheme.kAccent
                           : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                       borderRadius: BorderRadius.circular(26),
-                      boxShadow: canProceed || (isLastStep && canConfirm)
+                      boxShadow: (isLastStep ? canConfirm : canProceed)
                           ? [
                               BoxShadow(
                                 color: AppTheme.kAccent.withOpacity(0.35),
@@ -579,7 +1027,7 @@ class _BottomBar extends StatelessWidget {
                               ? 'confirm_booking'.tr(context)
                               : 'next'.tr(context),
                           style: TextStyle(
-                            color: canProceed || (isLastStep && canConfirm)
+                            color: (isLastStep ? canConfirm : canProceed)
                                 ? const Color(0xFF0A1828)
                                 : (isDark
                                       ? Colors.white38
@@ -588,7 +1036,7 @@ class _BottomBar extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        if (canProceed || (isLastStep && canConfirm)) ...[
+                        if (isLastStep ? canConfirm : canProceed) ...[
                           const SizedBox(width: 6),
                           Icon(
                             isLastStep
@@ -622,22 +1070,30 @@ class _BottomBar extends StatelessWidget {
     ),
   );
 
-  String _fmtDate(DateTime d, BuildContext context) {
-    const m = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final isToday = DateUtils.isSameDay(d, DateTime.now());
-    return isToday ? 'today'.tr(context) : '${m[d.month - 1]} ${d.day}';
+  String _formatDate(DateTime d, BuildContext context) {
+    final now = DateTime.now();
+    final tomorrow = now.add(const Duration(days: 1));
+
+    if (DateUtils.isSameDay(d, now)) {
+      return 'today'.tr(context);
+    } else if (DateUtils.isSameDay(d, tomorrow)) {
+      return 'tomorrow'.tr(context);
+    } else {
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${months[d.month - 1]} ${d.day}';
+    }
   }
 }

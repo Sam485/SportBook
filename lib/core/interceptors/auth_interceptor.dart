@@ -1,11 +1,27 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/feature/Auth/service/auth_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 
 class AuthInterceptor extends Interceptor {
   bool _isRefreshing = false;
   final List<({RequestOptions options, ErrorInterceptorHandler handler})>
   _pendingRequests = [];
+
+  // Lazy initialization to avoid circular dependencies
+  AuthService? _authService;
+  TokenService? _tokenService;
+
+  AuthService get _authServiceInstance {
+    _authService ??= getIt<AuthService>();
+    return _authService!;
+  }
+
+  TokenService get _tokenServiceInstance {
+    _tokenService ??= getIt<TokenService>();
+    return _tokenService!;
+  }
 
   @override
   Future<void> onRequest(
@@ -19,28 +35,30 @@ class AuthInterceptor extends Interceptor {
     }
 
     try {
-      final tokenService = getIt<TokenService>();
-
-      // Check if token is valid and not expired
-      final isValid = await tokenService.hasValidTokenAsync();
-
-      if (!isValid) {
-        // Try to refresh token
-        final refreshed = await tokenService.refreshAccessToken();
-        if (!refreshed) {
-          // If refresh fails, continue without token (will get 401)
-          handler.next(options);
-          return;
+      // Check if token exists and is valid
+      final token = await _tokenServiceInstance.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        // Check if token is expired
+        final isValid = await _tokenServiceInstance.hasValidTokenAsync();
+        if (!isValid) {
+          // Token expired - try to refresh
+          final refreshed = await _tokenServiceInstance.refreshAccessToken();
+          if (!refreshed) {
+            // Refresh failed - redirect to login
+            _authServiceInstance.logout();
+            handler.next(options);
+            return;
+          }
         }
-      }
-
-      // Get the token after potential refresh
-      final accessToken = await tokenService.getAccessToken();
-      if (accessToken != null && accessToken.isNotEmpty) {
-        options.headers['Authorization'] = 'Bearer $accessToken';
+        // Get the token after potential refresh
+        final accessToken = await _tokenServiceInstance.getAccessToken();
+        if (accessToken != null && accessToken.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $accessToken';
+        }
       }
     } catch (e) {
       print('Error adding auth token: $e');
+      // Don't call logout here to avoid recursion
     }
 
     handler.next(options);
@@ -54,23 +72,21 @@ class AuthInterceptor extends Interceptor {
     // Handle token expiration (401)
     if (err.response?.statusCode == 401 &&
         !_isAuthEndpoint(err.requestOptions.path)) {
+      // Prevent recursive refresh attempts
+      if (_isRefreshing) {
+        _pendingRequests.add((options: err.requestOptions, handler: handler));
+        return;
+      }
+
       try {
-        final tokenService = getIt<TokenService>();
-
-        // If already refreshing, add to queue
-        if (_isRefreshing) {
-          _pendingRequests.add((options: err.requestOptions, handler: handler));
-          return;
-        }
-
         _isRefreshing = true;
 
         // Try to refresh the token
-        final refreshed = await tokenService.refreshAccessToken();
+        final refreshed = await _tokenServiceInstance.refreshAccessToken();
 
         if (refreshed) {
           // Get new token
-          final newToken = await tokenService.getAccessToken();
+          final newToken = await _tokenServiceInstance.getAccessToken();
           if (newToken != null && newToken.isNotEmpty) {
             // Update the original request with new token
             err.requestOptions.headers['Authorization'] = 'Bearer $newToken';
@@ -100,14 +116,16 @@ class AuthInterceptor extends Interceptor {
         // Refresh failed - clear tokens and redirect to login
         _isRefreshing = false;
         _pendingRequests.clear();
-        await tokenService.clearToken();
 
-        // You might want to emit a logout event here
+        // Use AuthService to handle logout
+        _authServiceInstance.logout();
+
         handler.next(err);
       } catch (e) {
         print('Token refresh error: $e');
         _isRefreshing = false;
         _pendingRequests.clear();
+        // Don't call logout here to avoid recursion
         handler.next(err);
       }
       return;

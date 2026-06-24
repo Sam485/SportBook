@@ -9,10 +9,17 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme.dart';
 import '../../translations/app_translations.dart';
 
-/// Full-screen map picker. Returns a [String] city/address label, or null if
-/// the user cancels.
 class MapPickerScreen extends StatefulWidget {
-  const MapPickerScreen({super.key});
+  final double? initialLat;
+  final double? initialLng;
+  final String? initialLabel;
+
+  const MapPickerScreen({
+    super.key,
+    this.initialLat,
+    this.initialLng,
+    this.initialLabel,
+  });
 
   @override
   State<MapPickerScreen> createState() => _MapPickerScreenState();
@@ -20,31 +27,36 @@ class MapPickerScreen extends StatefulWidget {
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
   // ── Map state ───────────────────────────────────────────────────────────────
-  LatLng _pinLocation = const LatLng(40.7128, -74.0060);
+  late LatLng _pinLocation;
   final MapController _mapController = MapController();
 
   bool _isResolving = false;
   bool _isFetchingGps = false;
-  String _resolvedLabel = 'New York';
+  String _resolvedLabel = '';
+  bool _isInitialLoad = true;
+  bool _isDisposed = false;
 
   // ── Search state ────────────────────────────────────────────────────────────
   final TextEditingController _searchCtrl = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-  bool _isSearching = false; // field is focused / active
-  bool _isGeocoding = false; // forward-geocode in progress
+  bool _isSearching = false;
+  bool _isGeocoding = false;
   List<_SearchResult> _results = [];
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _resolveLabel(_pinLocation);
-
+    
+    // Initialize with existing location or default
+    _initializeLocation();
+    
     _searchFocus.addListener(() {
       if (!_searchFocus.hasFocus) {
-        // Small delay so a result tap can register before we close
         Future.delayed(const Duration(milliseconds: 150), () {
-          if (mounted) setState(() => _isSearching = false);
+          if (mounted && !_isDisposed) {
+            setState(() => _isSearching = false);
+          }
         });
       }
     });
@@ -52,32 +64,83 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _debounce?.cancel();
     _searchCtrl.dispose();
     _searchFocus.dispose();
     super.dispose();
   }
 
+  // ── Initialize Location ──────────────────────────────────────────────────────
+
+  void _initializeLocation() {
+    // Use existing coordinates if provided
+    if (widget.initialLat != null && widget.initialLng != null) {
+      _pinLocation = LatLng(widget.initialLat!, widget.initialLng!);
+      _resolvedLabel = widget.initialLabel ?? 'Current Location';
+    } else {
+      // Default to Phnom Penh
+      _pinLocation = const LatLng(11.5564, 104.9282);
+      _resolvedLabel = 'Phnom Penh';
+    }
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    if (_isDisposed) return;
+    
+    final status = await Permission.location.status;
+    
+    if (status.isGranted) {
+      await _goToCurrentLocation(animateMap: false);
+    } else if (status.isDenied) {
+      final newStatus = await Permission.location.request();
+      if (newStatus.isGranted) {
+        await _goToCurrentLocation(animateMap: false);
+      }
+    }
+    
+    if (_isDisposed) return;
+    
+    // Resolve label for the current pin location
+    await _resolveLabel(_pinLocation);
+    
+    setState(() {
+      _isInitialLoad = false;
+    });
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        _mapController.move(_pinLocation, 14);
+      }
+    });
+  }
+
   // ── Reverse-geocode ──────────────────────────────────────────────────────────
 
   Future<void> _resolveLabel(LatLng point) async {
-    setState(() => _isResolving = true);
+    if (_isDisposed) return;
+    
+    if (mounted) {
+      setState(() => _isResolving = true);
+    }
     try {
       final marks = await placemarkFromCoordinates(
         point.latitude,
         point.longitude,
       );
-      final p = marks.first;
-      final label = (p.locality?.isNotEmpty == true)
-          ? p.locality!
-          : (p.subAdministrativeArea?.isNotEmpty == true)
-          ? p.subAdministrativeArea!
-          : p.administrativeArea ??
-                '${point.latitude.toStringAsFixed(4)}, '
-                    '${point.longitude.toStringAsFixed(4)}';
-      if (mounted) setState(() => _resolvedLabel = label);
+      if (marks.isNotEmpty && mounted && !_isDisposed) {
+        final p = marks.first;
+        final label = (p.locality?.isNotEmpty == true)
+            ? p.locality!
+            : (p.subAdministrativeArea?.isNotEmpty == true)
+            ? p.subAdministrativeArea!
+            : p.administrativeArea ??
+                  '${point.latitude.toStringAsFixed(4)}, '
+                  '${point.longitude.toStringAsFixed(4)}';
+        setState(() => _resolvedLabel = label);
+      }
     } catch (_) {
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(
           () => _resolvedLabel =
               '${point.latitude.toStringAsFixed(4)}, '
@@ -85,30 +148,42 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isResolving = false);
+      if (mounted && !_isDisposed) {
+        setState(() => _isResolving = false);
+      }
     }
   }
 
   // ── Forward-geocode (search) ─────────────────────────────────────────────────
 
   void _onSearchChanged(String query) {
+    if (_isDisposed) return;
+    
     _debounce?.cancel();
     if (query.trim().isEmpty) {
-      setState(() {
-        _results = [];
-        _isGeocoding = false;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _results = [];
+          _isGeocoding = false;
+        });
+      }
       return;
     }
-    setState(() => _isGeocoding = true);
+    
+    if (mounted && !_isDisposed) {
+      setState(() => _isGeocoding = true);
+    }
+    
     _debounce = Timer(const Duration(milliseconds: 600), () async {
+      if (_isDisposed) return;
+      
       try {
         final locations = await locationFromAddress(query.trim());
-        if (!mounted) return;
+        if (!mounted || _isDisposed) return;
+        
         final results = <_SearchResult>[];
         for (final loc in locations.take(5)) {
           final pt = LatLng(loc.latitude, loc.longitude);
-          // Quick reverse to get a readable label for each hit
           String label =
               '${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}';
           try {
@@ -131,22 +206,27 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           } catch (_) {}
           results.add(_SearchResult(label: label, point: pt));
         }
-        if (mounted)
+        
+        if (mounted && !_isDisposed) {
           setState(() {
             _results = results;
             _isGeocoding = false;
           });
+        }
       } catch (_) {
-        if (mounted)
+        if (mounted && !_isDisposed) {
           setState(() {
             _results = [];
             _isGeocoding = false;
           });
+        }
       }
     });
   }
 
   void _selectResult(_SearchResult result) {
+    if (_isDisposed) return;
+    
     _searchCtrl.text = result.label;
     _searchFocus.unfocus();
     setState(() {
@@ -159,6 +239,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   void _clearSearch() {
+    if (_isDisposed) return;
+    
     _searchCtrl.clear();
     setState(() {
       _results = [];
@@ -168,50 +250,84 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   // ── GPS ──────────────────────────────────────────────────────────────────────
 
-  Future<void> _goToCurrentLocation() async {
-    setState(() => _isFetchingGps = true);
+  Future<void> _goToCurrentLocation({bool animateMap = true}) async {
+    if (_isDisposed) return;
+    
+    if (mounted) {
+      setState(() => _isFetchingGps = true);
+    }
+    
     try {
       var status = await Permission.location.status;
       if (status.isDenied) status = await Permission.location.request();
       if (!status.isGranted) {
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('location_permission_denied'.tr(context)),
+            const SnackBar(
+              content: Text('Location permission denied'),
               behavior: SnackBarBehavior.floating,
             ),
           );
         }
         return;
       }
+
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted && !_isDisposed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location services are off'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
+          accuracy: LocationAccuracy.high,
         ),
       );
+      
       final newPin = LatLng(pos.latitude, pos.longitude);
-      _mapController.move(newPin, 14);
+      
+      if (_isDisposed) return;
+      
       setState(() => _pinLocation = newPin);
+      
       await _resolveLabel(newPin);
-      // Sync search field to new label
-      if (mounted) _searchCtrl.text = _resolvedLabel;
+      
+      if (mounted && !_isDisposed) {
+        _searchCtrl.text = _resolvedLabel;
+        if (animateMap) {
+          _mapController.move(newPin, 14);
+        }
+      }
     } catch (_) {
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('could_not_get_location'.tr(context)),
+          const SnackBar(
+            content: Text('Could not get location'),
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isFetchingGps = false);
+      if (mounted && !_isDisposed) {
+        setState(() => _isFetchingGps = false);
+      }
     }
   }
 
   // ── Confirm ──────────────────────────────────────────────────────────────────
 
-  void _confirm() => Navigator.pop(context, _resolvedLabel);
+  void _confirm() {
+    if (!_isDisposed && mounted) {
+      Navigator.pop(context, _resolvedLabel);
+    }
+  }
 
   // ── Build ────────────────────────────────────────────────────────────────────
 
@@ -221,11 +337,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-      // Dismiss keyboard when tapping the map
       body: GestureDetector(
         onTap: () {
           _searchFocus.unfocus();
-          setState(() => _isSearching = false);
+          if (mounted && !_isDisposed) {
+            setState(() => _isSearching = false);
+          }
         },
         child: Stack(
           children: [
@@ -234,20 +351,21 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: _pinLocation,
-                initialZoom: 12,
+                initialZoom: 14,
                 onPositionChanged: (MapCamera camera, bool hasGesture) {
-                  if (hasGesture) {
+                  if (hasGesture && mounted && !_isDisposed) {
                     setState(() => _pinLocation = camera.center);
                   }
                 },
                 onMapEvent: (event) {
-                  if (event is MapEventMoveEnd ||
-                      event is MapEventScrollWheelZoom) {
+                  if ((event is MapEventMoveEnd ||
+                      event is MapEventScrollWheelZoom) && !_isDisposed) {
                     _resolveLabel(_pinLocation);
-                    // Keep search field in sync when map is dragged manually
                     if (!_isSearching) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) _searchCtrl.text = _resolvedLabel;
+                        if (mounted && !_isDisposed) {
+                          _searchCtrl.text = _resolvedLabel;
+                        }
                       });
                     }
                   }
@@ -283,7 +401,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           // Back
                           _CircleButton(
                             isDark: isDark,
-                            onTap: () => Navigator.pop(context),
+                            onTap: () {
+                              if (!_isDisposed && mounted) {
+                                Navigator.pop(context);
+                              }
+                            },
                             child: Icon(
                               Icons.arrow_back_rounded,
                               color: isDark
@@ -330,8 +452,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                     child: TextField(
                                       controller: _searchCtrl,
                                       focusNode: _searchFocus,
-                                      onTap: () =>
-                                          setState(() => _isSearching = true),
+                                      onTap: () {
+                                        if (mounted && !_isDisposed) {
+                                          setState(() => _isSearching = true);
+                                        }
+                                      },
                                       onChanged: _onSearchChanged,
                                       textInputAction: TextInputAction.search,
                                       onSubmitted: (v) => _onSearchChanged(v),
@@ -343,9 +468,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                         fontWeight: FontWeight.w500,
                                       ),
                                       decoration: InputDecoration(
-                                        hintText: 'search_location_hint'.tr(
-                                          context,
-                                        ),
+                                        hintText: 'Search location...',
                                         hintStyle: TextStyle(
                                           color: isDark
                                               ? AppTheme.kTextSub
@@ -357,7 +480,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                       ),
                                     ),
                                   ),
-                                  // Clear button
                                   if (_searchCtrl.text.isNotEmpty)
                                     GestureDetector(
                                       onTap: _clearSearch,
@@ -386,7 +508,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           _CircleButton(
                             isDark: isDark,
                             isLoading: _isFetchingGps,
-                            onTap: _isFetchingGps ? null : _goToCurrentLocation,
+                            onTap: _isFetchingGps ? null : () => _goToCurrentLocation(animateMap: true),
                             child: Icon(
                               Icons.my_location_rounded,
                               color: AppTheme.kAccent,
@@ -478,7 +600,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                'searching'.tr(context),
+                                'Searching...',
                                 style: TextStyle(
                                   color: isDark
                                       ? AppTheme.kTextSub
@@ -545,7 +667,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             const SizedBox(width: 6),
                             Text(
                               _isResolving
-                                  ? 'resolving'.tr(context)
+                                  ? 'Loading...'
                                   : _resolvedLabel,
                               style: TextStyle(
                                 color: isDark
@@ -581,7 +703,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             children: [
                               const Icon(Icons.check_circle_rounded, size: 18),
                               const SizedBox(width: 8),
-                              Text('confirm_location'.tr(context)),
+                              Text('Confirm Location'),
                             ],
                           ),
                         ),

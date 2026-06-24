@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/static/models/models.dart';
 import '../../core/theme.dart';
-import '../../feature/static/models/models.dart';
+import '../../translations/app_translations.dart'; // ✅ Import translations
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 class SectionHeader extends StatelessWidget {
   final String title;
-  final String actionLabel;
+  final String? actionLabel; // ✅ Make optional
   final VoidCallback? onAction;
+  final bool isDark; // ✅ Make optional with default
 
   const SectionHeader({
     super.key,
     required this.title,
-    this.actionLabel = 'view_all',
+    this.actionLabel,
     this.onAction,
-    required bool isDark,
+    this.isDark = false, // ✅ Default value
   });
 
   @override
@@ -34,17 +36,19 @@ class SectionHeader extends StatelessWidget {
               letterSpacing: -0.3,
             ),
           ),
-          GestureDetector(
-            onTap: onAction,
-            child: Text(
-              actionLabel,
-              style: const TextStyle(
-                color: AppTheme.kAccent,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+          if (onAction != null) // ✅ Only show if onAction is provided
+            GestureDetector(
+              onTap: onAction,
+              child: Text(
+                actionLabel ??
+                    'view_all'.tr(context), // ✅ Use translation with fallback
+                style: const TextStyle(
+                  color: AppTheme.kAccent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

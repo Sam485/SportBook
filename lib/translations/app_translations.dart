@@ -37,6 +37,11 @@ class AppTranslations {
       'sport_tennis': 'Tennis',
       'sport_badminton': 'Badminton',
       'sport_gym': 'Gym',
+      'sport_volleyball': 'Volleyball',
+      'sport_swimming': 'Swimming',
+      'sport_yoga': 'Yoga',
+      'sport_boxing': 'Boxing',
+      'sport_running': 'Running',
 
       // ---------------------- Navigation ----------------------------
       'home': 'Home',
@@ -82,12 +87,27 @@ class AppTranslations {
       'favorites_empty': 'No favorite clubs yet',
       'favorites_hint': 'Start favoriting clubs you love!',
       'explore_clubs': 'Explore Clubs',
-
-      // ---------------------- Explore Screen ----------------------------
-      'nearby': 'Nearby',
-      'no_nearby_clubs': 'No nearby club found!',
+      'no_upcoming_bookings': 'No Upcoming Bookings',
+      'book_a_club_to_get_started': 'Book a club to get started',
+      'browse_clubs': 'Browse Clubs',
+      'loading_courts': 'Loading courts...',
+      'no_courts_available': 'No courts available',
+      'please_check_back_later': 'Please check back later',
+      'failed_to_load_courts': 'Failed to load courts',
+      'go_back': 'Go Back',
+      'unknown_error': 'Unknown error occurred',
+      'some_courts_unavailable': 'Some courts are currently unavailable',
+      'end_of_list': 'You\'ve reached the end',
+      'loading_clubs': 'Loading clubs...',
+      'loading_more': 'Loading more...',
+      'all_clubs': 'All Clubs',
+      'no_clubs_available': 'No clubs available',
+      'try_adjusting_search': 'Try adjusting your search terms',
+      'search_clubs': 'Search clubs...',
+      'no_available_slots': 'No available slots for this date',
+      'no_available_slots_today': 'No available slots for today',
+      'no_available_end_times': 'No available end times',
       'no_results_for': 'No results found for "{query}"',
-      'search_hint': 'Search clubs, sports...',
 
       // ---------------------- Booking ----------------------------
       'search': 'Search',
@@ -111,6 +131,7 @@ class AppTranslations {
           'Are you sure you want to cancel "{title}"?',
       'reschedule': 'Reschedule',
       'reschedule_coming_soon': 'Reschedule feature coming soon',
+      'processing_booking': 'Processing booking...',
 
       // ---------------------- Booking Flow ----------------------------
       'court': 'Court',
@@ -120,6 +141,30 @@ class AppTranslations {
       'next': 'Next',
       'court_label': 'Court {number}',
       'today': 'Today',
+      'tomorrow': 'Tomorrow',
+      'yesterday': 'Yesterday',
+      'select_category_desc': 'Choose a sport category',
+      'select_court_desc':
+          'Tap a court to select · Tap the expand icon to preview',
+      'choose_date_desc': 'Choose a date for your booking',
+      'choose_payment_desc': 'Choose how you\'d like to pay',
+      'week_of': 'Week of {date}',
+      'current_week': 'Current Week',
+      'already_booked': 'Already booked on this court',
+      'from_label': 'FROM',
+      'to_label': 'TO',
+      'pick_start_time_first': 'Pick a start time first',
+      'hours': 'hour(s)',
+      'select_payment_method': 'Please select a payment method',
+      'contact_info_section': 'CONTACT INFORMATION',
+      'full_name_label': 'Full Name',
+      'full_name_hint': 'Enter your full name',
+      'full_name_required': 'Please enter your full name',
+      'name_min_length': 'Name must be at least 2 characters',
+      'phone_label': 'Phone Number',
+      'phone_hint': 'Enter your phone number',
+      'phone_required': 'Please enter your phone number',
+      'phone_invalid': 'Please enter a valid phone number',
 
       // ---------------------- Club Detailed Screen ----------------------------
       'facilities': 'Facilities',
@@ -184,6 +229,13 @@ class AppTranslations {
       'dark': 'Dark',
       'light': 'Light',
       'system': 'System',
+      'my_bookings': 'My Bookings',
+      'search_bookings': 'Search bookings...',
+      'no_bookings_found': 'No bookings found',
+      'no_bookings_desc': 'You don\'t have any bookings yet',
+      'no_bookings_status_desc': 'No bookings found with this status',
+      'clear_filters': 'Clear Filters',
+      'failed_to_load_bookings': 'Failed to load bookings',
 
       // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'Choose a sport to book at {name}',
@@ -193,24 +245,17 @@ class AppTranslations {
       'basketball_subtitle': '3v3 or 5v5 full court',
       'gym_subtitle': 'Book a personal trainer session',
       'book_your_session': 'Book your session',
+      'select_sport_desc': 'Choose a sport to book',
 
       // ---------------------- Step Court ----------------------------
       'select_trainer': 'Select Trainer',
-      'select_court_desc':
-          'Tap a court to select · Tap the expand icon to preview',
       'choose_trainer_desc': 'Choose a trainer for your session',
       'pinch_to_zoom': 'Pinch to zoom',
 
       // ---------------------- Step Date & Time ----------------------------
-      'choose_date_desc': 'Choose a date for your booking',
-      'week_of': 'Week of {date}',
-      'current_week': 'Current Week',
-      'already_booked': 'Already booked on this court',
-      'from_label': 'FROM',
-      'to_label': 'TO',
-      'pick_start_time_first': 'Pick a start time first',
-      'no_available_end_times': 'No available end times',
-      'hours': 'hour(s)',
+      'cannot_select_past_date': 'Cannot select past dates',
+      'cannot_select_past_time': 'Cannot select past times',
+      'end_time_must_be_after_start': 'End time must be after start time',
 
       // ---------------------- Days ----------------------------
       'mon': 'Mon',
@@ -237,18 +282,6 @@ class AppTranslations {
 
       // ---------------------- Step Payment ----------------------------
       'payment_method': 'Payment Method',
-      'choose_payment_desc': 'Choose how you\'d like to pay',
-      'select_payment_section': 'SELECT PAYMENT',
-      'select_payment_method': 'Please select a payment method',
-      'contact_info_section': 'CONTACT INFORMATION',
-      'full_name_label': 'Full Name',
-      'full_name_hint': 'Enter your full name',
-      'full_name_required': 'Please enter your full name',
-      'name_min_length': 'Name must be at least 2 characters',
-      'phone_label': 'Phone Number',
-      'phone_hint': 'Enter your phone number',
-      'phone_required': 'Please enter your phone number',
-      'phone_invalid': 'Please enter a valid phone number',
       'sport': 'Sport',
       'time': 'Time',
       'khqr_title': 'KHQR / Bank Transfer',
@@ -269,6 +302,11 @@ class AppTranslations {
       'cash_step2': 'Arrive at the venue before your session',
       'cash_step3': 'Show your booking confirmation at the counter',
       'cash_step4': 'Pay the amount in cash and enjoy your game!',
+      'aba_subtitle': 'Pay with ABA Bank',
+      'wing_subtitle': 'Pay with Wing Money',
+      'pi_pay_subtitle': 'Pay with Pi Pay',
+      'true_money_subtitle': 'Pay with True Money',
+      'pay_with': 'Pay with {name}',
 
       // ---------------------- Payment Success Page ----------------------------
       'payment_success_title': 'Payment Successful!',
@@ -278,6 +316,7 @@ class AppTranslations {
       'return_to_home': 'Return to Home',
       'booking': 'Booking',
       'total_paid': 'Total Paid',
+      'booking_created_with_issues': 'Booking created with issues',
 
       // ---------------------- Password & Security ----------------------------
       'password_security': 'Password & Security',
@@ -327,6 +366,11 @@ class AppTranslations {
       'share_coming_soon': 'Share feature coming soon',
       'hosted_by': 'Hosted by {name}',
       'response_rate': 'Response rate: 98%',
+      'slot_booking': 'Slot Booking',
+      'payment_ref': 'Transaction Ref',
+      'cancelled_at': 'Cancelled At',
+      'note': 'Note',
+      'payment_status': 'Payment Status',
 
       // ---------------------- Authentication ----------------------------
       'login': 'Login',
@@ -399,10 +443,6 @@ class AppTranslations {
       'password_changed': 'Password changed successfully',
       'all_notifications_read': 'All notifications marked as read',
 
-      // ---------------------- Time ----------------------------
-      'tomorrow': 'Tomorrow',
-      'yesterday': 'Yesterday',
-
       // ---------------------- Status ----------------------------
       'confirmed': 'Confirmed',
       'pending': 'Pending',
@@ -421,6 +461,16 @@ class AppTranslations {
           'Join local games, challenge nearby players, and grow your sports community.',
       'banner_desc_4':
           'Log your sessions, monitor progress, and push your personal best every time you play.',
+
+      // ---------------------- Explore Screen ----------------------------
+      'nearby': 'Nearby',
+      'no_nearby_clubs': 'No nearby club found!',
+
+      // ---------------------- Transaction ----------------------------
+      'transaction_reference': 'Transaction Reference',
+      'enter_transaction_ref': 'Enter transaction reference',
+      'auto_generated_id': 'Auto-generated ID',
+      'transaction_ref': 'Transaction Reference',
     },
 
     // ------------------------------------------------------------------------
@@ -450,6 +500,11 @@ class AppTranslations {
       'sport_tennis': 'តេនីស',
       'sport_badminton': 'បាត់មីនតុន',
       'sport_gym': 'កន្លែងហាត់ប្រាណ',
+      'sport_volleyball': 'បាល់ទះ',
+      'sport_swimming': 'ហែលទឹក',
+      'sport_yoga': 'យូហ្គា',
+      'sport_boxing': 'ប្រដាល់',
+      'sport_running': 'រត់',
 
       // ---------------------- Navigation ----------------------------
       'home': 'ទំព័រដើម',
@@ -496,12 +551,26 @@ class AppTranslations {
       'favorites_empty': 'មិនទាន់មានក្លឹបដែលអ្នកចូលចិត្តនៅឡើយទេ',
       'favorites_hint': 'ចាប់ផ្តើមចូលចិត្តក្លឹបដែលអ្នកស្រលាញ់!',
       'explore_clubs': 'ស្វែងរកក្លឹប',
-
-      // ---------------------- Explore Screen ----------------------------
-      'nearby': 'ក្បែរអ្នក',
-      'no_nearby_clubs': 'រកមិនឃើញក្លឹបនៅក្បែរអ្នក!',
+      'no_upcoming_bookings': 'គ្មានការកក់នាពេលខាងមុខ',
+      'book_a_club_to_get_started': 'កក់ក្លឹបដើម្បីចាប់ផ្តើម',
+      'browse_clubs': 'រកមើលក្លឹប',
+      'loading_courts': 'កំពុងផ្ទុកទីលាន...',
+      'no_courts_available': 'គ្មានទីលានដែលអាចប្រើបាន',
+      'please_check_back_later': 'សូមត្រឡប់មកពិនិត្យមើលនៅពេលក្រោយ',
+      'failed_to_load_courts': 'មិនអាចផ្ទុកទីលានបាន',
+      'go_back': 'ត្រឡប់ក្រោយ',
+      'unknown_error': 'មានកំហុសមិនស្គាល់',
+      'some_courts_unavailable': 'ទីលានខ្លះមិនអាចប្រើបានបច្ចុប្បន្ន',
+      'end_of_list': 'អ្នកបានដល់ចុងបញ្ជីហើយ',
+      'loading_clubs': 'កំពុងផ្ទុកក្លឹប...',
+      'loading_more': 'កំពុងផ្ទុកបន្ថែម...',
+      'all_clubs': 'ក្លឹបទាំងអស់',
+      'no_clubs_available': 'គ្មានក្លឹបដែលអាចរកបាន',
+      'try_adjusting_search': 'សូមសាកល្បងកែតម្រូវពាក្យស្វែងរករបស់អ្នក',
+      'search_clubs': 'ស្វែងរកក្លឹប...',
+      'no_available_slots': 'គ្មានពេលវេលាដែលអាចរកបានសម្រាប់កាលបរិច្ឆេទនេះ',
+      'no_available_slots_today': 'គ្មានពេលវេលាដែលអាចរកបានសម្រាប់ថ្ងៃនេះ',
       'no_results_for': 'រកមិនឃើញលទ្ធផលសម្រាប់ "{query}"',
-      'search_hint': 'ស្វែងរកក្លឹប កីឡា...',
 
       // ---------------------- Booking ----------------------------
       'search': 'ស្វែងរក',
@@ -525,6 +594,7 @@ class AppTranslations {
           'តើអ្នកពិតជាចង់បោះបង់ការកក់ "{title}" មែនទេ?',
       'reschedule': 'កំណត់ពេលវេលាឡើងវិញ',
       'reschedule_coming_soon': 'លក្ខណៈពិសេសកំណត់ពេលវេលាឡើងវិញនឹងមកដល់ឆាប់ៗ',
+      'processing_booking': 'កំពុងដំណើរការការកក់...',
 
       // ---------------------- Booking Flow ----------------------------
       'court': 'ទីលាន',
@@ -534,6 +604,34 @@ class AppTranslations {
       'next': 'បន្ទាប់',
       'court_label': 'ទីលានលេខ {number}',
       'today': 'ថ្ងៃនេះ',
+      'tomorrow': 'ថ្ងៃស្អែក',
+      'yesterday': 'ម្សិលមិញ',
+      'select_category_desc': 'ជ្រើសរើសប្រភេទកីឡា',
+      'select_court_desc':
+          'ចុចលើទីលានដើម្បីជ្រើសរើស · ចុចរូបតំណាងពង្រីកដើម្បីមើល',
+      'choose_date_desc': 'ជ្រើសរើសកាលបរិច្ឆេទសម្រាប់ការកក់របស់អ្នក',
+      'choose_payment_desc': 'ជ្រើសរើសរបៀបដែលអ្នកចង់បង់ប្រាក់',
+      'week_of': 'សប្តាហ៍នៃ {date}',
+      'current_week': 'សប្តាហ៍បច្ចុប្បន្ន',
+      'already_booked': 'បានកក់រួចហើយនៅលើទីលាននេះ',
+      'from_label': 'ពី',
+      'to_label': 'ទៅ',
+      'pick_start_time_first': 'ជ្រើសរើសម៉ោងចាប់ផ្តើមជាមុនសិន',
+      'no_available_end_times': 'គ្មានម៉ោងបញ្ចប់ដែលអាចរកបាន',
+      'hours': 'ម៉ោង',
+      'select_payment_method': 'សូមជ្រើសរើសវិធីសាស្ត្រទូទាត់',
+      'contact_info_section': 'ព័ត៌មានទំនាក់ទំនង',
+      'full_name_label': 'ឈ្មោះពេញ',
+      'full_name_hint': 'បញ្ចូលឈ្មោះពេញរបស់អ្នក',
+      'full_name_required': 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក',
+      'name_min_length': 'ឈ្មោះត្រូវតែមានយ៉ាងហោចណាស់ ២ តួអក្សរ',
+      'phone_label': 'លេខទូរស័ព្ទ',
+      'phone_hint': 'បញ្ចូលលេខទូរស័ព្ទរបស់អ្នក',
+      'phone_required': 'សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក',
+      'phone_invalid': 'សូមបញ្ចូលលេខទូរស័ព្ទដែលមានសុពលភាព',
+      'cannot_select_past_date': 'មិនអាចជ្រើសរើសកាលបរិច្ឆេទកន្លងមកបានទេ',
+      'cannot_select_past_time': 'មិនអាចជ្រើសរើសម៉ោងកន្លងមកបានទេ',
+      'end_time_must_be_after_start': 'ម៉ោងបញ្ចប់ត្រូវតែបន្ទាប់ពីម៉ោងចាប់ផ្តើម',
 
       // ---------------------- Club Detailed Screen ----------------------------
       'facilities': 'បរិក្ខារ',
@@ -598,6 +696,13 @@ class AppTranslations {
       'dark': 'ងងឹត',
       'light': 'ភ្លឺ',
       'system': 'ប្រព័ន្ធ',
+      'my_bookings': 'ការកក់របស់ខ្ញុំ',
+      'search_bookings': 'ស្វែងរកការកក់...',
+      'no_bookings_found': 'រកមិនឃើញការកក់',
+      'no_bookings_desc': 'អ្នកមិនទាន់មានការកក់នៅឡើយទេ',
+      'no_bookings_status_desc': 'រកមិនឃើញការកក់ជាមួយស្ថានភាពនេះ',
+      'clear_filters': 'លុបតម្រង',
+      'failed_to_load_bookings': 'មិនអាចផ្ទុកការកក់បាន',
 
       // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'ជ្រើសរើសកីឡាដើម្បីកក់នៅ {name}',
@@ -607,24 +712,12 @@ class AppTranslations {
       'basketball_subtitle': 'ទីលាន ៣នាក់ទល់នឹង ៣នាក់ ឬ ៥នាក់ទល់នឹង ៥នាក់',
       'gym_subtitle': 'កក់វគ្គជាមួយគ្រូបង្វឹកផ្ទាល់ខ្លួន',
       'book_your_session': 'កក់វគ្គរបស់អ្នក',
+      'select_sport_desc': 'ជ្រើសរើសកីឡាដើម្បីកក់',
 
       // ---------------------- Step Court ----------------------------
       'select_trainer': 'ជ្រើសរើសគ្រូបង្វឹក',
-      'select_court_desc':
-          'ចុចលើទីលានដើម្បីជ្រើសរើស · ចុចរូបតំណាងពង្រីកដើម្បីមើល',
       'choose_trainer_desc': 'ជ្រើសរើសគ្រូបង្វឹកសម្រាប់វគ្គរបស់អ្នក',
       'pinch_to_zoom': 'ច្របាច់ដើម្បីពង្រីក',
-
-      // ---------------------- Step Date & Time ----------------------------
-      'choose_date_desc': 'ជ្រើសរើសកាលបរិច្ឆេទសម្រាប់ការកក់របស់អ្នក',
-      'week_of': 'សប្តាហ៍នៃ {date}',
-      'current_week': 'សប្តាហ៍បច្ចុប្បន្ន',
-      'already_booked': 'បានកក់រួចហើយនៅលើទីលាននេះ',
-      'from_label': 'ពី',
-      'to_label': 'ទៅ',
-      'pick_start_time_first': 'ជ្រើសរើសម៉ោងចាប់ផ្តើមជាមុនសិន',
-      'no_available_end_times': 'គ្មានម៉ោងបញ្ចប់ដែលអាចរកបាន',
-      'hours': 'ម៉ោង',
 
       // ---------------------- Days ----------------------------
       'mon': 'ចន្ទ',
@@ -651,18 +744,6 @@ class AppTranslations {
 
       // ---------------------- Step Payment ----------------------------
       'payment_method': 'វិធីសាស្ត្រទូទាត់',
-      'choose_payment_desc': 'ជ្រើសរើសរបៀបដែលអ្នកចង់បង់ប្រាក់',
-      'select_payment_section': 'ជ្រើសរើសការទូទាត់',
-      'select_payment_method': 'សូមជ្រើសរើសវិធីសាស្ត្រទូទាត់',
-      'contact_info_section': 'ព័ត៌មានទំនាក់ទំនង',
-      'full_name_label': 'ឈ្មោះពេញ',
-      'full_name_hint': 'បញ្ចូលឈ្មោះពេញរបស់អ្នក',
-      'full_name_required': 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក',
-      'name_min_length': 'ឈ្មោះត្រូវតែមានយ៉ាងហោចណាស់ ២ តួអក្សរ',
-      'phone_label': 'លេខទូរស័ព្ទ',
-      'phone_hint': 'បញ្ចូលលេខទូរស័ព្ទរបស់អ្នក',
-      'phone_required': 'សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក',
-      'phone_invalid': 'សូមបញ្ចូលលេខទូរស័ព្ទដែលមានសុពលភាព',
       'sport': 'កីឡា',
       'time': 'ម៉ោង',
       'khqr_title': 'KHQR / ផ្ទេរតាមធនាគារ',
@@ -683,6 +764,11 @@ class AppTranslations {
       'cash_step2': 'មកដល់កន្លែងមុនពេលវគ្គរបស់អ្នក',
       'cash_step3': 'បង្ហាញការបញ្ជាក់ការកក់របស់អ្នកនៅតុទទួលប្រាក់',
       'cash_step4': 'បង់ប្រាក់ជាសាច់ប្រាក់ និងរីករាយជាមួយការប្រកួតរបស់អ្នក!',
+      'aba_subtitle': 'បង់ប្រាក់ជាមួយធនាគារ ABA',
+      'wing_subtitle': 'បង់ប្រាក់ជាមួយ Wing Money',
+      'pi_pay_subtitle': 'បង់ប្រាក់ជាមួយ Pi Pay',
+      'true_money_subtitle': 'បង់ប្រាក់ជាមួយ True Money',
+      'pay_with': 'បង់ប្រាក់ជាមួយ {name}',
 
       // ---------------------- Payment Success Page ----------------------------
       'payment_success_title': 'ការទូទាត់បានជោគជ័យ!',
@@ -692,6 +778,7 @@ class AppTranslations {
       'return_to_home': 'ត្រឡប់ទៅទំព័រដើម',
       'booking': 'ការកក់',
       'total_paid': 'បានបង់សរុប',
+      'booking_created_with_issues': 'ការកក់ត្រូវបានបង្កើតដោយមានបញ្ហា',
 
       // ---------------------- Password & Security ----------------------------
       'password_security': 'ពាក្យសម្ងាត់ និងសុវត្ថិភាព',
@@ -738,6 +825,11 @@ class AppTranslations {
       'share_coming_soon': 'លក្ខណៈពិសេសចែករំលែកនឹងមកដល់ឆាប់ៗ',
       'hosted_by': 'រៀបចំដោយ {name}',
       'response_rate': 'អត្រាឆ្លើយតប: ៩៨%',
+      'slot_booking': 'ការកក់ទីលាន',
+      'payment_ref': 'លេខសម្គាល់ប្រតិបត្តិការ',
+      'cancelled_at': 'បានបោះបង់នៅ',
+      'note': 'កំណត់ចំណាំ',
+      'payment_status': 'ស្ថានភាពការទូទាត់',
 
       // ---------------------- Authentication ----------------------------
       'login': 'ចូល',
@@ -811,10 +903,6 @@ class AppTranslations {
       'password_changed': 'បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ',
       'all_notifications_read': 'បានសម្គាល់ការជូនដំណឹងទាំងអស់ថាបានអាន',
 
-      // ---------------------- Time ----------------------------
-      'tomorrow': 'ថ្ងៃស្អែក',
-      'yesterday': 'ម្សិលមិញ',
-
       // ---------------------- Status ----------------------------
       'confirmed': 'បានបញ្ជាក់',
       'pending': 'កំពុងរង់ចាំ',
@@ -833,6 +921,16 @@ class AppTranslations {
           'ចូលរួមការប្រកួតក្នុងតំបន់ ប្រកួតប្រជែងជាមួយអ្នកលេងក្បែរអ្នក និងពង្រីកសហគមន៍កីឡារបស់អ្នក។',
       'banner_desc_4':
           'កត់ត្រាវគ្គរបស់អ្នក តាមដានវឌ្ឍនភាព និងបង្កើនសមត្ថភាពផ្ទាល់ខ្លួនរាល់ពេលដែលអ្នកលេង។',
+
+      // ---------------------- Explore Screen ----------------------------
+      'nearby': 'ក្បែរអ្នក',
+      'no_nearby_clubs': 'រកមិនឃើញក្លឹបនៅក្បែរអ្នក!',
+
+      // ---------------------- Transaction ----------------------------
+      'transaction_reference': 'លេខសម្គាល់ប្រតិបត្តិការ',
+      'enter_transaction_ref': 'បញ្ចូលលេខសម្គាល់ប្រតិបត្តិការ',
+      'auto_generated_id': 'លេខសម្គាល់ដែលបង្កើតដោយស្វ័យប្រវត្តិ',
+      'transaction_ref': 'លេខសម្គាល់ប្រតិបត្តិការ',
     },
   };
 

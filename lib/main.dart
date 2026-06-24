@@ -4,8 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sportbook/core/config/firebase_config.dart';
 import 'package:sportbook/core/di/service_locator.dart';
-import 'package:sportbook/feature/Token/service/token_service.dart';
+import 'package:sportbook/feature/Auth/service/auth_service.dart';
 import 'core/theme.dart';
 import 'providers/booking_provider.dart';
 import 'providers/theme_provider.dart';
@@ -14,8 +15,19 @@ import 'routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await FirebaseConfig.initialize();
+  await FirebaseConfig.requestNotificationPermission();
+
   await SharedPreferences.getInstance();
   await setupServiceLocator();
+
+  // Register the navigator key in service locator
+  final navigatorKey = GlobalKey<NavigatorState>();
+  if (!getIt.isRegistered<GlobalKey<NavigatorState>>()) {
+    getIt.registerSingleton<GlobalKey<NavigatorState>>(navigatorKey);
+  }
+
   await dotenv.load(fileName: ".env");
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -24,12 +36,13 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-
-  runApp(const SportMateApp());
+  runApp(SportMateApp(navigatorKey: navigatorKey));
 }
 
 class SportMateApp extends StatefulWidget {
-  const SportMateApp({super.key});
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  const SportMateApp({super.key, required this.navigatorKey});
 
   @override
   State<SportMateApp> createState() => _SportMateAppState();
@@ -37,9 +50,12 @@ class SportMateApp extends StatefulWidget {
 
 class _SportMateAppState extends State<SportMateApp>
     with WidgetsBindingObserver {
+  late final AuthService _authService;
+
   @override
   void initState() {
     super.initState();
+    _authService = getIt<AuthService>();
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -52,35 +68,7 @@ class _SportMateAppState extends State<SportMateApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkTokenOnResume();
-    }
-  }
-
-  Future<void> _checkTokenOnResume() async {
-    try {
-      final tokenService = getIt<TokenService>();
-      final hasValidToken = await tokenService.hasValidTokenAsync();
-
-      if (!hasValidToken && mounted) {
-        // Token expired, try to refresh or logout
-        final refreshed = await tokenService.refreshAccessToken();
-        if (!refreshed && mounted) {
-          // Token refresh failed, redirect to login
-          // Use a post-frame callback to avoid issues during build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              // Navigate to login only if not already on login screen
-              final currentRoute = ModalRoute.of(context)?.settings.name;
-              if (currentRoute != AppRoutes.login &&
-                  currentRoute != AppRoutes.splash) {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
-              }
-            }
-          });
-        }
-      }
-    } catch (e) {
-      print('Token check on resume error: $e');
+      _authService.checkTokenOnResume();
     }
   }
 
@@ -91,10 +79,12 @@ class _SportMateAppState extends State<SportMateApp>
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        Provider<AuthService>.value(value: _authService),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
           return MaterialApp(
+            navigatorKey: widget.navigatorKey,
             title: 'SportMate',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,

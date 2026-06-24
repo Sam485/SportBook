@@ -1,7 +1,8 @@
+// screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/di/service_locator.dart';
-import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
@@ -27,8 +28,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isNotificationsEnabled = true;
   bool _isLoading = true;
+  bool _isDisposed = false;
 
-  // User profile data - will be loaded from API
+  // User profile data
   UserModel? _user;
 
   // Static avatar URL for now
@@ -41,39 +43,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Repositories and services
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
-  final _clubService = getIt<SportClubService>();
 
   // Language state
   late String _currentLanguage;
 
+  // Notification settings key
+  static const String _notificationsKey = 'notifications_enabled';
+
   @override
   void initState() {
     super.initState();
+    _userService.addListener(_onUserServiceChanged);
     _loadUserProfile();
     _loadSampleHistoryBookings();
     _loadCurrentLanguage();
+    _loadNotificationSettings();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _userService.removeListener(_onUserServiceChanged);
+    super.dispose();
+  }
+
+  void _onUserServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _user = _userService.currentUser;
+        });
+      }
+    });
+  }
+
+  Future<void> _loadNotificationSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool(_notificationsKey) ?? true;
+      setState(() {
+        _isNotificationsEnabled = enabled;
+      });
+    } catch (e) {}
+  }
+
+  Future<void> _saveNotificationSettings(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_notificationsKey, enabled);
+    } catch (e) {}
+  }
+
+  Future<void> _toggleNotifications(bool value) async {
+    setState(() {
+      _isNotificationsEnabled = value;
+    });
+
+    await _saveNotificationSettings(value);
   }
 
   Future<void> _loadUserProfile() async {
     try {
       setState(() => _isLoading = true);
 
-      // Check if user has valid token
       final hasValidToken = await _tokenService.hasValidTokenAsync();
 
       if (hasValidToken) {
-        // Fetch user profile from API
-        final user = await _userService.getProfile();
+        await _userService.getProfile();
         setState(() {
-          _user = user;
+          _user = _userService.currentUser;
           _isLoading = false;
         });
       } else {
         setState(() => _isLoading = false);
-        // Optionally redirect to login
       }
     } catch (e) {
-      print('Error loading profile: $e');
       setState(() => _isLoading = false);
 
       if (mounted) {
@@ -89,7 +133,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadSampleHistoryBookings() {
     // Add sample history bookings - replace with your actual data
-    // You can also fetch from API here
   }
 
   void _loadCurrentLanguage() {
@@ -114,7 +157,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToFavorites() {
-    // Navigate directly to FavoriteClub without loading data here
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const FavoriteClub()),
@@ -122,18 +164,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToEditProfile() async {
-    if (_user == null) return;
-
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            EditProfileScreen(user: _user!, userService: _userService),
-      ),
+      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
     );
 
     if (result != null && mounted) {
-      // Refresh user profile after edit
       await _loadUserProfile();
 
       ScaffoldMessenger.of(
@@ -161,7 +197,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _currentLanguage = selectedLanguage.toUpperCase();
       });
-      // Rebuild the UI to update all translations
       setState(() {});
     }
   }
@@ -207,10 +242,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
 
-              // Clear tokens
               await _tokenService.clearToken();
+              _userService.clearUser();
 
-              // Navigate to login
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 '/login',
@@ -347,29 +381,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       alignment: Alignment.center,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(50),
-                        child: Image.network(
-                          _user!.avatarUrl ?? _staticAvatarUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: AppTheme.cardAlt(context),
-                            child: Icon(
-                              Icons.person,
-                              size: 36,
-                              color: AppTheme.textSub(context),
-                            ),
-                          ),
-                          loadingBuilder: (_, c, p) => p == null
-                              ? c
-                              : Container(
+                        child:
+                            _user!.avatarUrl != null &&
+                                _user!.avatarUrl!.isNotEmpty
+                            ? Image.network(
+                                _user!.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
                                   color: AppTheme.cardAlt(context),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppTheme.kAccent,
-                                      strokeWidth: 2,
-                                    ),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 36,
+                                    color: AppTheme.textSub(context),
                                   ),
                                 ),
-                        ),
+                                loadingBuilder: (_, c, p) => p == null
+                                    ? c
+                                    : Container(
+                                        color: AppTheme.cardAlt(context),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppTheme.kAccent,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                              )
+                            : Image.network(
+                                _staticAvatarUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: AppTheme.cardAlt(context),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 36,
+                                    color: AppTheme.textSub(context),
+                                  ),
+                                ),
+                                loadingBuilder: (_, c, p) => p == null
+                                    ? c
+                                    : Container(
+                                        color: AppTheme.cardAlt(context),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppTheme.kAccent,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -428,7 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppTheme.cardAlt(context),
                             ),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(6.0),
                           child: Column(
                             children: [
                               Text(
@@ -456,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppTheme.cardAlt(context),
                             ),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(6.0),
                           child: Column(
                             children: [
                               Text(
@@ -483,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: ElevatedButton(
                     onPressed: _navigateToEditProfile,
                     style: AppTheme.elevatedButtonStyle(
-                      backgroundColor: AppTheme.kAccent.withOpacity(0.5),
+                      backgroundColor: AppTheme.kAccent.withValues(alpha: 0.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -554,7 +614,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           Text(
                             subTitle,
-                            style: AppTheme.tsSubAdaptive(context),
+                            style: AppTheme.tsSubAdaptive(
+                              context,
+                            ).copyWith(fontSize: 12),
                           ),
                         ],
                       ),
@@ -589,7 +651,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           Column(
             children: [
-              // Notification
+              // Notification - With real toggle functionality
               Container(
                 width: double.infinity,
                 height: 60,
@@ -628,16 +690,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             Text(
                               'booking_reminders'.tr(context),
-                              style: AppTheme.tsSubAdaptive(context),
+                              style: AppTheme.tsSubAdaptive(
+                                context,
+                              ).copyWith(fontSize: 12),
                             ),
                           ],
                         ),
                       ),
                       Switch(
                         value: _isNotificationsEnabled,
-                        onChanged: (value) => setState(() {
-                          _isNotificationsEnabled = value;
-                        }),
+                        onChanged: _toggleNotifications,
                         activeColor: AppTheme.kAccent,
                       ),
                     ],
@@ -684,7 +746,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 _currentLanguage == 'EN'
                                     ? 'english'.tr(context)
                                     : 'khmer'.tr(context),
-                                style: AppTheme.tsSubAdaptive(context),
+                                style: AppTheme.tsSubAdaptive(
+                                  context,
+                                ).copyWith(fontSize: 12),
                               ),
                             ],
                           ),
@@ -750,7 +814,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     : (themeProvider.currentTheme == 'light'
                                           ? 'light_mode'.tr(context)
                                           : 'system_default'.tr(context)),
-                                style: AppTheme.tsSubAdaptive(context),
+                                style: AppTheme.tsSubAdaptive(
+                                  context,
+                                ).copyWith(fontSize: 12),
                               ),
                             ],
                           ),

@@ -1,7 +1,7 @@
-// feature/SportClub/repository/sport_club_repository.dart
 import 'package:dio/dio.dart';
 import 'package:sportbook/feature/SportClub/model/dto/favorite_response_dto.dart';
 import 'package:sportbook/feature/SportClub/model/dto/get_all_sport_club_dto.dart';
+import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 
 class SportClubRepository {
   final Dio _dio;
@@ -36,7 +36,7 @@ class SportClubRepository {
   // Get all favorites
   Future<GetAllSportClubDto> getAllFavorite() async {
     try {
-      final response = await _dio.get('/users/me/favorites?page=1&limit=10');
+      final response = await _dio.get('/users/me/favorites');
       return GetAllSportClubDto.fromJson(response.data);
     } on DioException catch (e) {
       throw Exception(
@@ -53,7 +53,6 @@ class SportClubRepository {
     bool isCurrentlyFavorited,
   ) async {
     try {
-
       if (isCurrentlyFavorited) {
         // If currently favorited, DELETE to remove
         final response = await _dio.delete('/users/me/favorites/$clubId');
@@ -67,6 +66,37 @@ class SportClubRepository {
       throw Exception('Server error: ${e.response?.data ?? e.message}');
     } catch (e) {
       throw Exception('Failed to toggle favorite: $e');
+    }
+  }
+
+  // Get nearby sport clubs (distance filtering on backend)
+  Future<GetAllSportClubDto> getAllSportClubNearBy(
+    double lat,
+    double lng,
+    int radius,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/sport-clubs/nearby',
+        queryParameters: {'lat': lat, 'lng': lng, 'radius': radius},
+      );
+      return GetAllSportClubDto.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Server error: ${e.response?.data ?? e.message}');
+    } catch (e) {
+      throw Exception('Failed to retrieve data: $e');
+    }
+  }
+
+  // Get single sport club by ID
+  Future<SportClubModel> getSportClubById(int id) async {
+    try {
+      final response = await _dio.get('/sport-clubs/$id');
+      return SportClubModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Server error: ${e.response?.data ?? e.message}');
+    } catch (e) {
+      throw Exception('Failed to retrieve club: $e');
     }
   }
 }

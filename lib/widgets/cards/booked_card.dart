@@ -1,26 +1,102 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/static/models/models.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class BookedCard extends StatefulWidget {
-  final SportBooking booking;
-  const BookedCard({super.key, required this.booking});
+  final BookingModel booking;
+  final VoidCallback? onBookingUpdated; // ✅ Callback to refresh parent
+
+  const BookedCard({super.key, required this.booking, this.onBookingUpdated});
 
   @override
   State<BookedCard> createState() => _BookedCardState();
 }
 
 class _BookedCardState extends State<BookedCard> {
-  SportBooking get b => widget.booking;
+  final BookingService _bookingService = getIt<BookingService>();
+  bool _isCancelling = false;
+  BookingModel? _currentBooking; // ✅ Track current booking state
 
-  void _onCancel() {
+  // Computed properties - use _currentBooking if available, otherwise widget.booking
+  BookingModel get b => _currentBooking ?? widget.booking;
+
+  String get _bookingId => '#BK-${b.id.toString().padLeft(6, '0')}';
+  String get _formattedDate => _formatDate(b.bookingDate);
+  String get _timeRange => '${b.startTime} - ${b.endTime}';
+  String get _status => b.status;
+
+  bool get _isCancellable =>
+      _status.toLowerCase() == 'pending' ||
+      _status.toLowerCase() == 'confirmed';
+
+  Color get _statusColor {
+    switch (_status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Color get _clubColor {
+    final colors = [
+      const Color(0xFFE74C3C),
+      const Color(0xFF2ECC71),
+      const Color(0xFFF39C12),
+      const Color(0xFF9B59B6),
+      const Color(0xFF1ABC9C),
+      const Color(0xFF3498DB),
+      const Color(0xFFE67E22),
+      const Color(0xFF2C3E50),
+      const Color(0xFF16A085),
+      const Color(0xFF8E44AD),
+    ];
+    return colors[b.sportClub.id % colors.length];
+  }
+
+  String get _initials {
+    final parts = b.sportClub.name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return b.sportClub.name.isNotEmpty
+        ? b.sportClub.name[0].toUpperCase()
+        : '?';
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Future<void> _onCancel() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showDialog(
+    final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
@@ -36,7 +112,7 @@ class _BookedCardState extends State<BookedCard> {
         content: Text(
           'cancel_booking_confirmation'
               .tr(context)
-              .replaceAll('{title}', b.title),
+              .replaceAll('{title}', b.slot.name),
           style: TextStyle(
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 13,
@@ -44,7 +120,7 @@ class _BookedCardState extends State<BookedCard> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: Text(
               'keep'.tr(context),
               style: TextStyle(
@@ -55,21 +131,75 @@ class _BookedCardState extends State<BookedCard> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('booking_cancelled'.tr(context))),
-              );
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: Text(
-              'cancel_booking'.tr(context),
+              'yes_cancel'.tr(context),
               style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
       ),
     );
+
+    if (shouldCancel != true) return;
+
+    setState(() {
+      _isCancelling = true;
+    });
+
+    try {
+      final result = await _bookingService.cancelBooking(b.id);
+
+      if (mounted) {
+        // ✅ Update the local booking state with the cancelled status
+        setState(() {
+          _currentBooking = result; // Use the updated booking from API
+          _isCancelling = false;
+        });
+
+        // ✅ Notify parent that booking was updated
+        widget.onBookingUpdated?.call();
+
+        // ✅ Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking cancelled successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCancelling = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel booking: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  // ✅ Method to refresh booking data from API
+  Future<void> _refreshBooking() async {
+    try {
+      final updatedBooking = await _bookingService.getBookingById(b.id);
+      if (mounted) {
+        setState(() {
+          _currentBooking = updatedBooking;
+        });
+        widget.onBookingUpdated?.call();
+      }
+    } catch (e) {
+      print('Failed to refresh booking: $e');
+    }
   }
 
   void _showQrDialog() {
@@ -145,8 +275,7 @@ class _BookedCardState extends State<BookedCard> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: QrImageView(
-                  data:
-                      'BOOKING:${b.id}\nTITLE:${b.title}\nVENUE:${b.venue}\nDATE:${b.formattedBookingDate}',
+                  data: _buildQrData(),
                   version: QrVersions.auto,
                   size: 168,
                   backgroundColor: Colors.white,
@@ -168,7 +297,7 @@ class _BookedCardState extends State<BookedCard> {
                 child: Column(
                   children: [
                     Text(
-                      b.title,
+                      b.slot.name,
                       style: TextStyle(
                         color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 14,
@@ -178,7 +307,7 @@ class _BookedCardState extends State<BookedCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      b.venue,
+                      b.sportClub.name,
                       style: TextStyle(
                         color: isDark
                             ? AppTheme.kTextSub
@@ -189,12 +318,24 @@ class _BookedCardState extends State<BookedCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${b.formattedBookingDate} • ${b.openTime} - ${b.closeTime}',
+                      '$_formattedDate • $_timeRange',
                       style: TextStyle(
                         color: isDark
                             ? AppTheme.kAccent
                             : AppTheme.kLightTextSub,
                         fontSize: 11,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _bookingId,
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -259,13 +400,32 @@ class _BookedCardState extends State<BookedCard> {
     );
   }
 
+  String _buildQrData() {
+    return 'BOOKING:${b.id}\n'
+        'SLOT:${b.slot.name}\n'
+        'CLUB:${b.sportClub.name}\n'
+        'DATE:$_formattedDate\n'
+        'TIME:$_timeRange';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
-      onTap: () =>
-          Navigator.pushNamed(context, AppRoutes.bookedDetailed, arguments: b),
+      onTap: () {
+        // Navigate to detailed view and listen for updates when returning
+        Navigator.pushNamed(
+          context,
+          AppRoutes.bookedDetailed,
+          arguments: b,
+        ).then((_) {
+          // Refresh when coming back from detailed view
+          if (mounted) {
+            _refreshBooking();
+          }
+        });
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Container(
@@ -276,11 +436,11 @@ class _BookedCardState extends State<BookedCard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                _ownerImage(),
+                _clubImage(),
                 const SizedBox(width: 10),
                 _bookingBody(isDark),
                 const SizedBox(width: 10),
-                _qrButton(isDark),
+                _actionButtons(isDark),
               ],
             ),
           ),
@@ -289,25 +449,36 @@ class _BookedCardState extends State<BookedCard> {
     );
   }
 
-  Widget _ownerImage() {
+  Widget _clubImage() {
+    final color = _clubColor;
+    final hasImage = b.slot.imageUrl.isNotEmpty;
+
     return Container(
       width: 100,
       height: 50 * (MediaQuery.of(context).size.height / 300),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
-        color: b.ownerColor.withOpacity(0.2),
-        border: Border.all(color: b.ownerColor, width: 2),
+        color: color.withOpacity(0.2),
+        border: Border.all(color: color, width: 2),
         borderRadius: BorderRadius.circular(12),
+        image: hasImage
+            ? DecorationImage(
+                image: NetworkImage(b.slot.imageUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
       ),
       alignment: Alignment.center,
-      child: Text(
-        b.ownerInitials,
-        style: TextStyle(
-          color: b.ownerColor,
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
+      child: hasImage
+          ? null
+          : Text(
+              _initials,
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
     );
   }
 
@@ -316,72 +487,87 @@ class _BookedCardState extends State<BookedCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Booking title
-          Text(
-            b.title,
-            style: TextStyle(
-              color: isDark ? Colors.white : AppTheme.kLightText,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
-            overflow: TextOverflow.ellipsis,
+          // Slot name
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  b.slot.name,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _statusBadge(),
+            ],
           ),
           const SizedBox(height: 2),
-          _badget(b.sportTypes[0], b.ownerColor),
+          _badge(b.sportClub.name, _clubColor),
           const SizedBox(height: 6),
-          // Booked date
+          // Date and Time
           _detailRow(
             Icons.calendar_today_outlined,
             AppTheme.kAccent,
-            '${'booked_on'.tr(context)} ${_formatBookingDate()}',
+            '$_formattedDate • $_timeRange',
             isDark,
           ),
-          const SizedBox(height: 8),
-          _detailRow(
-            Icons.timer_outlined,
-            AppTheme.kAccent,
-            '${b.openTime}  –  ${b.closeTime}',
-            isDark,
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _detailRow(
             Icons.location_on_outlined,
             isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-            b.venue,
+            b.sportClub.location,
             isDark,
           ),
-          const SizedBox(height: 8),
-          _badget('\$ 12.00', AppTheme.kAccent),
+          const SizedBox(height: 6),
+          _badge('\$${b.totalAmount.toStringAsFixed(2)}', AppTheme.kAccent),
         ],
       ),
     );
   }
 
-  String _formatBookingDate() {
-    // You can format the date properly here
-    // For now using a sample date
-    return 'Apr 24';
+  Widget _statusBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _statusColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _status.toUpperCase(),
+        style: TextStyle(
+          color: _statusColor,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 
   Widget _detailRow(IconData icon, Color iconColor, String text, bool isDark) {
     return Row(
       children: [
-        Icon(icon, color: iconColor, size: 16),
-        const SizedBox(width: 8),
+        Icon(icon, color: iconColor, size: 14),
+        const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-              fontSize: 13,
+              fontSize: 12,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
   }
 
-  Widget _badget(String text, Color color) {
+  Widget _badge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -395,27 +581,56 @@ class _BookedCardState extends State<BookedCard> {
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
 
-  Widget _qrButton(bool isDark) {
-    return InkWell(
-      onTap: _showQrDialog,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          child: Icon(
-            Icons.qr_code,
-            color: isDark ? AppTheme.kAccent : AppTheme.kLightText,
-            size: 24,
+  Widget _actionButtons(bool isDark) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // QR Button
+        InkWell(
+          onTap: _showQrDialog,
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.qr_code,
+              color: isDark ? AppTheme.kAccent : AppTheme.kLightText,
+              size: 22,
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+        // Cancel Button (only if cancellable)
+        if (_isCancellable)
+          InkWell(
+            onTap: _isCancelling ? null : _onCancel,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: _isCancelling
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.red,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+            ),
+          ),
+      ],
     );
   }
 }

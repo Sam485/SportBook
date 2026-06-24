@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/model/create_booking_model.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import '../../../core/theme.dart';
-import '../../../providers/booking_provider.dart';
-import '../../../translations/app_translations.dart';
+import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
   final VoidCallback onGoHome;
   final VoidCallback onViewBooking;
+  final Map<String, dynamic>? bookingData;
 
   const PaymentSuccessPage({
     super.key,
     required this.onGoHome,
     required this.onViewBooking,
+    this.bookingData,
   });
 
   @override
@@ -22,6 +27,8 @@ class PaymentSuccessPage extends StatefulWidget {
 
 class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with TickerProviderStateMixin {
+  final BookingService _bookingService = getIt<BookingService>();
+
   late AnimationController _checkController;
   late AnimationController _rippleController;
   late AnimationController _contentController;
@@ -37,11 +44,88 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   late Animation<double> _buttonFade;
   late Animation<Offset> _buttonSlide;
 
+  // Booking data
+  late String _sportName;
+  late String _courtName;
+  late String _date;
+  late String _timeRange;
+  late double _totalPrice;
+  late int _slotId;
+  late int _clubId;
+  late DateTime _selectedDate;
+  late String _startTime;
+  late String _endTime;
+  late String _paymentMethod;
+  late String _bookingId;
+  late BookingModel? _createdBooking;
+
+  bool _isCreatingBooking = false;
+  String? _errorMessage;
+  bool _bookingCreated = false;
+
+  // Global navigator key
+  final GlobalKey<NavigatorState> _navigatorKey =
+      getIt<GlobalKey<NavigatorState>>();
+
   @override
   void initState() {
     super.initState();
     HapticFeedback.heavyImpact();
 
+    // Extract booking data
+    final data = widget.bookingData ?? {};
+    _sportName = data['category'] ?? '—';
+    _courtName = data['courtName'] ?? '—';
+    _totalPrice = (data['totalPrice'] ?? 0.0).toDouble();
+    _slotId = data['court'] ?? 0;
+    _clubId = (data['club'] as dynamic)?.id ?? 0;
+    _paymentMethod = data['paymentMethod'] ?? 'qr_code';
+
+    // Get date
+    final date = data['date'] as DateTime?;
+    if (date != null) {
+      _selectedDate = date;
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      final weekdays = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      _date =
+          '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
+    } else {
+      _selectedDate = DateTime.now();
+      _date = '—';
+    }
+
+    // Get time - use the String format from bookingData (already in 24-hour format)
+    _startTime = data['startTime'] as String? ?? '00:00';
+    _endTime = data['endTime'] as String? ?? '00:00';
+
+    // Format time range for display (convert to 12-hour for display)
+    _timeRange =
+        '${_formatTimeForDisplay(_startTime)} – ${_formatTimeForDisplay(_endTime)}';
+
+    _bookingId = _generateId();
+
+    // Setup animations
     _checkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -118,6 +202,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           CurvedAnimation(parent: _buttonController, curve: Curves.easeOut),
         );
 
+    // Start animations
     _checkController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _rippleController.forward();
@@ -128,6 +213,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     Future.delayed(const Duration(milliseconds: 650), () {
       if (mounted) _buttonController.forward();
     });
+
+    // Create the booking after animations start
+    _createBooking();
   }
 
   @override
@@ -139,21 +227,280 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     super.dispose();
   }
 
+  String _formatTimeForDisplay(String time24) {
+    try {
+      final parts = time24.split(':');
+      int hour = int.parse(parts[0]);
+      final minute = parts[1];
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+      return '$hour12:$minute $period';
+    } catch (_) {
+      return time24;
+    }
+  }
+
+  String _formatDateForApi(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _generateId() {
+    final now = DateTime.now();
+    return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
+  }
+
+  // ============================================================
+  // _createBooking() method
+  // ============================================================
+  Future<void> _createBooking() async {
+    // Check if already creating or widget is unmounted
+    if (_isCreatingBooking || !mounted) return;
+
+    // Validate slot ID
+    if (_slotId == 0) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Invalid slot selected';
+          _isCreatingBooking = false;
+        });
+      }
+      return;
+    }
+
+    // Validate club ID
+    if (_clubId == 0) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Invalid club selected';
+          _isCreatingBooking = false;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _isCreatingBooking = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Generate transaction ID
+      final transactionId = CreateBookingModel.generateTransactionId();
+
+      // Use the String times directly (already in 24-hour format)
+      final booking = CreateBookingModel(
+        slotId: _slotId,
+        sportClubId: _clubId,
+        bookingDate: _selectedDate,
+        startTime: _startTime,
+        endTime: _endTime,
+        note: 'Booking from app',
+        paymentMethod: _paymentMethod,
+        transactionRef: transactionId,
+      );
+
+      print('Creating booking with data: ${booking.toJson()}');
+
+      final result = await _bookingService.createBooking(booking);
+
+      if (mounted) {
+        setState(() {
+          _isCreatingBooking = false;
+          _bookingCreated = true;
+          _createdBooking = result;
+          _bookingId = '#BK-${result.id.toString().padLeft(6, '0')}';
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking created successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCreatingBooking = false;
+          _errorMessage = e.toString();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Booking creation failed: ${e.toString()}'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
+  // ============================================================
+  // SAFE NAVIGATION METHODS
+  // ============================================================
+
+  void _navigateToHome() {
+    // ✅ Check if mounted
+    if (!mounted) return;
+
+    try {
+      // Try to use the navigator key first
+      final navState = _navigatorKey.currentState;
+      if (navState != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (navState.canPop()) {
+              navState.popUntil((route) => route.isFirst);
+            } else {
+              navState.pushReplacementNamed(AppRoutes.home);
+            }
+          } catch (e) {
+            // Fallback: use context
+            if (mounted) {
+              try {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              } catch (_) {
+                Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+              }
+            }
+          }
+        });
+        return;
+      }
+
+      // Fallback: use context
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            try {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            } catch (_) {
+              Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Final fallback
+      if (mounted) {
+        try {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } catch (_) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        }
+      }
+    }
+  }
+
+  void _navigateToBookingDetail() {
+    // ✅ Check if mounted and booking exists
+    if (!mounted || _createdBooking == null) {
+      // If no booking, go to bookings list
+      _navigateToBookings();
+      return;
+    }
+
+    try {
+      final navState = _navigatorKey.currentState;
+      if (navState != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            // Navigate to booking detail
+            navState.pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => BookedDetailed(booking: _createdBooking!),
+              ),
+              (route) => route.isFirst,
+            );
+          } catch (e) {
+            // Fallback: navigate to bookings list
+            _navigateToBookings();
+          }
+        });
+        return;
+      }
+
+      // Fallback: use context
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            try {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) => BookedDetailed(booking: _createdBooking!),
+                ),
+                (route) => route.isFirst,
+              );
+            } catch (_) {
+              _navigateToBookings();
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Final fallback
+      _navigateToBookings();
+    }
+  }
+
+  void _navigateToBookings() {
+    if (!mounted) return;
+
+    try {
+      final navState = _navigatorKey.currentState;
+      if (navState != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            navState.pushReplacementNamed(
+              AppRoutes.allbookings,
+              arguments: true,
+            );
+          } catch (_) {
+            if (mounted) {
+              Navigator.of(
+                context,
+              ).pushReplacementNamed(AppRoutes.allbookings, arguments: true);
+            }
+          }
+        });
+        return;
+      }
+
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(
+              context,
+            ).pushReplacementNamed(AppRoutes.allbookings, arguments: true);
+          }
+        });
+      }
+    } catch (e) {
+      // Final fallback
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushReplacementNamed(AppRoutes.allbookings, arguments: true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final p = context.watch<BookingProvider>();
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
 
-              _SuccessAnimation(
+            SliverToBoxAdapter(
+              child: _SuccessAnimation(
                 checkScale: _checkScale,
                 checkOpacity: _checkOpacity,
                 ripple1: _ripple1,
@@ -162,10 +509,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 rippleController: _rippleController,
                 isDark: isDark,
               ),
+            ),
 
-              const SizedBox(height: 36),
+            const SliverToBoxAdapter(child: SizedBox(height: 36)),
 
-              FadeTransition(
+            SliverToBoxAdapter(
+              child: FadeTransition(
                 opacity: _contentFade,
                 child: SlideTransition(
                   position: _contentSlide,
@@ -183,7 +532,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'payment_success_desc'.tr(context),
+                        _errorMessage != null
+                            ? 'booking_created_with_issues'.tr(context)
+                            : 'payment_success_desc'.tr(context),
                         style: TextStyle(
                           color: (isDark ? Colors.white : AppTheme.kLightText)
                               .withOpacity(0.5),
@@ -192,35 +543,48 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         ),
                         textAlign: TextAlign.center,
                       ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(color: Colors.orange, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                       const SizedBox(height: 32),
 
-                      _BookingPillCard(p: p, isDark: isDark),
+                      _BookingPillCard(
+                        bookingId: _bookingId,
+                        sportName: _sportName,
+                        courtName: _courtName,
+                        date: _date,
+                        timeRange: _timeRange,
+                        totalPrice: _totalPrice,
+                        isDark: isDark,
+                        isLoading: _isCreatingBooking,
+                      ),
                     ],
                   ),
                 ),
               ),
+            ),
 
-              const Spacer(flex: 3),
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
 
-              FadeTransition(
+            SliverToBoxAdapter(
+              child: FadeTransition(
                 opacity: _buttonFade,
                 child: SlideTransition(
                   position: _buttonSlide,
                   child: Column(
                     children: [
+                      // View Booking Button - Navigate to booking detail
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            final booking = p.confirmedBooking;
-                            if (booking != null) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.bookedDetailed,
-                                arguments: booking,
-                              );
-                            }
-                          },
+                          onPressed: _isCreatingBooking || !_bookingCreated
+                              ? null
+                              : _navigateToBookingDetail,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.kAccent,
                             foregroundColor: Colors.black,
@@ -230,29 +594,44 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             ),
                             elevation: 0,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.receipt_long_rounded, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'view_my_booking'.tr(context),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2,
+                          child: _isCreatingBooking
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.black,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.receipt_long_rounded,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'view_my_booking'.tr(context),
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
 
+                      // Go Home Button - Pop to home
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed: widget.onGoHome,
+                          onPressed: _isCreatingBooking
+                              ? null
+                              : _navigateToHome,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: isDark
                                 ? Colors.white70
@@ -299,14 +678,17 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          ],
         ),
       ),
     );
   }
 }
 
+// ── Success Animation ────────────────────────────────────────────────────────
 class _SuccessAnimation extends StatelessWidget {
   final Animation<double> checkScale;
   final Animation<double> checkOpacity;
@@ -432,52 +814,30 @@ class _RippleRing extends StatelessWidget {
   }
 }
 
+// ── Booking Pill Card ──────────────────────────────────────────────────────
 class _BookingPillCard extends StatelessWidget {
-  final BookingProvider p;
+  final String bookingId;
+  final String sportName;
+  final String courtName;
+  final String date;
+  final String timeRange;
+  final double totalPrice;
   final bool isDark;
+  final bool isLoading;
 
-  const _BookingPillCard({required this.p, required this.isDark});
-
-  static String _fmtH(int h) {
-    final period = h >= 12 ? 'PM' : 'AM';
-    final hr = h % 12 == 0 ? 12 : h % 12;
-    return '$hr:00 $period';
-  }
-
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  static const _weekdays = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
+  const _BookingPillCard({
+    required this.bookingId,
+    required this.sportName,
+    required this.courtName,
+    required this.date,
+    required this.timeRange,
+    required this.totalPrice,
+    required this.isDark,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final date = p.selectedDate;
-    final dateStr = date != null
-        ? '${_weekdays[date.weekday - 1]}, ${_months[date.month - 1]} ${date.day}'
-        : '—';
-    final timeStr = (p.startHour != null && p.endHour != null)
-        ? '${_fmtH(p.startHour!)} – ${_fmtH(p.endHour!)}'
-        : '—';
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -500,14 +860,26 @@ class _BookingPillCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.tag_rounded,
+                if (isLoading)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      color: AppTheme.kAccent,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                if (isLoading) const SizedBox(width: 6),
+                Icon(
+                  isLoading ? Icons.hourglass_empty : Icons.tag_rounded,
                   color: AppTheme.kAccent,
                   size: 13,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${'booking'.tr(context)} #${_generateId()}',
+                  isLoading
+                      ? 'processing_booking'.tr(context)
+                      : '${'booking'.tr(context)} #$bookingId',
                   style: const TextStyle(
                     color: AppTheme.kAccent,
                     fontSize: 12,
@@ -522,35 +894,35 @@ class _BookingPillCard extends StatelessWidget {
 
           _DetailRow(
             icon: Icons.sports_rounded,
-            label: p.selectedSport ?? '—',
+            label: sportName,
             sub: 'sport'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.grid_view_rounded,
-            label: p.target?.name ?? '—',
+            label: courtName,
             sub: 'court'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.calendar_month_rounded,
-            label: dateStr,
+            label: date,
             sub: 'date'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.access_time_filled_rounded,
-            label: timeStr,
+            label: timeRange,
             sub: 'time'.tr(context),
             isDark: isDark,
           ),
           _CardDivider(isDark: isDark),
           _DetailRow(
             icon: Icons.payments_rounded,
-            label: '\$${p.totalPrice.toStringAsFixed(2)}',
+            label: '\$${totalPrice.toStringAsFixed(2)}',
             sub: 'total_paid'.tr(context),
             valueColor: AppTheme.kAccent,
             isDark: isDark,
@@ -558,11 +930,6 @@ class _BookingPillCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _generateId() {
-    final now = DateTime.now();
-    return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
   }
 }
 

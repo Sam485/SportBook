@@ -1,11 +1,16 @@
+// home_screen.dart - COMPLETE FIXED VERSION WITH REAL BOOKINGS
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
+import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
@@ -13,12 +18,9 @@ import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
 import 'package:sportbook/widgets/common/map_picker_screen.dart';
 import '../../core/theme.dart';
-import '../../feature/static/models/models.dart';
-import '../../feature/static/services/data_service.dart';
 import '../../widgets/common/section_header.dart';
-import '../../widgets/cards/booking_card.dart';
+import '../../widgets/cards/booked_card.dart';
 import '../../widgets/cards/club_card.dart';
-import '../../widgets/common/location_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,51 +36,97 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _refreshCounter = 0;
 
+  // Location for nearby search
+  double? _currentLat;
+  double? _currentLng;
+  int _radius = 10; // Default radius in km
+
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
   final _categoryService = getIt<CategoryService>();
   late final SportClubService _clubService;
+  late final BookingService _bookingService;
 
   List<BannerModel>? _banners;
   UserModel? _user;
   List<CategoryModel> _categories = [];
   bool _isCategoriesLoading = true;
 
-  // Get clubs directly from service
-  List<SportClubModel> get _clubs => List.from(_clubService.clubs);
+  // Booking data
+  GetAllBookingDto? _bookingsData;
+  bool _isBookingsLoading = true;
+  String? _bookingsError;
 
-  // Get filtered clubs based on selected category
+  // Get nearby clubs from service
+  List<SportClubModel> get _clubs => List.from(_clubService.nearbyClubs);
+
+  // Get upcoming bookings (filtered by status)
+  List<BookingModel> get _upcomingBookings {
+    if (_bookingsData == null) return [];
+    // Filter for upcoming bookings (pending, confirmed)
+    return _bookingsData!.data.where((booking) {
+      final status = booking.status.toLowerCase();
+      return status == 'pending' || status == 'confirmed';
+    }).toList();
+  }
+
+  // Filter clubs by category ID
   List<SportClubModel> get _filteredClubs {
     if (_selectedCat == 'all') {
       return _clubs;
     }
     return _clubs
         .where(
-          (club) =>
-              club.categories.any((cat) => cat.toString() == _selectedCat),
+          (club) => club.categories.any(
+            (cat) =>
+                cat.id.toString() == _selectedCat || cat.name == _selectedCat,
+          ),
         )
         .toList();
   }
 
-  // Keep bookings from static data for now
-  List<SportBooking> get _bookings =>
-      DataService.filteredBookings(_selectedCat);
-
   Future<void> initialLoad() async {
     try {
+      // Get user profile first
+      await _userService.getProfile();
+      _user = _userService.currentUser;
+
+      // Get user location from profile
+      if (_user != null) {
+        _currentLat = _user!.lat;
+        _currentLng = _user!.lng;
+        _locationLabel = _user!.location ?? 'New York';
+      }
+
+      // Load all data in parallel
       final results = await Future.wait([
         _bannerService.getAllActiveBanner(),
-        _userService.getProfile(),
-        _clubService.fetchClubs(),
-        _categoryService.fetchCategories(limit: 100), // Fetch all categories
+        _categoryService.fetchCategories(limit: 100),
+        _bookingService.getAllBookings(page: 1, limit: 10),
       ]);
+
+      // Load nearby clubs using user location
+      if (_currentLat != null && _currentLng != null) {
+        await _clubService.fetchNearbyClubs(
+          lat: _currentLat!,
+          lng: _currentLng!,
+          radius: _radius,
+        );
+      } else {
+        // If no location, use default coordinates (Phnom Penh)
+        await _clubService.fetchNearbyClubs(
+          lat: 11.5564,
+          lng: 104.9282,
+          radius: _radius,
+        );
+      }
 
       if (!_isDisposed && mounted) {
         setState(() {
           _banners = results[0] as List<BannerModel>?;
-          _user = results[1] as UserModel?;
-          _locationLabel = _user?.location ?? 'New York';
-          _categories = results[3] as List<CategoryModel>;
+          _categories = results[1] as List<CategoryModel>;
+          _bookingsData = results[2] as GetAllBookingDto;
+          _isBookingsLoading = false;
           _isCategoriesLoading = false;
           _isLoading = false;
           _refreshCounter++;
@@ -90,14 +138,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _isLoading = false;
           _isCategoriesLoading = false;
+          _isBookingsLoading = false;
+          _bookingsError = e.toString();
           _refreshCounter++;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -106,9 +150,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _clubService = getIt<SportClubService>();
+    _bookingService = getIt<BookingService>();
+
     // Listen to service changes
     _clubService.addListener(_onServiceChanged);
-    _categoryService.addListener(_onCategoryServiceChanged);
+
     initialLoad();
   }
 
@@ -116,7 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _isDisposed = true;
     _clubService.removeListener(_onServiceChanged);
-    _categoryService.removeListener(_onCategoryServiceChanged);
     super.dispose();
   }
 
@@ -130,21 +175,40 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _onCategoryServiceChanged() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDisposed && mounted) {
-        setState(() {
-          _categories = _categoryService.categories;
-          _refreshCounter++;
-        });
-      }
-    });
-  }
+  // ============================================================
+  // NAVIGATION METHODS
+  // ============================================================
 
+  // ✅ Refresh data
   Future<void> _onRefresh() async {
     await initialLoad();
   }
 
+  // ✅ Navigate to booking flow and refresh on return
+  Future<void> _navigateToBookingFlow(SportClubModel club) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.bookingFlow,
+      arguments: club,
+    );
+
+    // Refresh data when returning from booking flow
+    if (result == true || mounted) {
+      await _onRefresh();
+    }
+  }
+
+  // ✅ Navigate to explore screen
+  void _navigateToExplore() {
+    Navigator.pushNamed(context, AppRoutes.explore);
+  }
+
+  // ✅ Navigate to bookings screen
+  void _navigateBookings() {
+    Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
+  }
+
+  // ✅ Navigate view all clubs
   void _navigateViewAll() {
     final clubs = _filteredClubs;
     if (clubs.isEmpty) return;
@@ -155,58 +219,102 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateBookings() {
-    Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
-  }
-
+  // ✅ Open location picker
   void _openLocationPicker() async {
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const LocationPickerSheet(),
+      enableDrag: false,
+      isDismissible: false,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.60,
+          width: double.infinity,
+          decoration: const BoxDecoration(color: Colors.transparent),
+          child: MapPickerScreen(
+            initialLat: _currentLat,
+            initialLng: _currentLng,
+            initialLabel: _locationLabel,
+          ),
+        );
+      },
     );
 
-    if (!mounted) return;
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _locationLabel = result;
+      });
 
-    if (result == '__open_map__') {
-      final city = await Navigator.push<String>(
-        context,
-        MaterialPageRoute(builder: (_) => const MapPickerScreen()),
-      );
-      if (city != null && city.isNotEmpty) {
-        setState(() => _locationLabel = city);
-        await _refreshClubsWithLocation(city);
+      await _updateUserLocation(result);
+
+      // Refresh nearby clubs with new location
+      if (_currentLat != null && _currentLng != null) {
+        await _refreshNearbyClubs(_currentLat!, _currentLng!);
       }
-    } else if (result != null && result.isNotEmpty) {
-      setState(() => _locationLabel = result);
-      await _refreshClubsWithLocation(result);
     }
   }
 
-  Future<void> _refreshClubsWithLocation(String location) async {
+  Future<void> _updateUserLocation(String location) async {
     try {
-      await _clubService.fetchClubs(search: location);
-      if (!_isDisposed && mounted) {
-        setState(() {
-          _refreshCounter++;
-        });
+      setState(() {
+        _isLoading = true;
+      });
+
+      final updateDto = UpdateDto(
+        fullName: _user?.fullName ?? '',
+        location: location,
+        lat: _currentLat ?? 0.0,
+        lng: _currentLng ?? 0.0,
+      );
+
+      await _userService.updateProfile(updateDto);
+
+      // Update user after profile update
+      setState(() {
+        _user = _userService.currentUser;
+        _locationLabel = _user?.location ?? location;
+        _currentLat = _user?.lat;
+        _currentLng = _user?.lng;
+        _isLoading = false;
+      });
+
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Clubs updated for $location'),
+            content: Text('Location updated successfully'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      if (!_isDisposed && mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update clubs: $e'),
+            content: Text('Failed to update location: $e'),
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _refreshNearbyClubs(double lat, double lng) async {
+    try {
+      await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _refreshCounter++;
+        });
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        print('Failed to refresh nearby clubs: $e');
       }
     }
   }
@@ -243,12 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   isDark: isDark,
                 ),
               ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) => BookingCard(booking: _bookings[i]),
-                  childCount: _bookings.length,
-                ),
-              ),
+              SliverToBoxAdapter(child: _bookingsList(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
@@ -281,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? Image.network(
                     _user!.avatarUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
@@ -442,11 +545,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return const SizedBox.shrink();
     }
 
-    // Add "All" category at the beginning
     final displayCategories = [
       CategoryModel(
         id: 0,
         name: 'all'.tr(context),
+        imageUrl: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
@@ -464,11 +567,12 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (_, i) {
             final cat = displayCategories[i];
             final isAll = cat.id == 0;
-            final sel = _selectedCat == (isAll ? 'all' : cat.id.toString());
+            final catId = isAll ? 'all' : cat.id.toString();
+            final sel = _selectedCat == catId;
 
             return GestureDetector(
               onTap: () => setState(() {
-                _selectedCat = isAll ? 'all' : cat.id.toString();
+                _selectedCat = catId;
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -530,7 +634,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getCategoryEmoji(String categoryName) {
-    // Map category names to emojis
     switch (categoryName.toLowerCase()) {
       case 'football':
         return '⚽';
@@ -558,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _clubsList(bool isDark) {
-    if (_clubService.isLoading || _isLoading) {
+    if (_clubService.isLoadingNearby || _isLoading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Container(
@@ -571,7 +674,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 CircularProgressIndicator(color: AppTheme.kAccent),
                 SizedBox(height: 16),
                 Text(
-                  'Loading clubs...',
+                  'Loading nearby clubs...',
                   style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
                 ),
               ],
@@ -581,7 +684,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_clubService.error.isNotEmpty) {
+    if (_clubService.errorNearby.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         child: Container(
@@ -605,7 +708,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                _clubService.error,
+                _clubService.errorNearby,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
@@ -615,7 +718,19 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () async {
-                  await _clubService.fetchClubs();
+                  if (_currentLat != null && _currentLng != null) {
+                    await _clubService.fetchNearbyClubs(
+                      lat: _currentLat!,
+                      lng: _currentLng!,
+                      radius: _radius,
+                    );
+                  } else {
+                    await _clubService.fetchNearbyClubs(
+                      lat: 11.5564,
+                      lng: 104.9282,
+                      radius: _radius,
+                    );
+                  }
                   if (!_isDisposed && mounted) setState(() {});
                 },
                 style: ElevatedButton.styleFrom(
@@ -655,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'no_clubs_for_sport'.tr(context),
+                'no_clubs_nearby'.tr(context),
                 style: TextStyle(
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
@@ -664,12 +779,69 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try selecting a different category or location',
+                'Try expanding your search radius or changing location',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
+              ),
+              const SizedBox(height: 16),
+              // Radius selector
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Radius: ',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                      fontSize: 14,
+                    ),
+                  ),
+                  DropdownButton<int>(
+                    value: _radius,
+                    dropdownColor: isDark
+                        ? AppTheme.kCard
+                        : AppTheme.kLightCard,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 5, child: Text('5 km')),
+                      DropdownMenuItem(value: 10, child: Text('10 km')),
+                      DropdownMenuItem(value: 20, child: Text('20 km')),
+                      DropdownMenuItem(value: 50, child: Text('50 km')),
+                    ],
+                    onChanged: (newRadius) async {
+                      if (newRadius != null && mounted) {
+                        setState(() {
+                          _radius = newRadius;
+                          _isLoading = true;
+                        });
+
+                        if (_currentLat != null && _currentLng != null) {
+                          await _clubService.fetchNearbyClubs(
+                            lat: _currentLat!,
+                            lng: _currentLng!,
+                            radius: _radius,
+                          );
+                        } else {
+                          await _clubService.fetchNearbyClubs(
+                            lat: 11.5564,
+                            lng: 104.9282,
+                            radius: _radius,
+                          );
+                        }
+
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -689,6 +861,140 @@ class _HomeScreenState extends State<HomeScreen> {
           club: clubs[i],
         ),
       ),
+    );
+  }
+
+  // ── Bookings List ──────────────────────────────────────────────────────────
+  Widget _bookingsList(bool isDark) {
+    if (_isBookingsLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Container(
+          height: 120,
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: AppTheme.kAccent,
+                  strokeWidth: 2,
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Loading bookings...',
+                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_bookingsError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Column(
+            children: [
+              Icon(Icons.error_outline, color: Colors.orange, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                'Failed to load bookings',
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _bookingsError!,
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final upcoming = _upcomingBookings;
+
+    if (upcoming.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Column(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+                size: 40,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'no_upcoming_bookings'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'book_a_club_to_get_started'.tr(context),
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _navigateToExplore, // ✅ Navigate to explore
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.kAccent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: Text(
+                  'browse_clubs'.tr(context),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show only first 3 upcoming bookings
+    final displayBookings = upcoming.length > 3
+        ? upcoming.sublist(0, 3)
+        : upcoming;
+
+    return Column(
+      children: displayBookings.map((booking) {
+        return BookedCard(
+          key: ValueKey('booking_${booking.id}_$_refreshCounter'),
+          booking: booking,
+          onBookingUpdated: _onRefresh, // ✅ Refresh when booking is updated
+        );
+      }).toList(),
     );
   }
 }

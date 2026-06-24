@@ -19,6 +19,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List<String> _categories = [];
   bool _isLoading = true;
   String _error = '';
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -26,7 +27,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _loadNotifications();
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
   Future<void> _loadNotifications() async {
+    if (_isDisposed) return;
+
     setState(() {
       _isLoading = true;
       _error = '';
@@ -38,15 +47,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
       // Get unique categories from notifications
       final types = await _notificationService.getNotificationTypes();
 
-      setState(() {
-        _categories = ['all', ...types.where((t) => t != 'all')];
-        _isLoading = false;
-      });
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _categories = ['all', ...types.where((t) => t != 'all')];
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -136,15 +149,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  // Add this to the NotificationScreen class
   Future<void> _markAllAsRead() async {
+    if (_isDisposed) return;
+
     try {
-      // Show loading indicator
       setState(() {});
 
       final result = await _notificationService.markAllAsRead();
 
-      if (result && mounted) {
+      if (result && !_isDisposed && mounted) {
         setState(() {});
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -156,7 +169,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to mark all as read: $e'),
@@ -169,15 +182,33 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _markAsRead(int id) async {
+    if (_isDisposed) return;
+
     try {
       await _notificationService.markAsRead(id);
-      setState(() {});
+      if (!_isDisposed && mounted) {
+        setState(() {});
+      }
     } catch (e) {
-      // Silent fail
       if (kDebugMode) {
         print('Failed to mark as read: $e');
       }
     }
+  }
+
+  void _showNotificationDetail(NotificationItem notification) {
+    if (_isDisposed) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => NotificationDetailDialog(
+        notification: notification,
+        onConfirm: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   @override
@@ -209,7 +240,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
         centerTitle: true,
         actions: [
-          // Mark all as read button
           if (_notificationService.unreadCount > 0)
             IconButton(
               icon: Icon(
@@ -218,7 +248,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
               onPressed: _markAllAsRead,
             ),
-          // Refresh button
           IconButton(
             icon: Icon(
               Icons.refresh_rounded,
@@ -458,8 +487,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
           if (!notification.isRead) {
             _markAsRead(notification.id);
           }
-          // Navigate to notification detail or handle the notification
-          _handleNotificationTap(notification);
+          // Show notification detail dialog
+          _showNotificationDetail(notification);
         },
         child: Container(
           width: double.infinity,
@@ -531,33 +560,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
     );
   }
-
-  void _handleNotificationTap(NotificationItem notification) {
-    // Handle different notification types
-    switch (notification.category) {
-      case 'bookings':
-        // Navigate to booking details
-        if (kDebugMode) {
-          print('Navigate to booking: ${notification.id}');
-        }
-        break;
-      case 'alerts':
-        // Show alert dialog or navigate
-        if (kDebugMode) {
-          print('Show alert: ${notification.id}');
-        }
-        break;
-      case 'messages':
-        // Navigate to message
-        break;
-      case 'promotions':
-        // Show promotion details
-        break;
-      default:
-        // Default action
-        break;
-    }
-  }
 }
 
 // Keep your existing NotificationItem model
@@ -581,4 +583,196 @@ class NotificationItem {
     required this.category,
     required this.isRead,
   });
+}
+
+// ============================================================================
+// Notification Detail Dialog
+// ============================================================================
+
+class NotificationDetailDialog extends StatelessWidget {
+  final NotificationItem notification;
+  final VoidCallback onConfirm;
+
+  const NotificationDetailDialog({
+    super.key,
+    required this.notification,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: Container(
+        width: size.width * 0.92,
+        constraints: BoxConstraints(
+          maxWidth: 420,
+          maxHeight: size.height * 0.85,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.kCard : Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 30,
+              spreadRadius: 5,
+              offset: const Offset(0, 15),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Image
+            Container(
+              height: 190,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+                image: const DecorationImage(
+                  image: NetworkImage(
+                    'https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&h=400&fit=crop&crop=center',
+                  ),
+                  fit: BoxFit.cover,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      isDark
+                          ? Colors.black.withOpacity(0.4)
+                          : Colors.black.withOpacity(0.2),
+                    ],
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.kAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        notification.category,
+                        style: TextStyle(
+                          color: const Color(0xFF0A1828),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  notification.title,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Description
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  notification.description,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.grey[700],
+                    fontSize: 14,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Divider line
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              height: 1,
+              color: isDark ? Colors.grey[800] : Colors.grey[200],
+            ),
+
+            const SizedBox(height: 16),
+
+            // OK Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: onConfirm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.kAccent,
+                    foregroundColor: const Color(0xFF0A1828),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'OK',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -25,7 +25,12 @@ class _ImageCarouselState extends State<ImageCarousel> {
   @override
   void initState() {
     super.initState();
-    _ctrl = PageController(initialPage: 10000);
+    // Only use infinite scrolling if there are multiple images
+    if (widget.imageUrls.length > 1) {
+      _ctrl = PageController(initialPage: 10000);
+    } else {
+      _ctrl = PageController(initialPage: 0);
+    }
   }
 
   @override
@@ -35,12 +40,13 @@ class _ImageCarouselState extends State<ImageCarousel> {
   }
 
   void _onDragUpdate(DragUpdateDetails d) {
-    if (!_ctrl.hasClients) return;
+    // Only allow dragging if there are multiple images
+    if (widget.imageUrls.length <= 1 || !_ctrl.hasClients) return;
     _ctrl.position.moveTo(_ctrl.offset - (d.primaryDelta ?? 0), clamp: false);
   }
 
   void _onDragEnd(DragEndDetails d) {
-    if (!_ctrl.hasClients) return;
+    if (widget.imageUrls.length <= 1 || !_ctrl.hasClients) return;
     final v = d.primaryVelocity ?? 0;
     final c = _ctrl.page?.round() ?? 10000;
     if (v < -300)
@@ -85,6 +91,25 @@ class _ImageCarouselState extends State<ImageCarousel> {
         widget.borderRadius ??
         const BorderRadius.vertical(top: Radius.circular(22));
 
+    // If no images, show placeholder
+    if (urls.isEmpty) {
+      return ClipRRect(
+        borderRadius: br,
+        child: Container(
+          height: widget.height,
+          width: double.infinity,
+          color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+          child: const Center(
+            child: Icon(
+              Icons.image_not_supported,
+              color: Colors.grey,
+              size: 40,
+            ),
+          ),
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: br,
       child: SizedBox(
@@ -101,11 +126,13 @@ class _ImageCarouselState extends State<ImageCarousel> {
               // Pages
               PageView.builder(
                 controller: _ctrl,
-                itemCount: null,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _page = i % urls.length),
+                itemCount: urls.length, // ✅ Use actual count, not null
+                physics: urls.length > 1
+                    ? const NeverScrollableScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (_, i) => Image.network(
-                  urls[i % urls.length],
+                  urls[i],
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
@@ -150,7 +177,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                 ),
               ),
 
-              // Dot indicators
+              // Dot indicators - only show if multiple images
               if (urls.length > 1)
                 Positioned(
                   bottom: 10,
@@ -178,7 +205,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                   ),
                 ),
 
-              // Count badge
+              // Count badge - only show if multiple images
               if (urls.length > 1)
                 Positioned(
                   top: 10,
@@ -215,7 +242,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                   ),
                 ),
 
-              // Favourite
+              // Favourite button
               Positioned(
                 top: 10,
                 right: 12,
@@ -277,7 +304,12 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
   void initState() {
     super.initState();
     _cur = widget.initialIndex;
-    _ctrl = PageController(initialPage: 10000 + widget.initialIndex);
+    // If only one image, start at 0
+    if (widget.imageUrls.length > 1) {
+      _ctrl = PageController(initialPage: 10000 + widget.initialIndex);
+    } else {
+      _ctrl = PageController(initialPage: 0);
+    }
     _fade = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -292,11 +324,15 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
     super.dispose();
   }
 
-  void _close() => _fade.reverse().then((_) => Navigator.of(context).pop());
+  void _close() => _fade.reverse().then((_) {
+    if (mounted) Navigator.of(context).pop();
+  });
 
   @override
   Widget build(BuildContext context) {
     final total = widget.imageUrls.length;
+    final hasMultiple = total > 1;
+
     return FadeTransition(
       opacity: _fade,
       child: Scaffold(
@@ -320,14 +356,14 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                   opacity: (1 - (_dragY.abs() / 400)).clamp(0.0, 1.0),
                   child: PageView.builder(
                     controller: _ctrl,
-                    itemCount: null,
-                    onPageChanged: (i) => setState(() => _cur = i % total),
+                    itemCount: total, // ✅ Use actual count
+                    onPageChanged: (i) => setState(() => _cur = i),
                     itemBuilder: (_, i) => InteractiveViewer(
                       minScale: 1.0,
                       maxScale: 4.0,
                       child: Center(
                         child: Image.network(
-                          widget.imageUrls[i % total],
+                          widget.imageUrls[i],
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) => Icon(
                             Icons.broken_image_outlined,
@@ -370,25 +406,26 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                           ),
                         ),
                         const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            '${_cur + 1} / $total',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                        if (hasMultiple) // ✅ Only show count if multiple images
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Text(
+                              '${_cur + 1} / $total',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(width: 8),
                       ],
                     ),
@@ -397,8 +434,8 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
               ),
             ),
 
-            // Bottom indicators
-            if (total > 1)
+            // Bottom indicators - only show if multiple images
+            if (hasMultiple)
               Positioned(
                 bottom: 40,
                 left: 0,
