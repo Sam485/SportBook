@@ -18,16 +18,17 @@ class BookedDetailed extends StatefulWidget {
 class _BookedDetailedState extends State<BookedDetailed> {
   final BookingService _bookingService = getIt<BookingService>();
   bool _isCancelling = false;
+  BookingModel? _currentBooking; // ✅ Track current booking state
 
-  // Computed properties
-  String get _bookingId =>
-      '#BK-${widget.booking.id.toString().padLeft(6, '0')}';
-  String get _formattedDate => _formatDate(widget.booking.bookingDate);
-  String get _timeRange =>
-      '${widget.booking.startTime} - ${widget.booking.endTime}';
-  String get _status => widget.booking.status;
-  String get _paymentStatus => widget.booking.paymentStatus;
-  double get _totalAmount => widget.booking.totalAmount.toDouble();
+  // Computed properties - use _currentBooking if available, otherwise widget.booking
+  BookingModel get b => _currentBooking ?? widget.booking;
+
+  String get _bookingId => '#BK-${b.id.toString().padLeft(6, '0')}';
+  String get _formattedDate => _formatDate(b.bookingDate);
+  String get _timeRange => '${b.startTime} - ${b.endTime}';
+  String get _status => b.status;
+  String get _paymentStatus => b.paymentStatus;
+  double get _totalAmount => b.totalAmount.toDouble();
 
   bool get _isCancellable =>
       _status.toLowerCase() == 'pending' ||
@@ -61,16 +62,16 @@ class _BookedDetailedState extends State<BookedDetailed> {
       const Color(0xFF16A085),
       const Color(0xFF8E44AD),
     ];
-    return colors[widget.booking.sportClub.id % colors.length];
+    return colors[b.sportClub.id % colors.length];
   }
 
   String get _initials {
-    final parts = widget.booking.sportClub.name.trim().split(' ');
+    final parts = b.sportClub.name.trim().split(' ');
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return widget.booking.sportClub.name.isNotEmpty
-        ? widget.booking.sportClub.name[0].toUpperCase()
+    return b.sportClub.name.isNotEmpty
+        ? b.sportClub.name[0].toUpperCase()
         : '?';
   }
 
@@ -115,6 +116,20 @@ class _BookedDetailedState extends State<BookedDetailed> {
     return '$month $day, $year at $hour:$minute';
   }
 
+  // ✅ Method to refresh booking data from API
+  Future<void> _refreshBooking() async {
+    try {
+      final updatedBooking = await _bookingService.getBookingById(b.id);
+      if (mounted) {
+        setState(() {
+          _currentBooking = updatedBooking;
+        });
+      }
+    } catch (e) {
+      print('Failed to refresh booking: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -149,7 +164,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
   Widget _header(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = _clubColor;
-    final hasImage = widget.booking.slot.imageUrl.isNotEmpty;
+    final hasImage = b.slot.imageUrl.isNotEmpty;
 
     return Stack(
       children: [
@@ -160,7 +175,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           decoration: BoxDecoration(
             image: DecorationImage(
               image: hasImage
-                  ? NetworkImage(widget.booking.slot.imageUrl) as ImageProvider
+                  ? NetworkImage(b.slot.imageUrl) as ImageProvider
                   : const AssetImage('assets/images/default_club.jpg'),
               fit: BoxFit.cover,
             ),
@@ -193,7 +208,8 @@ class _BookedDetailedState extends State<BookedDetailed> {
           top: 16,
           left: 16,
           child: InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: () =>
+                Navigator.pop(context, true), // ✅ Return true to refresh
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.5),
@@ -279,7 +295,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        widget.booking.slot.name.toUpperCase(),
+                        b.slot.name.toUpperCase(),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -313,7 +329,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
 
                 // Title
                 Text(
-                  widget.booking.slot.name,
+                  b.slot.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -322,7 +338,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  widget.booking.sportClub.name,
+                  b.sportClub.name,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 16,
@@ -342,7 +358,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        widget.booking.sportClub.location,
+                        b.sportClub.location,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
@@ -413,7 +429,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
 
   Widget _paymentSummary(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final slotPrice = widget.booking.slot.price;
+    final slotPrice = b.slot.price;
     final total = _totalAmount;
 
     return Padding(
@@ -467,7 +483,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
 
   Widget _bookingDetailed(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final payment = widget.booking.payment;
+    final payment = b.payment;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 5),
@@ -535,24 +551,19 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 _buildPaymentRow(
                   context,
                   'booked_on'.tr(context),
-                  _formatDateTime(widget.booking.createdAt),
+                  _formatDateTime(b.createdAt),
                   false,
                 ),
-                if (widget.booking.note.isNotEmpty) ...[
+                if (b.note.isNotEmpty) ...[
                   _divider(context),
-                  _buildPaymentRow(
-                    context,
-                    'note'.tr(context),
-                    widget.booking.note,
-                    false,
-                  ),
+                  _buildPaymentRow(context, 'note'.tr(context), b.note, false),
                 ],
-                if (widget.booking.cancelledAt != null) ...[
+                if (b.cancelledAt != null) ...[
                   _divider(context),
                   _buildPaymentRow(
                     context,
                     'cancelled_at'.tr(context),
-                    _formatDateTime(widget.booking.cancelledAt!),
+                    _formatDateTime(b.cancelledAt!),
                     false,
                   ),
                 ],
@@ -714,9 +725,9 @@ class _BookedDetailedState extends State<BookedDetailed> {
   }
 
   String _buildQrData() {
-    return 'BOOKING:${widget.booking.id}\n'
-        'SLOT:${widget.booking.slot.name}\n'
-        'CLUB:${widget.booking.sportClub.name}\n'
+    return 'BOOKING:${b.id}\n'
+        'SLOT:${b.slot.name}\n'
+        'CLUB:${b.sportClub.name}\n'
         'DATE:$_formattedDate\n'
         'TIME:$_timeRange\n'
         'TOTAL:\$${_totalAmount.toStringAsFixed(2)}';
@@ -918,7 +929,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
         content: Text(
           'cancel_booking_confirmation'
               .tr(context)
-              .replaceAll('{title}', widget.booking.slot.name),
+              .replaceAll('{title}', b.slot.name),
           style: TextStyle(
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
@@ -947,35 +958,56 @@ class _BookedDetailedState extends State<BookedDetailed> {
   }
 
   Future<void> _cancelBooking(BuildContext context) async {
+    // ✅ Prevent multiple cancellation attempts
+    if (_isCancelling) return;
+
     setState(() {
       _isCancelling = true;
     });
 
     try {
-      await _bookingService.cancelBooking(widget.booking.id);
+      // ✅ Call the API to cancel booking
+      await _bookingService.cancelBooking(b.id);
 
       if (mounted) {
-        Navigator.pop(context); // Close dialog
+        // ✅ Close the dialog
+        Navigator.pop(context);
+
+        // ✅ Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Booking cancelled successfully'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
-        Navigator.pop(context); // Go back to bookings list
+
+        // ✅ Refresh the booking data to show updated status
+        await _refreshBooking();
+
+        // ✅ Go back to the previous screen after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.pop(context, true); // Return true to indicate refresh
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close dialog
+        // ✅ Close the dialog if it's still open
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
+        // ✅ Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to cancel booking: $e'),
+            content: Text('Failed to cancel booking: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
+
         setState(() {
           _isCancelling = false;
         });
@@ -984,7 +1016,6 @@ class _BookedDetailedState extends State<BookedDetailed> {
   }
 
   void _shareBooking(BuildContext context) {
-    // Implement share functionality
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('share_coming_soon'.tr(context))));

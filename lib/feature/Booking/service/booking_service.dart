@@ -19,6 +19,9 @@ abstract class BookingService {
   // Cancel a booking
   Future<BookingModel> cancelBooking(int id);
 
+  // Alternative cancel method using PATCH
+  Future<BookingModel> cancelBookingWithPatch(int id);
+
   // Get bookings by status
   Future<GetAllBookingDto> getBookingsByStatus({
     required String status,

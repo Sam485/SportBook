@@ -25,6 +25,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   String _selectedStatus = '';
   int _currentPage = 1;
   final int _limit = 10;
+  int _refreshCounter = 0;
 
   // Get the list of bookings from the response
   List<BookingModel> get _bookings => _bookingsData?.data ?? [];
@@ -33,6 +34,17 @@ class _BookingsScreenState extends State<BookingsScreen> {
   void initState() {
     super.initState();
     _fetchBookings();
+  }
+
+  // In BookingsScreen, ensure data is refreshed when the screen is viewed
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data when screen becomes visible again
+    if (!_isLoading && _bookingsData != null) {
+      _fetchBookings();
+    }
   }
 
   @override
@@ -54,15 +66,20 @@ class _BookingsScreenState extends State<BookingsScreen> {
         status: _selectedStatus,
       );
 
-      setState(() {
-        _bookingsData = data;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _bookingsData = data;
+          _isLoading = false;
+          _refreshCounter++;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -118,7 +135,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
                     SliverToBoxAdapter(child: _searchBar(isDark)),
                     SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (_, i) => BookedCard(booking: _bookings[i]),
+                        (_, i) => BookedCard(
+                          key: ValueKey(
+                            'booking_${_bookings[i].id}_$_refreshCounter',
+                          ),
+                          booking: _bookings[i],
+                          onBookingUpdated: _refreshBookings, // ✅ Pass callback
+                        ),
                         childCount: _bookings.length,
                       ),
                     ),
@@ -276,8 +299,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
                     ),
                   ),
               onChanged: (value) {
-                // Implement search functionality with debounce
-                // For now, just refresh the list
+                // Search with debounce
                 _fetchBookings();
               },
             ),

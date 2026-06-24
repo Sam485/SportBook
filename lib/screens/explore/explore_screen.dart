@@ -7,6 +7,7 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart'; // ✅ ADD THIS IMPORT
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
 import 'package:sportbook/widgets/common/section_header.dart';
@@ -29,6 +30,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   int _totalClubs = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  bool _isInitialLoad = true;
 
   // Search debounce
   Timer? _searchDebounce;
@@ -96,6 +98,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _allClubs = [];
       _currentPage = 1;
       _hasMore = true;
+      _isInitialLoad = true;
     });
 
     try {
@@ -103,23 +106,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
       await _categoryService.fetchCategories(limit: 100);
       _categories = _categoryService.categories;
 
-      // Load all clubs with pagination using fetchAllClubs
+      // Load all clubs with pagination
       await _loadAllClubs(reset: true);
 
       setState(() {
         _isLoading = false;
         _isCategoriesLoading = false;
+        _isInitialLoad = false;
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
         _isCategoriesLoading = false;
+        _isInitialLoad = false;
       });
     }
   }
 
   Future<void> _loadAllClubs({bool reset = false}) async {
+    // Don't load if already loading or no more data
     if (_isLoadingMore || !_hasMore) return;
 
     setState(() {
@@ -127,23 +133,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
 
     try {
-      // Use fetchAllClubs from the service - this updates the service state
-      final clubs = await _clubService.fetchAllClubs(
+      // Use the repository directly to get ALL clubs (not nearby)
+      final repository = getIt<SportClubRepository>(); // ✅ Now this works
+      final dto = await repository.getAllSportClub(
         page: _currentPage,
         limit: 20,
         search: _query,
       );
 
-      if (clubs.isNotEmpty) {
-        setState(() async {
+      if (dto.data.isNotEmpty) {
+        setState(() {
           if (reset) {
-            _allClubs = clubs;
+            _allClubs = dto.data;
           } else {
-            _allClubs.addAll(clubs);
+            // Remove duplicates by ID before adding
+            final existingIds = _allClubs.map((c) => c.id).toSet();
+            final newClubs = dto.data
+                .where((c) => !existingIds.contains(c.id))
+                .toList();
+            _allClubs.addAll(newClubs);
           }
-          // Get total from the service or from the DTO
-          // Since fetchAllClubs returns List, we need to get total from repository
-          final dto = await _clubService.getAllSportClub();
           _totalClubs = dto.total;
           _hasMore = _allClubs.length < _totalClubs;
           _currentPage++;
@@ -408,7 +417,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
           return Padding(
             padding: const EdgeInsets.all(8.0),
             child: ClubCard(
-              key: ValueKey('club_${clubs[index].id}'),
+              key: ValueKey(
+                'club_${clubs[index].id}_${clubs[index].updatedAt}',
+              ),
               club: clubs[index],
             ),
           );

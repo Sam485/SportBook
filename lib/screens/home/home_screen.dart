@@ -70,8 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
-  // Get all bookings for display
-
   // Filter clubs by category ID
   List<SportClubModel> get _filteredClubs {
     if (_selectedCat == 'all') {
@@ -177,10 +175,40 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // ============================================================
+  // NAVIGATION METHODS
+  // ============================================================
+
+  // ✅ Refresh data
   Future<void> _onRefresh() async {
     await initialLoad();
   }
 
+  // ✅ Navigate to booking flow and refresh on return
+  Future<void> _navigateToBookingFlow(SportClubModel club) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.bookingFlow,
+      arguments: club,
+    );
+
+    // Refresh data when returning from booking flow
+    if (result == true || mounted) {
+      await _onRefresh();
+    }
+  }
+
+  // ✅ Navigate to explore screen
+  void _navigateToExplore() {
+    Navigator.pushNamed(context, AppRoutes.explore);
+  }
+
+  // ✅ Navigate to bookings screen
+  void _navigateBookings() {
+    Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
+  }
+
+  // ✅ Navigate view all clubs
   void _navigateViewAll() {
     final clubs = _filteredClubs;
     if (clubs.isEmpty) return;
@@ -191,10 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateBookings() {
-    Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
-  }
-
+  // ✅ Open location picker
   void _openLocationPicker() async {
     final result = await showModalBottomSheet<String>(
       context: context,
@@ -347,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppTheme.kAccent, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.kAccent.withValues(alpha: 0.3),
+                color: AppTheme.kAccent.withOpacity(0.3),
                 blurRadius: 10,
               ),
             ],
@@ -934,9 +959,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () {
-                  // Navigate to clubs or home
-                },
+                onPressed: _navigateToExplore, // ✅ Navigate to explore
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.kAccent,
                   foregroundColor: Colors.black,
@@ -969,6 +992,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return BookedCard(
           key: ValueKey('booking_${booking.id}_$_refreshCounter'),
           booking: booking,
+          onBookingUpdated: _onRefresh, // ✅ Refresh when booking is updated
         );
       }).toList(),
     );

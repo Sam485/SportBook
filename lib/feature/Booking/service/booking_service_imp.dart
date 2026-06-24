@@ -38,6 +38,11 @@ class BookingServiceImp implements BookingService {
   }
 
   @override
+  Future<BookingModel> cancelBookingWithPatch(int id) async {
+    return await _repository.cancelBookingWithPatch(id);
+  }
+
+  @override
   Future<GetAllBookingDto> getBookingsByStatus({
     required String status,
     int page = 1,

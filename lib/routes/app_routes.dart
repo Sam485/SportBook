@@ -9,10 +9,10 @@ import 'package:sportbook/screens/auth/sign_up_screen.dart';
 import 'package:sportbook/screens/auth/verify_screen.dart';
 import 'package:sportbook/screens/bookings/bookings_screen.dart';
 import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
+import 'package:sportbook/screens/explore/explore_screen.dart';
 import 'package:sportbook/screens/home/Notification/notification_screen.dart';
 import 'package:sportbook/screens/home/ViewAll/view_all.dart';
 import 'package:sportbook/screens/loading/splash_screen.dart';
-import '../feature/static/models/models.dart';
 import '../screens/main_screen.dart';
 import '../screens/booking_flow/booking_flow_screen.dart';
 import '../screens/club_detailed/club_detailed.dart';
@@ -34,9 +34,12 @@ class AppRoutes {
   static const String forgetPass = '/forget-password';
   static const String otpVerify = '/otp-verify';
   static const String resetPassword = '/reset-password';
+  static const String explore = '/explore';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case explore:
+        return MaterialPageRoute(builder: (_) => const ExploreScreen());
       case otpVerify:
         return MaterialPageRoute(builder: (_) => const VerifyScreen());
       case resetPassword:

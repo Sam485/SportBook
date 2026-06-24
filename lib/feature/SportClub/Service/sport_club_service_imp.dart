@@ -352,7 +352,7 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
         }
 
         // Only add if not already in favorites
-        if (club != null && !_favoriteClubs.any((c) => c.id == clubId)) {
+        if (!_favoriteClubs.any((c) => c.id == clubId)) {
           _favoriteClubs.add(club);
           print('Club $clubId added to favorites');
         }

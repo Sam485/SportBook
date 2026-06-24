@@ -3,6 +3,7 @@ import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/dto/slot_dto.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/booking_flow/steps/step_payment.dart';
 import 'package:sportbook/screens/booking_flow/steps/success.dart';
 import '../../core/theme.dart';
@@ -174,7 +175,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     });
 
     try {
-      final clubData = await _clubService.getClubById(widget.target.id);
+      final clubData = await _clubService.getClubByIdWithSlots(
+        widget.target.id,
+      );
 
       // Check if widget is still mounted after async operation
       if (!mounted) return;
@@ -244,6 +247,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   void _onPaymentConfirmed() {
+    // ✅ Check if widget is still mounted
     if (!mounted) return;
 
     if (_selectedSlot == null) {
@@ -296,43 +300,93 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       'courtName': _courtName,
       'slot': _selectedSlot,
       'date': _selectedDate,
-      'startTime': startTimeStr, // Store as String (24-hour format)
-      'endTime': endTimeStr, // Store as String (24-hour format)
-      'startTimeOfDay':
-          _selectedStartTime, // Store original TimeOfDay for display
-      'endTimeOfDay': _selectedEndTime, // Store original TimeOfDay for display
+      'startTime': startTimeStr,
+      'endTime': endTimeStr,
+      'startTimeOfDay': _selectedStartTime,
+      'endTimeOfDay': _selectedEndTime,
       'paymentMethod': paymentMethodApi,
       'totalPrice': _totalPrice,
       'pricePerHour': _pricePerHour,
     };
 
+    // ✅ Save the current context for navigation
+    final currentContext = context;
+
+    // ✅ Navigate to success page with proper callbacks
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => PaymentSuccessPage(
           bookingData: bookingData,
           onGoHome: () {
-            if (Navigator.of(context, rootNavigator: true).canPop()) {
-              Navigator.of(context).popUntil((r) => r.isFirst);
-            }
+            // ✅ Pop until home screen is reached
+            Navigator.of(context).popUntil((route) {
+              return route.settings.name == AppRoutes.home;
+            });
           },
           onViewBooking: () {
-            if (Navigator.of(context, rootNavigator: true).canPop()) {
-              Navigator.of(context).popUntil((r) => r.isFirst);
-            }
+            // ✅ Push bookings and remove everything else
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              AppRoutes.allbookings,
+              (route) => false,
+              arguments: true,
+            );
           },
         ),
       ),
     );
   }
 
+  // ✅ Safe navigation callback for Go Home
+  void _safeNavigateHome() {
+    // Check if mounted before navigation
+    if (!mounted) return;
+
+    try {
+      final context = this.context;
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context).popUntil((r) => r.isFirst);
+      } else {
+        // If can't pop to first, just pop
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      // If navigation fails, just pop
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {}
+    }
+  }
+
+  // ✅ Safe navigation callback for View Booking
+  void _safeNavigateBooking() {
+    // Check if mounted before navigation
+    if (!mounted) return;
+
+    try {
+      final context = this.context;
+      if (Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context).popUntil((r) => r.isFirst);
+      } else {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {}
+    }
+  }
+
   // Callbacks from steps
   void _onCategorySelected(String category) {
+    if (!mounted) return;
     setState(() {
       _selectedCategory = category;
     });
   }
 
   void _onCourtSelected(int courtId) {
+    if (!mounted) return;
+
     // Find the full slot object
     final slot = _clubWithSlots?.slots?.firstWhere(
       (s) => s.id == courtId,
@@ -346,6 +400,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   void _onDateTimeSelected(DateTime date, TimeOfDay start, TimeOfDay end) {
+    if (!mounted) return;
     setState(() {
       _selectedDate = date;
       _selectedStartTime = start;
@@ -354,6 +409,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   void _onPaymentMethodSelected(String method) {
+    if (!mounted) return;
     setState(() {
       _selectedPaymentMethod = method;
     });

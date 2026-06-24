@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/Token/service/token_service.dart';
-import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/feature/Auth/service/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,6 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   bool _isChecking = true;
   String _error = '';
   bool _isDisposed = false;
+  final AuthService _authService = getIt<AuthService>();
 
   @override
   void initState() {
@@ -34,34 +34,8 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 1));
 
     try {
-      final tokenService = getIt<TokenService>();
-
-      // Check if token exists and is valid
-      final hasValidToken = await tokenService.hasValidTokenAsync();
-
-      if (!_isDisposed && !mounted) return;
-
-      if (hasValidToken) {
-        // Navigate to home
-        if (!_isDisposed && mounted) {
-          Navigator.pushReplacementNamed(context, AppRoutes.home);
-        }
-      } else {
-        // Check if we have a refresh token to try
-        final refreshToken = await tokenService.getRefreshToken();
-        if (refreshToken != null && refreshToken.isNotEmpty) {
-          // Try to refresh
-          final refreshed = await tokenService.refreshAccessToken();
-          if (refreshed && !_isDisposed && mounted) {
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
-            return;
-          }
-        }
-
-        // No valid token, go to login
-        if (!_isDisposed && mounted) {
-          Navigator.pushReplacementNamed(context, AppRoutes.login);
-        }
+      if (!_isDisposed && mounted) {
+        await _authService.checkAndRedirect(context);
       }
     } catch (e) {
       print('Auth check error: $e');

@@ -9,7 +9,9 @@ import 'package:sportbook/translations/app_translations.dart';
 
 class BookedCard extends StatefulWidget {
   final BookingModel booking;
-  const BookedCard({super.key, required this.booking});
+  final VoidCallback? onBookingUpdated; // ✅ Callback to refresh parent
+
+  const BookedCard({super.key, required this.booking, this.onBookingUpdated});
 
   @override
   State<BookedCard> createState() => _BookedCardState();
@@ -18,14 +20,16 @@ class BookedCard extends StatefulWidget {
 class _BookedCardState extends State<BookedCard> {
   final BookingService _bookingService = getIt<BookingService>();
   bool _isCancelling = false;
+  BookingModel? _currentBooking; // ✅ Track current booking state
 
-  BookingModel get b => widget.booking;
+  // Computed properties - use _currentBooking if available, otherwise widget.booking
+  BookingModel get b => _currentBooking ?? widget.booking;
 
-  // Computed properties
   String get _bookingId => '#BK-${b.id.toString().padLeft(6, '0')}';
   String get _formattedDate => _formatDate(b.bookingDate);
   String get _timeRange => '${b.startTime} - ${b.endTime}';
   String get _status => b.status;
+
   bool get _isCancellable =>
       _status.toLowerCase() == 'pending' ||
       _status.toLowerCase() == 'confirmed';
@@ -89,10 +93,10 @@ class _BookedCardState extends State<BookedCard> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  void _onCancel() async {
+  Future<void> _onCancel() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showDialog(
+    final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
@@ -116,7 +120,7 @@ class _BookedCardState extends State<BookedCard> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: Text(
               'keep'.tr(context),
               style: TextStyle(
@@ -127,58 +131,75 @@ class _BookedCardState extends State<BookedCard> {
             ),
           ),
           ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              setState(() {
-                _isCancelling = true;
-              });
-
-              try {
-                await _bookingService.cancelBooking(b.id);
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Booking cancelled successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to cancel booking: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              } finally {
-                if (mounted) {
-                  setState(() {
-                    _isCancelling = false;
-                  });
-                }
-              }
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: _isCancelling
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    'cancel_booking'.tr(context),
-                    style: const TextStyle(color: Colors.white),
-                  ),
+            child: Text(
+              'yes_cancel'.tr(context),
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
+
+    if (shouldCancel != true) return;
+
+    setState(() {
+      _isCancelling = true;
+    });
+
+    try {
+      final result = await _bookingService.cancelBooking(b.id);
+
+      if (mounted) {
+        // ✅ Update the local booking state with the cancelled status
+        setState(() {
+          _currentBooking = result; // Use the updated booking from API
+          _isCancelling = false;
+        });
+
+        // ✅ Notify parent that booking was updated
+        widget.onBookingUpdated?.call();
+
+        // ✅ Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking cancelled successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCancelling = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel booking: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  // ✅ Method to refresh booking data from API
+  Future<void> _refreshBooking() async {
+    try {
+      final updatedBooking = await _bookingService.getBookingById(b.id);
+      if (mounted) {
+        setState(() {
+          _currentBooking = updatedBooking;
+        });
+        widget.onBookingUpdated?.call();
+      }
+    } catch (e) {
+      print('Failed to refresh booking: $e');
+    }
   }
 
   void _showQrDialog() {
@@ -392,8 +413,19 @@ class _BookedCardState extends State<BookedCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
-      onTap: () =>
-          Navigator.pushNamed(context, AppRoutes.bookedDetailed, arguments: b),
+      onTap: () {
+        // Navigate to detailed view and listen for updates when returning
+        Navigator.pushNamed(
+          context,
+          AppRoutes.bookedDetailed,
+          arguments: b,
+        ).then((_) {
+          // Refresh when coming back from detailed view
+          if (mounted) {
+            _refreshBooking();
+          }
+        });
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Container(

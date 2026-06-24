@@ -488,7 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppTheme.cardAlt(context),
                             ),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(6.0),
                           child: Column(
                             children: [
                               Text(
@@ -516,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: AppTheme.cardAlt(context),
                             ),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(6.0),
                           child: Column(
                             children: [
                               Text(
@@ -614,7 +614,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           Text(
                             subTitle,
-                            style: AppTheme.tsSubAdaptive(context),
+                            style: AppTheme.tsSubAdaptive(
+                              context,
+                            ).copyWith(fontSize: 12),
                           ),
                         ],
                       ),
@@ -688,7 +690,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             Text(
                               'booking_reminders'.tr(context),
-                              style: AppTheme.tsSubAdaptive(context),
+                              style: AppTheme.tsSubAdaptive(
+                                context,
+                              ).copyWith(fontSize: 12),
                             ),
                           ],
                         ),
@@ -742,7 +746,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 _currentLanguage == 'EN'
                                     ? 'english'.tr(context)
                                     : 'khmer'.tr(context),
-                                style: AppTheme.tsSubAdaptive(context),
+                                style: AppTheme.tsSubAdaptive(
+                                  context,
+                                ).copyWith(fontSize: 12),
                               ),
                             ],
                           ),
@@ -808,7 +814,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     : (themeProvider.currentTheme == 'light'
                                           ? 'light_mode'.tr(context)
                                           : 'system_default'.tr(context)),
-                                style: AppTheme.tsSubAdaptive(context),
+                                style: AppTheme.tsSubAdaptive(
+                                  context,
+                                ).copyWith(fontSize: 12),
                               ),
                             ],
                           ),

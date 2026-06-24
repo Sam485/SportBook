@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/Booking/model/create_booking_model.dart';
 import 'package:sportbook/feature/Booking/service/booking_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
@@ -55,9 +57,15 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   late String _endTime;
   late String _paymentMethod;
   late String _bookingId;
+  late BookingModel? _createdBooking;
 
   bool _isCreatingBooking = false;
   String? _errorMessage;
+  bool _bookingCreated = false;
+
+  // Global navigator key
+  final GlobalKey<NavigatorState> _navigatorKey =
+      getIt<GlobalKey<NavigatorState>>();
 
   @override
   void initState() {
@@ -284,24 +292,22 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         slotId: _slotId,
         sportClubId: _clubId,
         bookingDate: _selectedDate,
-        startTime:
-            _startTime, // Already in 24-hour format from BookingFlowScreen
-        endTime: _endTime, // Already in 24-hour format from BookingFlowScreen
+        startTime: _startTime,
+        endTime: _endTime,
         note: 'Booking from app',
         paymentMethod: _paymentMethod,
         transactionRef: transactionId,
       );
 
-      // Print the request for debugging
       print('Creating booking with data: ${booking.toJson()}');
 
       final result = await _bookingService.createBooking(booking);
 
-      // Check if widget is still mounted after async operation
       if (mounted) {
         setState(() {
           _isCreatingBooking = false;
-          // Store the created booking ID
+          _bookingCreated = true;
+          _createdBooking = result;
           _bookingId = '#BK-${result.id.toString().padLeft(6, '0')}';
         });
 
@@ -310,11 +316,11 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           const SnackBar(
             content: Text('Booking created successfully!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      // Check if widget is still mounted before showing error
       if (mounted) {
         setState(() {
           _isCreatingBooking = false;
@@ -331,6 +337,156 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     }
   }
 
+  // ============================================================
+  // SAFE NAVIGATION METHODS
+  // ============================================================
+
+  void _navigateToHome() {
+    // ✅ Check if mounted
+    if (!mounted) return;
+
+    try {
+      // Try to use the navigator key first
+      final navState = _navigatorKey.currentState;
+      if (navState != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (navState.canPop()) {
+              navState.popUntil((route) => route.isFirst);
+            } else {
+              navState.pushReplacementNamed(AppRoutes.home);
+            }
+          } catch (e) {
+            // Fallback: use context
+            if (mounted) {
+              try {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              } catch (_) {
+                Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+              }
+            }
+          }
+        });
+        return;
+      }
+
+      // Fallback: use context
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            try {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            } catch (_) {
+              Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Final fallback
+      if (mounted) {
+        try {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } catch (_) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        }
+      }
+    }
+  }
+
+  void _navigateToBookingDetail() {
+    // ✅ Check if mounted and booking exists
+    if (!mounted || _createdBooking == null) {
+      // If no booking, go to bookings list
+      _navigateToBookings();
+      return;
+    }
+
+    try {
+      final navState = _navigatorKey.currentState;
+      if (navState != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            // Navigate to booking detail
+            navState.pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => BookedDetailed(booking: _createdBooking!),
+              ),
+              (route) => route.isFirst,
+            );
+          } catch (e) {
+            // Fallback: navigate to bookings list
+            _navigateToBookings();
+          }
+        });
+        return;
+      }
+
+      // Fallback: use context
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            try {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) => BookedDetailed(booking: _createdBooking!),
+                ),
+                (route) => route.isFirst,
+              );
+            } catch (_) {
+              _navigateToBookings();
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Final fallback
+      _navigateToBookings();
+    }
+  }
+
+  void _navigateToBookings() {
+    if (!mounted) return;
+
+    try {
+      final navState = _navigatorKey.currentState;
+      if (navState != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            navState.pushReplacementNamed(
+              AppRoutes.allbookings,
+              arguments: true,
+            );
+          } catch (_) {
+            if (mounted) {
+              Navigator.of(
+                context,
+              ).pushReplacementNamed(AppRoutes.allbookings, arguments: true);
+            }
+          }
+        });
+        return;
+      }
+
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(
+              context,
+            ).pushReplacementNamed(AppRoutes.allbookings, arguments: true);
+          }
+        });
+      }
+    } catch (e) {
+      // Final fallback
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushReplacementNamed(AppRoutes.allbookings, arguments: true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -338,13 +494,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
 
-              _SuccessAnimation(
+            SliverToBoxAdapter(
+              child: _SuccessAnimation(
                 checkScale: _checkScale,
                 checkOpacity: _checkOpacity,
                 ripple1: _ripple1,
@@ -353,10 +509,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 rippleController: _rippleController,
                 isDark: isDark,
               ),
+            ),
 
-              const SizedBox(height: 36),
+            const SliverToBoxAdapter(child: SizedBox(height: 36)),
 
-              FadeTransition(
+            SliverToBoxAdapter(
+              child: FadeTransition(
                 opacity: _contentFade,
                 child: SlideTransition(
                   position: _contentSlide,
@@ -409,21 +567,24 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   ),
                 ),
               ),
+            ),
 
-              const Spacer(flex: 3),
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
 
-              FadeTransition(
+            SliverToBoxAdapter(
+              child: FadeTransition(
                 opacity: _buttonFade,
                 child: SlideTransition(
                   position: _buttonSlide,
                   child: Column(
                     children: [
+                      // View Booking Button - Navigate to booking detail
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isCreatingBooking
+                          onPressed: _isCreatingBooking || !_bookingCreated
                               ? null
-                              : widget.onViewBooking,
+                              : _navigateToBookingDetail,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.kAccent,
                             foregroundColor: Colors.black,
@@ -464,12 +625,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 12),
 
+                      // Go Home Button - Pop to home
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: _isCreatingBooking
                               ? null
-                              : widget.onGoHome,
+                              : _navigateToHome,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: isDark
                                 ? Colors.white70
@@ -516,8 +678,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          ],
         ),
       ),
     );
