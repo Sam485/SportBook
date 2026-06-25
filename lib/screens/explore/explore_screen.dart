@@ -7,7 +7,7 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
-import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart'; // ✅ ADD THIS IMPORT
+import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
 import 'package:sportbook/widgets/common/section_header.dart';
@@ -24,7 +24,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _query = "";
   bool _isLoading = true;
   bool _isCategoriesLoading = true;
-  String _error = '';
+  String _errorMessage = '';
+  bool _hasError = false;
   bool _isDisposed = false;
   int _currentPage = 1;
   int _totalClubs = 0;
@@ -75,6 +76,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return result;
   }
 
+  // ✅ Get user-friendly error message
+  String get _userFriendlyErrorMessage {
+    if (_errorMessage.contains('timeout') ||
+        _errorMessage.contains('Timeout')) {
+      return 'connection_timeout'.tr(context);
+    } else if (_errorMessage.contains('network') ||
+        _errorMessage.contains('Network')) {
+      return 'network_error'.tr(context);
+    } else if (_errorMessage.contains('401') ||
+        _errorMessage.contains('unauthorized')) {
+      return 'unauthorized'.tr(context);
+    } else if (_errorMessage.contains('500')) {
+      return 'server_error'.tr(context);
+    } else if (_errorMessage.contains('404')) {
+      return 'not_found'.tr(context);
+    } else {
+      return 'something_went_wrong'.tr(context);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -94,7 +115,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     setState(() {
       _isLoading = true;
       _isCategoriesLoading = true;
-      _error = '';
+      _hasError = false;
+      _errorMessage = '';
       _allClubs = [];
       _currentPage = 1;
       _hasMore = true;
@@ -109,18 +131,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
       // Load all clubs with pagination
       await _loadAllClubs(reset: true);
 
-      setState(() {
-        _isLoading = false;
-        _isCategoriesLoading = false;
-        _isInitialLoad = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isCategoriesLoading = false;
+          _isInitialLoad = false;
+          _hasError = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-        _isCategoriesLoading = false;
-        _isInitialLoad = false;
-      });
+      // ✅ Set error flag but don't show the full exception
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _hasError = true;
+          _isLoading = false;
+          _isCategoriesLoading = false;
+          _isInitialLoad = false;
+        });
+      }
     }
   }
 
@@ -133,8 +162,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
 
     try {
-      // Use the repository directly to get ALL clubs (not nearby)
-      final repository = getIt<SportClubRepository>(); // ✅ Now this works
+      final repository = getIt<SportClubRepository>();
       final dto = await repository.getAllSportClub(
         page: _currentPage,
         limit: 20,
@@ -142,30 +170,36 @@ class _ExploreScreenState extends State<ExploreScreen> {
       );
 
       if (dto.data.isNotEmpty) {
-        setState(() {
-          if (reset) {
-            _allClubs = dto.data;
-          } else {
-            // Remove duplicates by ID before adding
-            final existingIds = _allClubs.map((c) => c.id).toSet();
-            final newClubs = dto.data
-                .where((c) => !existingIds.contains(c.id))
-                .toList();
-            _allClubs.addAll(newClubs);
-          }
-          _totalClubs = dto.total;
-          _hasMore = _allClubs.length < _totalClubs;
-          _currentPage++;
-        });
+        if (mounted) {
+          setState(() {
+            if (reset) {
+              _allClubs = dto.data;
+            } else {
+              final existingIds = _allClubs.map((c) => c.id).toSet();
+              final newClubs = dto.data
+                  .where((c) => !existingIds.contains(c.id))
+                  .toList();
+              _allClubs.addAll(newClubs);
+            }
+            _totalClubs = dto.total;
+            _hasMore = _allClubs.length < _totalClubs;
+            _currentPage++;
+            _hasError = false;
+          });
+        }
       } else {
-        setState(() {
-          _hasMore = false;
-        });
+        if (mounted) {
+          setState(() {
+            _hasMore = false;
+          });
+        }
       }
     } catch (e) {
+      // ✅ Don't show full exception, just set error flag
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _errorMessage = e.toString();
+          _hasError = true;
         });
       }
     } finally {
@@ -182,7 +216,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _allClubs = [];
       _currentPage = 1;
       _hasMore = true;
-      _error = '';
+      _hasError = false;
+      _errorMessage = '';
     });
     await _loadAllClubs(reset: true);
   }
@@ -206,6 +241,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           _allClubs = [];
           _currentPage = 1;
           _hasMore = true;
+          _hasError = false;
         });
         _loadAllClubs(reset: true);
       }
@@ -265,53 +301,49 @@ class _ExploreScreenState extends State<ExploreScreen> {
       );
     }
 
-    if (_error.isNotEmpty && _allClubs.isEmpty) {
+    // ✅ Show friendly error message instead of full exception
+    if (_hasError && _allClubs.isEmpty) {
       return SliverFillRemaining(
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline_rounded,
-                size: 64,
-                color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'error'.tr(context),
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppTheme.kLightText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 64,
+                  color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _loadData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.kAccent,
-                  foregroundColor: const Color(0xFF0A1828),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                const SizedBox(height: 16),
+                Text(
+                  _userFriendlyErrorMessage,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  textAlign: TextAlign.center,
                 ),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text('retry'.tr(context)),
-              ),
-            ],
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _loadData,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.kAccent,
+                    foregroundColor: const Color(0xFF0A1828),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text('retry'.tr(context)),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -361,71 +393,64 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          // Show loading indicator at the bottom if there are more clubs
-          if (index == clubs.length) {
-            if (_isLoadingMore) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: Column(
-                    children: [
-                      const CircularProgressIndicator(
-                        color: AppTheme.kAccent,
-                        strokeWidth: 2,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'loading_more'.tr(context),
-                        style: TextStyle(
-                          color: isDark
-                              ? AppTheme.kTextSub
-                              : AppTheme.kLightTextSub,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            } else if (_hasMore) {
-              // Trigger load more
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _loadMore();
-              });
-              return const SizedBox.shrink();
-            } else if (_totalClubs > 0) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text(
-                    'end_of_list'.tr(context),
-                    style: TextStyle(
-                      color: isDark
-                          ? AppTheme.kTextSub
-                          : AppTheme.kLightTextSub,
-                      fontSize: 12,
+      delegate: SliverChildBuilderDelegate((context, index) {
+        // Show loading indicator at the bottom if there are more clubs
+        if (index == clubs.length) {
+          if (_isLoadingMore) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(
+                      color: AppTheme.kAccent,
+                      strokeWidth: 2,
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'loading_more'.tr(context),
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else if (_hasMore) {
+            // Trigger load more
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _loadMore();
+            });
+            return const SizedBox.shrink();
+          } else if (_totalClubs > 0) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'end_of_list'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                    fontSize: 12,
                   ),
                 ),
-              );
-            }
-            return const SizedBox.shrink();
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ClubCard(
-              key: ValueKey(
-                'club_${clubs[index].id}_${clubs[index].updatedAt}',
               ),
-              club: clubs[index],
-            ),
-          );
-        },
-        childCount: clubs.length + 1, // +1 for loading indicator
-      ),
+            );
+          }
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ClubCard(
+            key: ValueKey('club_${clubs[index].id}_${clubs[index].updatedAt}'),
+            club: clubs[index],
+          ),
+        );
+      }, childCount: clubs.length + 1),
     );
   }
 
@@ -518,7 +543,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
       return const SizedBox.shrink();
     }
 
-    // Add "All" category at the beginning
     final displayCategories = [
       CategoryModel(
         id: 0,

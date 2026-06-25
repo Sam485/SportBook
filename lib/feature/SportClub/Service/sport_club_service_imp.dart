@@ -388,4 +388,11 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
   Future<SportClubModel> getClubByIdWithSlots(int id) async {
     return await _repository.getSportClubById(id);
   }
+
+  @override
+  void setNearbyClubs(List<SportClubModel> clubs) {
+    _nearbyClubs = clubs;
+    _errorNearby = '';
+    notifyListeners();
+  }
 }

@@ -1,5 +1,6 @@
-// home_screen.dart - COMPLETE FIXED VERSION WITH REAL BOOKINGS
+// home_screen.dart - COMPLETE FIXED VERSION WITH PHNOM PENH DEFAULT
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
@@ -10,6 +11,7 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
@@ -31,15 +33,26 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedCat = 'all';
-  String _locationLabel = 'New York';
+  String _locationLabel = 'Phnom Penh';
   bool _isDisposed = false;
   bool _isLoading = true;
   int _refreshCounter = 0;
 
+  // Default location: Phnom Penh, Cambodia
+  static const double _defaultLat = 11.5564;
+  static const double _defaultLng = 104.9282;
+  static const String _defaultLocationLabel = 'Phnom Penh';
+
   // Location for nearby search
-  double? _currentLat;
-  double? _currentLng;
-  int _radius = 10; // Default radius in km
+  double? _currentLat = _defaultLat;
+  double? _currentLng = _defaultLng;
+  int _radius = 20; // Default radius in km
+
+  // SharedPreferences keys
+  static const String _prefLat = 'user_lat';
+  static const String _prefLng = 'user_lng';
+  static const String _prefLocationLabel = 'user_location_label';
+  static const String _prefHasLocation = 'has_saved_location';
 
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
@@ -55,15 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // Booking data
   GetAllBookingDto? _bookingsData;
   bool _isBookingsLoading = true;
-  String? _bookingsError;
+  bool _hasBookingsError = false;
 
-  // Get nearby clubs from service
+  // Get clubs from service
   List<SportClubModel> get _clubs => List.from(_clubService.nearbyClubs);
 
   // Get upcoming bookings (filtered by status)
   List<BookingModel> get _upcomingBookings {
-    if (_bookingsData == null) return [];
-    // Filter for upcoming bookings (pending, confirmed)
+    if (_bookingsData == null || _hasBookingsError) return [];
     return _bookingsData!.data.where((booking) {
       final status = booking.status.toLowerCase();
       return status == 'pending' || status == 'confirmed';
@@ -85,47 +97,200 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
   }
 
+  // ✅ Check if user is authenticated
+  Future<bool> _isAuthenticated() async {
+    try {
+      final tokenService = getIt<TokenService>();
+      return await tokenService.hasValidTokenAsync();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ✅ Show login required dialog
+  void _showLoginRequiredDialog(BuildContext context, {String? message}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'login_required'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          message ?? 'login_to_book'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'cancel'.tr(context),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.login);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.kAccent,
+              foregroundColor: Colors.black,
+            ),
+            child: Text('login'.tr(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Navigate to booking flow with auth check
+  Future<void> _navigateToBookingFlow(SportClubModel club) async {
+    final isAuth = await _isAuthenticated();
+
+    if (!isAuth) {
+      _showLoginRequiredDialog(context);
+      return;
+    }
+
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.bookingFlow,
+      arguments: club,
+    );
+
+    if (result == true || mounted) {
+      await _onRefresh();
+    }
+  }
+
+  // ✅ Navigate to club detailed view
+  void _navigateToClubDetailed(SportClubModel club) {
+    Navigator.pushNamed(context, AppRoutes.clubDetailed, arguments: club);
+  }
+
+  // ============================================================
+  // LOCATION PERSISTENCE METHODS
+  // ============================================================
+
+  Future<void> _saveLocationToPrefs({
+    required double lat,
+    required double lng,
+    required String label,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_prefLat, lat);
+      await prefs.setDouble(_prefLng, lng);
+      await prefs.setString(_prefLocationLabel, label);
+      await prefs.setBool(_prefHasLocation, true);
+      print('📍 Location saved to preferences: $label ($lat, $lng)');
+    } catch (e) {
+      print('Failed to save location: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> _loadLocationFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasLocation = prefs.getBool(_prefHasLocation) ?? false;
+
+      if (!hasLocation) {
+        print('📍 No saved location found, using default Phnom Penh');
+        return null;
+      }
+
+      final lat = prefs.getDouble(_prefLat);
+      final lng = prefs.getDouble(_prefLng);
+      final label = prefs.getString(_prefLocationLabel) ?? 'Phnom Penh';
+
+      if (lat != null && lng != null) {
+        print('📍 Loaded location from preferences: $label ($lat, $lng)');
+        return {'lat': lat, 'lng': lng, 'label': label};
+      }
+      return null;
+    } catch (e) {
+      print('Failed to load location: $e');
+      return null;
+    }
+  }
+
+  // ============================================================
+  // INITIALIZATION METHODS
+  // ============================================================
+
   Future<void> initialLoad() async {
     try {
-      // Get user profile first
-      await _userService.getProfile();
-      _user = _userService.currentUser;
-
-      // Get user location from profile
-      if (_user != null) {
-        _currentLat = _user!.lat;
-        _currentLng = _user!.lng;
-        _locationLabel = _user!.location ?? 'New York';
-      }
-
-      // Load all data in parallel
-      final results = await Future.wait([
+      // ✅ Load public data first (banners, categories)
+      final publicResults = await Future.wait([
         _bannerService.getAllActiveBanner(),
         _categoryService.fetchCategories(limit: 100),
-        _bookingService.getAllBookings(page: 1, limit: 10),
       ]);
 
-      // Load nearby clubs using user location
-      if (_currentLat != null && _currentLng != null) {
-        await _clubService.fetchNearbyClubs(
-          lat: _currentLat!,
-          lng: _currentLng!,
-          radius: _radius,
-        );
-      } else {
-        // If no location, use default coordinates (Phnom Penh)
-        await _clubService.fetchNearbyClubs(
-          lat: 11.5564,
-          lng: 104.9282,
-          radius: _radius,
-        );
+      // ✅ Try to load user profile (may fail if not authenticated)
+      try {
+        await _userService.getProfile();
+        _user = _userService.currentUser;
+
+        if (_user != null && _user!.lat != null && _user!.lng != null) {
+          _currentLat = _user!.lat;
+          _currentLng = _user!.lng;
+          _locationLabel = _user!.location ?? 'Phnom Penh';
+          await _saveLocationToPrefs(
+            lat: _currentLat!,
+            lng: _currentLng!,
+            label: _locationLabel,
+          );
+        }
+      } catch (e) {
+        print('⚠️ User profile not available (not logged in): $e');
+        final savedLocation = await _loadLocationFromPrefs();
+        if (savedLocation != null) {
+          _currentLat = savedLocation['lat'];
+          _currentLng = savedLocation['lng'];
+          _locationLabel = savedLocation['label'];
+        } else {
+          _currentLat = _defaultLat;
+          _currentLng = _defaultLng;
+          _locationLabel = _defaultLocationLabel;
+        }
       }
+
+      // ✅ Try to load bookings (may fail if not authenticated)
+      try {
+        final bookingsData = await _bookingService.getAllBookings(
+          page: 1,
+          limit: 10,
+        );
+        _bookingsData = bookingsData;
+        _hasBookingsError = false;
+      } catch (e) {
+        print('⚠️ Bookings not available (not logged in): $e');
+        _bookingsData = null;
+        _hasBookingsError = true;
+      }
+
+      // ✅ Load clubs with timeout and fallback
+      await _loadClubsWithFallback();
 
       if (!_isDisposed && mounted) {
         setState(() {
-          _banners = results[0] as List<BannerModel>?;
-          _categories = results[1] as List<CategoryModel>;
-          _bookingsData = results[2] as GetAllBookingDto;
+          _banners = publicResults[0] as List<BannerModel>?;
+          _categories = publicResults[1] as List<CategoryModel>;
           _isBookingsLoading = false;
           _isCategoriesLoading = false;
           _isLoading = false;
@@ -139,9 +304,91 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
           _isCategoriesLoading = false;
           _isBookingsLoading = false;
-          _bookingsError = e.toString();
+          _hasBookingsError = true;
           _refreshCounter++;
         });
+      }
+    }
+  }
+
+  // ✅ Load clubs with timeout and fallback
+  Future<void> _loadClubsWithFallback() async {
+    try {
+      if (_currentLat != null && _currentLng != null) {
+        await _clubService
+            .fetchNearbyClubs(
+              lat: _currentLat!,
+              lng: _currentLng!,
+              radius: _radius,
+            )
+            .timeout(
+              const Duration(seconds: 15),
+              onTimeout: () {
+                print('⚠️ Nearby clubs timeout, falling back to all clubs');
+                return Future.value([]);
+              },
+            );
+      } else {
+        final allClubsDto = await _clubService.getAllSportClub(
+          page: 1,
+          limit: 100,
+        );
+        _clubService.setNearbyClubs(allClubsDto.data);
+        print('✅ Loaded ${allClubsDto.data.length} clubs (no location)');
+      }
+    } catch (e) {
+      print('❌ Nearby clubs failed, falling back to all clubs: $e');
+      try {
+        final allClubsDto = await _clubService.getAllSportClub(
+          page: 1,
+          limit: 100,
+        );
+        _clubService.setNearbyClubs(allClubsDto.data);
+        print('✅ Loaded ${allClubsDto.data.length} clubs as fallback');
+      } catch (fallbackError) {
+        print('❌ Fallback also failed: $fallbackError');
+        _clubService.setNearbyClubs([]);
+      }
+    }
+  }
+
+  // ✅ Refresh clubs with UI update
+  Future<void> _refreshNearbyClubsWithUIUpdate(double lat, double lng) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
+
+      await _saveLocationToPrefs(lat: lat, lng: lng, label: _locationLabel);
+
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _isLoading = false;
+          _refreshCounter++;
+        });
+      }
+    } catch (e) {
+      print('Failed to refresh nearby clubs: $e');
+      try {
+        final allClubsDto = await _clubService.getAllSportClub(
+          page: 1,
+          limit: 100,
+        );
+        _clubService.setNearbyClubs(allClubsDto.data);
+        if (!_isDisposed && mounted) {
+          setState(() {
+            _isLoading = false;
+            _refreshCounter++;
+          });
+        }
+      } catch (_) {
+        if (!_isDisposed && mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -152,10 +399,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _clubService = getIt<SportClubService>();
     _bookingService = getIt<BookingService>();
 
-    // Listen to service changes
     _clubService.addListener(_onServiceChanged);
 
-    initialLoad();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initialLoad();
+    });
   }
 
   @override
@@ -179,36 +427,18 @@ class _HomeScreenState extends State<HomeScreen> {
   // NAVIGATION METHODS
   // ============================================================
 
-  // ✅ Refresh data
   Future<void> _onRefresh() async {
     await initialLoad();
   }
 
-  // ✅ Navigate to booking flow and refresh on return
-  Future<void> _navigateToBookingFlow(SportClubModel club) async {
-    final result = await Navigator.pushNamed(
-      context,
-      AppRoutes.bookingFlow,
-      arguments: club,
-    );
-
-    // Refresh data when returning from booking flow
-    if (result == true || mounted) {
-      await _onRefresh();
-    }
-  }
-
-  // ✅ Navigate to explore screen
   void _navigateToExplore() {
     Navigator.pushNamed(context, AppRoutes.explore);
   }
 
-  // ✅ Navigate to bookings screen
   void _navigateBookings() {
     Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
   }
 
-  // ✅ Navigate view all clubs
   void _navigateViewAll() {
     final clubs = _filteredClubs;
     if (clubs.isEmpty) return;
@@ -219,7 +449,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ✅ Open location picker
   void _openLocationPicker() async {
     final result = await showModalBottomSheet<String>(
       context: context,
@@ -246,11 +475,20 @@ class _HomeScreenState extends State<HomeScreen> {
         _locationLabel = result;
       });
 
-      await _updateUserLocation(result);
+      if (_user != null) {
+        await _updateUserLocation(result);
+      } else {
+        if (_currentLat != null && _currentLng != null) {
+          await _saveLocationToPrefs(
+            lat: _currentLat!,
+            lng: _currentLng!,
+            label: result,
+          );
+        }
+      }
 
-      // Refresh nearby clubs with new location
       if (_currentLat != null && _currentLng != null) {
-        await _refreshNearbyClubs(_currentLat!, _currentLng!);
+        await _refreshNearbyClubsWithUIUpdate(_currentLat!, _currentLng!);
       }
     }
   }
@@ -270,7 +508,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       await _userService.updateProfile(updateDto);
 
-      // Update user after profile update
       setState(() {
         _user = _userService.currentUser;
         _locationLabel = _user?.location ?? location;
@@ -278,6 +515,14 @@ class _HomeScreenState extends State<HomeScreen> {
         _currentLng = _user?.lng;
         _isLoading = false;
       });
+
+      if (_currentLat != null && _currentLng != null) {
+        await _saveLocationToPrefs(
+          lat: _currentLat!,
+          lng: _currentLng!,
+          label: location,
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -296,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update location: $e'),
+            content: Text('Failed to update location'),
             backgroundColor: Colors.red,
           ),
         );
@@ -307,6 +552,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refreshNearbyClubs(double lat, double lng) async {
     try {
       await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
+
+      await _saveLocationToPrefs(lat: lat, lng: lng, label: _locationLabel);
+
       if (!_isDisposed && mounted) {
         setState(() {
           _refreshCounter++;
@@ -315,6 +563,13 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!_isDisposed && mounted) {
         print('Failed to refresh nearby clubs: $e');
+        try {
+          final allClubsDto = await _clubService.getAllSportClub(
+            page: 1,
+            limit: 100,
+          );
+          _clubService.setNearbyClubs(allClubsDto.data);
+        } catch (_) {}
       }
     }
   }
@@ -338,7 +593,8 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(child: _categoriesWidget(isDark)),
               SliverToBoxAdapter(
                 child: SectionHeader(
-                  title: 'clubs_nearby'.tr(context),
+                  title:
+                      '${'clubs_nearby'.tr(context)} (${_filteredClubs.length})',
                   onAction: _navigateViewAll,
                   isDark: isDark,
                 ),
@@ -360,6 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── Header ──────────────────────────────────────────────────────────────────
   Widget _header(bool isDark) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
     child: Row(
@@ -661,7 +918,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _clubsList(bool isDark) {
-    if (_clubService.isLoadingNearby || _isLoading) {
+    if (_isLoading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Container(
+          height: 250,
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppTheme.kAccent),
+                SizedBox(height: 16),
+                Text(
+                  'Loading clubs...',
+                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_clubService.isLoadingNearby) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Container(
@@ -679,75 +959,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-          ),
-        ),
-      );
-    }
-
-    if (_clubService.errorNearby.isNotEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: AppTheme.cardDecorationAdaptive(context),
-          child: Column(
-            children: [
-              Icon(
-                Icons.error_outline,
-                color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-                size: 48,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Failed to load clubs',
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppTheme.kLightText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _clubService.errorNearby,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  if (_currentLat != null && _currentLng != null) {
-                    await _clubService.fetchNearbyClubs(
-                      lat: _currentLat!,
-                      lng: _currentLng!,
-                      radius: _radius,
-                    );
-                  } else {
-                    await _clubService.fetchNearbyClubs(
-                      lat: 11.5564,
-                      lng: 104.9282,
-                      radius: _radius,
-                    );
-                  }
-                  if (!_isDisposed && mounted) setState(() {});
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.kAccent,
-                  foregroundColor: const Color(0xFF0A1828),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text('retry'.tr(context)),
-              ),
-            ],
           ),
         ),
       );
@@ -787,7 +998,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Radius selector
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -819,19 +1029,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _isLoading = true;
                         });
 
-                        if (_currentLat != null && _currentLng != null) {
-                          await _clubService.fetchNearbyClubs(
-                            lat: _currentLat!,
-                            lng: _currentLng!,
-                            radius: _radius,
-                          );
-                        } else {
-                          await _clubService.fetchNearbyClubs(
-                            lat: 11.5564,
-                            lng: 104.9282,
-                            radius: _radius,
-                          );
-                        }
+                        await _loadClubsWithFallback();
 
                         if (mounted) {
                           setState(() {
@@ -859,6 +1057,8 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (_, i) => ClubCard(
           key: ValueKey('club_${clubs[i].id}_$_refreshCounter'),
           club: clubs[i],
+          onBookPressed: _navigateToBookingFlow,
+          onDetailPressed: _navigateToClubDetailed,
         ),
       ),
     );
@@ -892,42 +1092,9 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_bookingsError != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: AppTheme.cardDecorationAdaptive(context),
-          child: Column(
-            children: [
-              Icon(Icons.error_outline, color: Colors.orange, size: 32),
-              const SizedBox(height: 8),
-              Text(
-                'Failed to load bookings',
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppTheme.kLightText,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _bookingsError!,
-                style: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     final upcoming = _upcomingBookings;
 
-    if (upcoming.isEmpty) {
+    if (upcoming.isEmpty || _hasBookingsError) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         child: Container(
@@ -959,7 +1126,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: _navigateToExplore, // ✅ Navigate to explore
+                onPressed: _navigateToExplore,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.kAccent,
                   foregroundColor: Colors.black,
@@ -982,7 +1149,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Show only first 3 upcoming bookings
     final displayBookings = upcoming.length > 3
         ? upcoming.sublist(0, 3)
         : upcoming;
@@ -992,7 +1158,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return BookedCard(
           key: ValueKey('booking_${booking.id}_$_refreshCounter'),
           booking: booking,
-          onBookingUpdated: _onRefresh, // ✅ Refresh when booking is updated
+          onBookingUpdated: _onRefresh,
         );
       }).toList(),
     );

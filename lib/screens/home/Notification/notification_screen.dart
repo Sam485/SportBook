@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Notification/service/notification_service.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -14,17 +16,40 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   final _notificationService = getIt<NotificationService>();
+  final _tokenService = getIt<TokenService>();
 
   String _selectedCat = 'all';
   List<String> _categories = [];
   bool _isLoading = true;
-  String _error = '';
+  bool _hasError = false;
+  String _errorMessage = '';
   bool _isDisposed = false;
+  bool _isCheckingAuth = true;
+
+  // ✅ Get user-friendly error message
+  String get _userFriendlyErrorMessage {
+    if (_errorMessage.isEmpty) return 'something_went_wrong'.tr(context);
+
+    final msg = _errorMessage.toLowerCase();
+    if (msg.contains('timeout') || msg.contains('timed out')) {
+      return 'connection_timeout'.tr(context);
+    } else if (msg.contains('network') || msg.contains('internet')) {
+      return 'network_error'.tr(context);
+    } else if (msg.contains('401') || msg.contains('unauthorized')) {
+      return 'unauthorized'.tr(context);
+    } else if (msg.contains('500') || msg.contains('server')) {
+      return 'server_error'.tr(context);
+    } else if (msg.contains('404') || msg.contains('not found')) {
+      return 'not_found'.tr(context);
+    } else {
+      return 'something_went_wrong'.tr(context);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _checkAuthentication();
   }
 
   @override
@@ -33,12 +58,62 @@ class _NotificationScreenState extends State<NotificationScreen> {
     super.dispose();
   }
 
+  // ✅ Check if user is authenticated
+  Future<void> _checkAuthentication() async {
+    setState(() {
+      _isCheckingAuth = true;
+    });
+
+    try {
+      final hasValidToken = await _tokenService.hasValidTokenAsync();
+
+      if (!hasValidToken) {
+        // Try to refresh token
+        final refreshToken = await _tokenService.getRefreshToken();
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          final refreshed = await _tokenService.refreshAccessToken();
+          if (!refreshed) {
+            // Not authenticated - redirect to login
+            _redirectToLogin();
+            return;
+          }
+        } else {
+          // No token - redirect to login
+          _redirectToLogin();
+          return;
+        }
+      }
+
+      // User is authenticated, load notifications
+      setState(() {
+        _isCheckingAuth = false;
+      });
+      _loadNotifications();
+    } catch (e) {
+      print('Auth check error: $e');
+      // If there's an error, assume not authenticated and redirect
+      _redirectToLogin();
+    }
+  }
+
+  // ✅ Redirect to login screen
+  void _redirectToLogin() {
+    if (!_isDisposed && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
+        }
+      });
+    }
+  }
+
   Future<void> _loadNotifications() async {
     if (_isDisposed) return;
 
     setState(() {
       _isLoading = true;
-      _error = '';
+      _hasError = false;
+      _errorMessage = '';
     });
 
     try {
@@ -51,12 +126,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
         setState(() {
           _categories = ['all', ...types.where((t) => t != 'all')];
           _isLoading = false;
+          _hasError = false;
         });
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
         setState(() {
-          _error = e.toString();
+          _errorMessage = e.toString();
+          _hasError = true;
           _isLoading = false;
         });
       }
@@ -215,6 +292,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ✅ Show loading while checking auth
+    if (_isCheckingAuth) {
+      return Scaffold(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: AppTheme.kAccent,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'loading'.tr(context),
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: AppBar(
@@ -294,53 +397,49 @@ class _NotificationScreenState extends State<NotificationScreen> {
       );
     }
 
-    if (_error.isNotEmpty) {
+    // ✅ Show friendly error message
+    if (_hasError) {
       return SliverFillRemaining(
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline_rounded,
-                size: 64,
-                color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'error'.tr(context),
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppTheme.kLightText,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 64,
+                  color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _loadNotifications,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.kAccent,
-                  foregroundColor: const Color(0xFF0A1828),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                const SizedBox(height: 16),
+                Text(
+                  _userFriendlyErrorMessage,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  textAlign: TextAlign.center,
                 ),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text('retry'.tr(context)),
-              ),
-            ],
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _loadNotifications,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.kAccent,
+                    foregroundColor: const Color(0xFF0A1828),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text('retry'.tr(context)),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -363,7 +462,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Text(
                 _selectedCat == 'all'
                     ? 'no_notifications'.tr(context)
-                    : 'No notifications in $_selectedCat',
+                    : 'no_notifications_in_category'
+                          .tr(context)
+                          .replaceAll('{category}', _selectedCat),
                 style: TextStyle(
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                   fontSize: 16,
@@ -599,7 +700,6 @@ class NotificationDetailDialog extends StatelessWidget {
     required this.onConfirm,
   });
 
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;

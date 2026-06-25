@@ -2,13 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import '../../core/theme.dart';
-import '../../routes/app_routes.dart';
 import '../../translations/app_translations.dart';
 
 class ClubCard extends StatefulWidget {
   final SportClubModel club;
-  const ClubCard({super.key, required this.club});
+  final Function(SportClubModel)? onBookPressed;
+  final Function(SportClubModel)? onDetailPressed;
+
+  const ClubCard({
+    super.key,
+    required this.club,
+    this.onBookPressed,
+    this.onDetailPressed,
+  });
 
   @override
   State<ClubCard> createState() => _ClubCardState();
@@ -24,6 +33,7 @@ class _ClubCardState extends State<ClubCard>
   bool _isNavigating = false;
 
   late final SportClubService _clubService;
+  late final TokenService _tokenService;
 
   @override
   bool get wantKeepAlive => true;
@@ -31,10 +41,16 @@ class _ClubCardState extends State<ClubCard>
   @override
   void initState() {
     super.initState();
-    _ctrl = PageController(initialPage: 10000);
+    // ✅ Only use infinite scrolling if there are multiple images
+    final urls = widget.club.imageUrls;
+    if (urls.length > 1) {
+      _ctrl = PageController(initialPage: 10000);
+    } else {
+      _ctrl = PageController(initialPage: 0);
+    }
 
-    // ✅ Get service instance AFTER it's registered
     _clubService = getIt<SportClubService>();
+    _tokenService = getIt<TokenService>();
 
     // Check if this club is already favorited
     _isFavorited = _clubService.isClubFavorited(widget.club.id);
@@ -52,7 +68,6 @@ class _ClubCardState extends State<ClubCard>
   }
 
   void _onServiceChanged() {
-    // Schedule the update after the current build phase completes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && mounted) {
         final isNowFavorited = _clubService.isClubFavorited(widget.club.id);
@@ -68,19 +83,18 @@ class _ClubCardState extends State<ClubCard>
   @override
   void didUpdateWidget(ClubCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update favorite status if the club ID changed
     if (oldWidget.club.id != widget.club.id) {
       _isFavorited = _clubService.isClubFavorited(widget.club.id);
     }
   }
 
   void _onDragUpdate(DragUpdateDetails d) {
-    if (!_ctrl.hasClients) return;
+    if (widget.club.imageUrls.length <= 1 || !_ctrl.hasClients) return;
     _ctrl.position.moveTo(_ctrl.offset - (d.primaryDelta ?? 0), clamp: false);
   }
 
   void _onDragEnd(DragEndDetails d) {
-    if (!_ctrl.hasClients) return;
+    if (widget.club.imageUrls.length <= 1 || !_ctrl.hasClients) return;
     final v = d.primaryVelocity ?? 0;
     final c = _ctrl.page?.round() ?? 10000;
     if (v < -300) {
@@ -104,15 +118,81 @@ class _ClubCardState extends State<ClubCard>
     }
   }
 
+  // ✅ Check if user is authenticated
+  Future<bool> _isAuthenticated() async {
+    try {
+      return await _tokenService.hasValidTokenAsync();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ✅ Show login required dialog
+  void _showLoginRequiredDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'login_required'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          'login_to_favorite'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'cancel'.tr(context),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.login);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.kAccent,
+              foregroundColor: Colors.black,
+            ),
+            child: Text('login'.tr(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _toggleFavorite() async {
     if (_isFavoriting) return;
 
-    // Store the current state before toggling
+    // ✅ Check if user is authenticated
+    final isAuth = await _isAuthenticated();
+
+    if (!isAuth) {
+      _showLoginRequiredDialog();
+      return;
+    }
+
     final wasFavorited = _isFavorited;
 
     setState(() {
       _isFavoriting = true;
-      // Optimistically update UI
       _isFavorited = !_isFavorited;
     });
 
@@ -120,7 +200,6 @@ class _ClubCardState extends State<ClubCard>
       await _clubService.toggleFavorite(widget.club.id);
 
       if (!_isDisposed && mounted) {
-        // Get the actual state from the service after the operation
         final isNowFavorited = _clubService.isClubFavorited(widget.club.id);
 
         setState(() {
@@ -130,19 +209,35 @@ class _ClubCardState extends State<ClubCard>
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
-        // Revert to the previous state on error
         setState(() {
           _isFavorited = wasFavorited;
           _isFavoriting = false;
         });
-
-        // Optional: Log error silently
         debugPrint('Failed to toggle favorite: $e');
       }
     }
   }
 
-  // ✅ New method to navigate with full club data including slots
+  // ✅ Use callbacks for navigation
+  void _handleBookPressed() {
+    if (widget.onBookPressed != null) {
+      widget.onBookPressed!(widget.club);
+    } else {
+      // Fallback: Navigate directly
+      _navigateToBookingFlow();
+    }
+  }
+
+  void _handleDetailPressed() {
+    if (widget.onDetailPressed != null) {
+      widget.onDetailPressed!(widget.club);
+    } else {
+      // Fallback: Navigate directly
+      _navigateToClubDetailed();
+    }
+  }
+
+  // ✅ Fallback navigation methods (kept for backward compatibility)
   Future<void> _navigateToBookingFlow() async {
     if (_isNavigating) return;
 
@@ -151,13 +246,11 @@ class _ClubCardState extends State<ClubCard>
     });
 
     try {
-      // Fetch the complete club data including slots
       final fullClubData = await _clubService.getClubByIdWithSlots(
         widget.club.id,
       );
 
       if (!_isDisposed && mounted) {
-        // Navigate with the full data
         await Navigator.pushNamed(
           context,
           AppRoutes.bookingFlow,
@@ -166,7 +259,6 @@ class _ClubCardState extends State<ClubCard>
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
-        // If API fails, navigate with the data we already have (without slots)
         await Navigator.pushNamed(
           context,
           AppRoutes.bookingFlow,
@@ -183,7 +275,6 @@ class _ClubCardState extends State<ClubCard>
     }
   }
 
-  // ✅ Method for navigating to club detailed view
   Future<void> _navigateToClubDetailed() async {
     if (_isNavigating) return;
 
@@ -192,7 +283,6 @@ class _ClubCardState extends State<ClubCard>
     });
 
     try {
-      // Fetch the complete club data including slots
       final fullClubData = await _clubService.getClubByIdWithSlots(
         widget.club.id,
       );
@@ -206,7 +296,6 @@ class _ClubCardState extends State<ClubCard>
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
-        // If API fails, navigate with the data we already have
         await Navigator.pushNamed(
           context,
           AppRoutes.clubDetailed,
@@ -230,452 +319,465 @@ class _ClubCardState extends State<ClubCard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final c = widget.club;
     final urls = c.imageUrls;
-
     final hasImages = urls.isNotEmpty;
 
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 14),
-      clipBehavior: Clip.hardEdge,
-      decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
-      child: Stack(
-        children: [
-          InkWell(
-            onTap: _navigateToBookingFlow,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Image carousel ──────────────────────────────────────────
-                GestureDetector(
-                  onHorizontalDragUpdate: hasImages ? _onDragUpdate : null,
-                  onHorizontalDragEnd: hasImages ? _onDragEnd : null,
-                  behavior: HitTestBehavior.opaque,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(22),
-                    ),
-                    child: SizedBox(
-                      height: 150,
-                      width: double.infinity,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Pages - Only show if images exist
-                          if (hasImages)
-                            PageView.builder(
-                              controller: _ctrl,
-                              itemCount: null,
-                              physics: const NeverScrollableScrollPhysics(),
-                              onPageChanged: (i) =>
-                                  setState(() => _page = i % urls.length),
-                              itemBuilder: (_, i) => Image.network(
-                                urls[i % urls.length],
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: isDark
-                                      ? AppTheme.kCardAlt
-                                      : AppTheme.kLightCardAlt,
-                                  child: const Icon(
-                                    Icons.image_not_supported,
-                                    color: Colors.grey,
-                                    size: 40,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 14),
+        clipBehavior: Clip.hardEdge,
+        decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
+        child: Stack(
+          children: [
+            // ✅ InkWell with custom border for ripple effect
+            InkWell(
+              onTap: _handleBookPressed,
+              borderRadius: BorderRadius.circular(22),
+              splashColor: AppTheme.kAccent.withOpacity(0.1),
+              highlightColor: AppTheme.kAccent.withOpacity(0.05),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Image carousel ──────────────────────────────────────────
+                  GestureDetector(
+                    onHorizontalDragUpdate: hasImages && urls.length > 1
+                        ? _onDragUpdate
+                        : null,
+                    onHorizontalDragEnd: hasImages && urls.length > 1
+                        ? _onDragEnd
+                        : null,
+                    behavior: HitTestBehavior.opaque,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(22),
+                      ),
+                      child: SizedBox(
+                        height: 150,
+                        width: double.infinity,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (hasImages)
+                              PageView.builder(
+                                controller: _ctrl,
+                                itemCount: urls.length,
+                                physics: const NeverScrollableScrollPhysics(),
+                                onPageChanged: (i) => setState(() => _page = i),
+                                itemBuilder: (_, i) => Image.network(
+                                  urls[i],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: isDark
+                                        ? AppTheme.kCardAlt
+                                        : AppTheme.kLightCardAlt,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      color: Colors.grey,
+                                      size: 40,
+                                    ),
                                   ),
+                                  loadingBuilder: (_, ch, p) => p == null
+                                      ? ch
+                                      : Container(
+                                          color: isDark
+                                              ? AppTheme.kCardAlt
+                                              : AppTheme.kLightCardAlt,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              color: AppTheme.kAccent,
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        ),
                                 ),
-                                loadingBuilder: (_, ch, p) => p == null
-                                    ? ch
-                                    : Container(
+                              )
+                            else
+                              Container(
+                                color: isDark
+                                    ? AppTheme.kCardAlt
+                                    : AppTheme.kLightCardAlt,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.sports,
+                                      color: isDark
+                                          ? Colors.white38
+                                          : AppTheme.kLightTextSub,
+                                      size: 48,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'no_images'.tr(context),
+                                      style: TextStyle(
                                         color: isDark
-                                            ? AppTheme.kCardAlt
-                                            : AppTheme.kLightCardAlt,
-                                        child: const Center(
+                                            ? Colors.white38
+                                            : AppTheme.kLightTextSub,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            // Scrim
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    isDark
+                                        ? const Color(0xCC0A1828)
+                                        : const Color(0xCCF0F6FF),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  stops: const [0.4, 1.0],
+                                ),
+                              ),
+                            ),
+
+                            // Open/close badge
+                            Positioned(
+                              top: 8,
+                              left: 10,
+                              child: _openCloseBadge(isDark),
+                            ),
+
+                            // Favorite button - TOP RIGHT
+                            Positioned(
+                              top: 8,
+                              right: 10,
+                              child: GestureDetector(
+                                onTap: _toggleFavorite,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _isFavorited
+                                          ? AppTheme.kAccent
+                                          : Colors.white24,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: _isFavoriting
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
                                           child: CircularProgressIndicator(
                                             color: AppTheme.kAccent,
                                             strokeWidth: 2,
                                           ),
+                                        )
+                                      : Icon(
+                                          _isFavorited
+                                              ? Icons.favorite_rounded
+                                              : Icons.favorite_border_rounded,
+                                          color: _isFavorited
+                                              ? AppTheme.kAccent
+                                              : Colors.white70,
+                                          size: 18,
                                         ),
-                                      ),
+                                ),
                               ),
-                            )
-                          else
-                            // Placeholder when no images
-                            Container(
-                              color: isDark
-                                  ? AppTheme.kCardAlt
-                                  : AppTheme.kLightCardAlt,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.sports,
-                                    color: isDark
-                                        ? Colors.white38
-                                        : AppTheme.kLightTextSub,
-                                    size: 48,
+                            ),
+
+                            // Page count badge - Only show if multiple images
+                            if (urls.length > 1)
+                              Positioned(
+                                bottom: 8,
+                                right: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'no_images'.tr(context),
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white38
-                                          : AppTheme.kLightTextSub,
-                                      fontSize: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: Text(
+                                    '${_page + 1}/${urls.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-
-                          // Scrim
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.transparent,
-                                  isDark
-                                      ? const Color(0xCC0A1828)
-                                      : const Color(0xCCF0F6FF),
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                stops: const [0.4, 1.0],
-                              ),
-                            ),
-                          ),
-
-                          // Open/close badge
-                          Positioned(
-                            top: 8,
-                            left: 10,
-                            child: _openCloseBadge(isDark),
-                          ),
-
-                          // Favorite button - TOP RIGHT
-                          Positioned(
-                            top: 8,
-                            right: 10,
-                            child: GestureDetector(
-                              onTap: _toggleFavorite,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: _isFavorited
-                                        ? AppTheme.kAccent
-                                        : Colors.white24,
-                                    width: 1.5,
-                                  ),
                                 ),
-                                child: _isFavoriting
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          color: AppTheme.kAccent,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Icon(
-                                        _isFavorited
-                                            ? Icons.favorite_rounded
-                                            : Icons.favorite_border_rounded,
-                                        color: _isFavorited
+                              ),
+
+                            // Dot indicators - Only show if multiple images
+                            if (urls.length > 1)
+                              Positioned(
+                                bottom: 8,
+                                left: 0,
+                                right: 0,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    urls.length,
+                                    (i) => AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 2,
+                                      ),
+                                      width: i == _page ? 14 : 5,
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color: i == _page
                                             ? AppTheme.kAccent
-                                            : Colors.white70,
-                                        size: 18,
+                                            : (isDark
+                                                  ? Colors.white.withOpacity(
+                                                      0.35,
+                                                    )
+                                                  : Colors.black.withOpacity(
+                                                      0.35,
+                                                    )),
+                                        borderRadius: BorderRadius.circular(3),
                                       ),
-                              ),
-                            ),
-                          ),
-
-                          // Page count badge - Only show if multiple images
-                          if (urls.length > 1)
-                            Positioned(
-                              bottom: 8,
-                              right: 10,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white24),
-                                ),
-                                child: Text(
-                                  '${_page + 1}/${urls.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          // Dot indicators - Only show if multiple images
-                          if (urls.length > 1)
-                            Positioned(
-                              bottom: 8,
-                              left: 0,
-                              right: 0,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(
-                                  urls.length,
-                                  (i) => AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 2,
-                                    ),
-                                    width: i == _page ? 14 : 5,
-                                    height: 5,
-                                    decoration: BoxDecoration(
-                                      color: i == _page
-                                          ? AppTheme.kAccent
-                                          : (isDark
-                                                ? Colors.white.withOpacity(0.35)
-                                                : Colors.black.withOpacity(
-                                                    0.35,
-                                                  )),
-                                      borderRadius: BorderRadius.circular(3),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // ── Details ─────────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name + hours
-                      Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: c.color.withOpacity(0.2),
-                              border: Border.all(color: c.color, width: 1.8),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              c.initials,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : AppTheme.kLightText,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
+                  // ── Details ─────────────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name + hours
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: c.color.withOpacity(0.2),
+                                border: Border.all(color: c.color, width: 1.8),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _navigateToClubDetailed,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    c.name,
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white
-                                          : AppTheme.kLightText,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.lock_open_outlined,
-                                        color: AppTheme.kAccent,
-                                        size: 11,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        c.openTime,
-                                        style: const TextStyle(
-                                          color: AppTheme.kAccent,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        width: 3,
-                                        height: 3,
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? AppTheme.kTextSub
-                                              : AppTheme.kLightTextSub,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      const Icon(
-                                        Icons.lock_outline,
-                                        color: AppTheme.kTextSub,
-                                        size: 11,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        c.closeTime,
-                                        style: TextStyle(
-                                          color: isDark
-                                              ? AppTheme.kTextSub
-                                              : AppTheme.kLightTextSub,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 6),
-                      Container(
-                        height: 1,
-                        color: isDark
-                            ? AppTheme.kBorder
-                            : AppTheme.kLightBorder,
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Venue - Changed to location
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.place_outlined,
-                            color: AppTheme.kAccent,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              c.location,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white70
-                                    : AppTheme.kLightTextSub,
-                                fontSize: 11,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Distance + Favorite count + Book button
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.route_outlined,
-                            color: AppTheme.kAccent,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${c.distanceKm.toStringAsFixed(1)} ${'km_away'.tr(context)}',
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppTheme.kTextSub
-                                  : AppTheme.kLightTextSub,
-                              fontSize: 11,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Favorite count indicator
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.favorite_rounded,
-                                color: AppTheme.kAccent.withOpacity(0.7),
-                                size: 12,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${c.favoriteCount}',
+                              alignment: Alignment.center,
+                              child: Text(
+                                c.initials,
                                 style: TextStyle(
                                   color: isDark
-                                      ? AppTheme.kTextSub
-                                      : AppTheme.kLightTextSub,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: _navigateToBookingFlow,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.kAccent,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.kAccent.withOpacity(0.35),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                'book'.tr(context),
-                                style: const TextStyle(
-                                  color: Color(0xFF0A1828),
-                                  fontSize: 11,
+                                      ? Colors.white
+                                      : AppTheme.kLightText,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: InkWell(
+                                onTap: _handleDetailPressed,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      c.name,
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white
+                                            : AppTheme.kLightText,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.lock_open_outlined,
+                                          color: AppTheme.kAccent,
+                                          size: 11,
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          c.openTime,
+                                          style: const TextStyle(
+                                            color: AppTheme.kAccent,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          width: 3,
+                                          height: 3,
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? AppTheme.kTextSub
+                                                : AppTheme.kLightTextSub,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          Icons.lock_outline,
+                                          color: AppTheme.kTextSub,
+                                          size: 11,
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          c.closeTime,
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? AppTheme.kTextSub
+                                                : AppTheme.kLightTextSub,
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+                        Container(
+                          height: 1,
+                          color: isDark
+                              ? AppTheme.kBorder
+                              : AppTheme.kLightBorder,
+                        ),
+                        const SizedBox(height: 6),
+
+                        // Venue - Changed to location
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.place_outlined,
+                              color: AppTheme.kAccent,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                c.location,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white70
+                                      : AppTheme.kLightTextSub,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+
+                        // Distance + Favorite count + Book button
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.route_outlined,
+                              color: AppTheme.kAccent,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${c.distanceKm.toStringAsFixed(1)} ${'km_away'.tr(context)}',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppTheme.kTextSub
+                                    : AppTheme.kLightTextSub,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Favorite count indicator
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.favorite_rounded,
+                                  color: AppTheme.kAccent.withOpacity(0.7),
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${c.favoriteCount}',
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? AppTheme.kTextSub
+                                        : AppTheme.kLightTextSub,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: _handleBookPressed,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.kAccent,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.kAccent.withOpacity(0.35),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'book'.tr(context),
+                                  style: const TextStyle(
+                                    color: Color(0xFF0A1828),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+            ),
+            // Loading overlay when navigating
+            if (_isNavigating)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(22),
                 ),
-              ],
-            ),
-          ),
-          // ✅ Loading overlay when navigating
-          if (_isNavigating)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(22),
+                child: const Center(
+                  child: CircularProgressIndicator(color: AppTheme.kAccent),
+                ),
               ),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppTheme.kAccent),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

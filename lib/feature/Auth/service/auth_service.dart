@@ -33,7 +33,43 @@ class AuthService {
     }
   }
 
-  // Check auth status and redirect appropriately
+  // ✅ Always go to home screen first, then check auth in background
+  Future<void> checkAndRedirectFromSplash(BuildContext context) async {
+    // Always navigate to home first
+    if (Navigator.canPop(context)) {
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
+    }
+
+    // ✅ Check auth after a short delay to allow navigation to complete
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _checkAuthInBackground();
+    });
+  }
+
+  // ✅ Check auth in background - NO NAVIGATION HERE
+  Future<void> _checkAuthInBackground() async {
+    try {
+      final hasValidToken = await isAuthenticated();
+
+      if (!hasValidToken) {
+        // Try to refresh token
+        final refreshToken = await _tokenServiceInstance.getRefreshToken();
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          final refreshed = await _tokenServiceInstance.refreshAccessToken();
+          if (!refreshed) {
+            await _tokenServiceInstance.clearToken();
+          }
+        } else {
+          // No token at all - clear everything
+          await _tokenServiceInstance.clearToken();
+        }
+      }
+    } catch (e) {
+      print('Background auth check error: $e');
+    }
+  }
+
+  // ✅ Check auth status and redirect appropriately (for other screens)
   Future<void> checkAndRedirect(BuildContext context) async {
     // Skip if already on login or splash screen
     final currentRoute = ModalRoute.of(context)?.settings.name;

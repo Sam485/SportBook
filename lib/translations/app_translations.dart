@@ -246,6 +246,7 @@ class AppTranslations {
       'gym_subtitle': 'Book a personal trainer session',
       'book_your_session': 'Book your session',
       'select_sport_desc': 'Choose a sport to book',
+      'volleyball_subtitle': 'Indoor or beach volleyball court',
 
       // ---------------------- Step Court ----------------------------
       'select_trainer': 'Select Trainer',
@@ -471,6 +472,39 @@ class AppTranslations {
       'enter_transaction_ref': 'Enter transaction reference',
       'auto_generated_id': 'Auto-generated ID',
       'transaction_ref': 'Transaction Reference',
+
+      // ---------------------- Exceptions ----------------------------
+      'connection_timeout': 'Connection timeout. Please check your internet.',
+      'network_error': 'Network error. Please check your connection.',
+      'unauthorized': 'Please login again to continue.',
+      'server_error': 'Server error. Please try again later.',
+      'not_found': 'Data not found.',
+      'something_went_wrong': 'Something went wrong. Please try again.',
+      'no_notifications': 'No notifications yet',
+      'no_banners': 'No banners available',
+
+      // ---------------------- Auth & Favorite Messages ----------------------------
+      'login_required': 'Login Required',
+      'login_to_book': 'Please login to book a court',
+      'login_to_favorite': 'Please login to add to favorites',
+      'login_to_complete_booking': 'Please login to complete your booking',
+      'login_to_continue': 'Login to Continue',
+      'login_now': 'Login Now',
+      'please_login_to_continue': 'Please login to continue',
+      'please_login_to_complete_booking':
+          'Please login to complete your booking',
+      'you_need_account_to_book': 'You need an account to book courts',
+      'authentication_required': 'Authentication Required',
+      'booking_requires_login': 'Booking requires authentication',
+      'checking_account': 'Checking account...',
+      'share_feature_coming_soon': 'Share feature coming soon',
+      'added_to_favorites': 'Added to favorites',
+      'removed_from_favorites': 'Removed from favorites',
+      'failed_to_update_favorite': 'Failed to update favorite',
+
+      // ---------------------- Auth Required for Navigation ----------------------------
+      'login_to_view_bookings': 'Please login to view your bookings',
+      'login_to_view_settings': 'Please login to view settings',
     },
 
     // ------------------------------------------------------------------------
@@ -713,6 +747,7 @@ class AppTranslations {
       'gym_subtitle': 'កក់វគ្គជាមួយគ្រូបង្វឹកផ្ទាល់ខ្លួន',
       'book_your_session': 'កក់វគ្គរបស់អ្នក',
       'select_sport_desc': 'ជ្រើសរើសកីឡាដើម្បីកក់',
+      'volleyball_subtitle': 'ទីលានបាល់ទះក្នុងផ្ទះ ឬឆ្នេរ',
 
       // ---------------------- Step Court ----------------------------
       'select_trainer': 'ជ្រើសរើសគ្រូបង្វឹក',
@@ -931,6 +966,39 @@ class AppTranslations {
       'enter_transaction_ref': 'បញ្ចូលលេខសម្គាល់ប្រតិបត្តិការ',
       'auto_generated_id': 'លេខសម្គាល់ដែលបង្កើតដោយស្វ័យប្រវត្តិ',
       'transaction_ref': 'លេខសម្គាល់ប្រតិបត្តិការ',
+
+      // ---------------------- Exceptions ----------------------------
+      'connection_timeout': 'ការតភ្ជាប់ផុតកំណត់។ សូមពិនិត្យអ៊ីនធឺណិតរបស់អ្នក។',
+      'network_error': 'កំហុសបណ្តាញ។ សូមពិនិត្យការតភ្ជាប់របស់អ្នក។',
+      'unauthorized': 'សូមចូលម្តងទៀតដើម្បីបន្ត។',
+      'server_error': 'កំហុសម៉ាស៊ីនមេ។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។',
+      'not_found': 'រកមិនឃើញទិន្នន័យ។',
+      'something_went_wrong': 'មានបញ្ហាកើតឡើង។ សូមព្យាយាមម្តងទៀត។',
+      'no_notifications': 'មិនទាន់មានការជូនដំណឹងនៅឡើយទេ',
+      'no_banners': 'គ្មានបដាដែលអាចរកបាន',
+
+      // ---------------------- Auth & Favorite Messages ----------------------------
+      'login_required': 'ទាមទារការចូលប្រើប្រាស់',
+      'login_to_book': 'សូមចូលប្រើប្រាស់ដើម្បីធ្វើការកក់',
+      'login_to_favorite': 'សូមចូលប្រើប្រាស់ដើម្បីបន្ថែមទៅក្នុងចំណូលចិត្ត',
+      'login_to_complete_booking': 'សូមចូលប្រើប្រាស់ដើម្បីបញ្ចប់ការកក់',
+      'login_to_continue': 'ចូលប្រើប្រាស់ដើម្បីបន្ត',
+      'login_now': 'ចូលប្រើប្រាស់ឥឡូវនេះ',
+      'please_login_to_continue': 'សូមចូលប្រើប្រាស់ដើម្បីបន្ត',
+      'please_login_to_complete_booking':
+          'សូមចូលប្រើប្រាស់ដើម្បីបញ្ចប់ការកក់របស់អ្នក',
+      'you_need_account_to_book': 'អ្នកត្រូវការគណនីដើម្បីកក់ទីលាន',
+      'authentication_required': 'តម្រូវការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ',
+      'booking_requires_login': 'ការកក់ទាមទារការចូលប្រើប្រាស់',
+      'checking_account': 'កំពុងពិនិត្យគណនី...',
+      'share_feature_coming_soon': 'មុខងារចែករំលែកនឹងមកដល់ឆាប់ៗនេះ',
+      'added_to_favorites': 'បានបន្ថែមទៅក្នុងចំណូលចិត្ត',
+      'removed_from_favorites': 'បានដកចេញពីចំណូលចិត្ត',
+      'failed_to_update_favorite': 'បរាជ័យក្នុងការធ្វើបច្ចុប្បន្នភាពចំណូលចិត្ត',
+
+      // ---------------------- Auth Required for Navigation ----------------------------
+      'login_to_view_bookings': 'សូមចូលប្រើប្រាស់ដើម្បីមើលការកក់របស់អ្នក',
+      'login_to_view_settings': 'សូមចូលប្រើប្រាស់ដើម្បីមើលការកំណត់',
     },
   };
 
