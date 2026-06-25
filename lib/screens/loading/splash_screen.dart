@@ -1,8 +1,7 @@
 // screens/splash_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
-import 'package:sportbook/feature/Auth/service/auth_service.dart';
+import 'package:sportbook/screens/main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,28 +11,26 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final AuthService _authService = getIt<AuthService>();
+  bool _isNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    // ✅ Use WidgetsBinding to ensure the widget is built before navigating
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _checkAuthStatus();
+      if (mounted && !_isNavigated) {
+        _isNavigated = true;
+        _navigateToMain();
       }
     });
   }
 
-  Future<void> _checkAuthStatus() async {
-    try {
-      if (mounted) {
-        await _authService.checkAndRedirectFromSplash(context);
-      }
-    } catch (e) {
-      print('Auth check error: $e');
-      // ✅ Don't set state here - just let the error be handled
-    }
+  void _navigateToMain() {
+    // ✅ Navigate to MainScreen and clear the stack
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+      (route) => false, // Remove all previous routes
+    );
   }
 
   @override
@@ -57,7 +54,6 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // App Logo/Icon
               Container(
                 width: 100,
                 height: 100,
@@ -66,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: AppTheme.kAccent,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.kAccent.withOpacity(0.3),
+                      color: AppTheme.kAccent.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),

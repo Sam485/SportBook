@@ -70,6 +70,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
             onTap: () async {
               setState(() => _selectedLanguage = 'en');
               await languageProvider.setLanguage('en');
+              // ignore: use_build_context_synchronously
               Navigator.pop(context, 'en');
             },
           ),
@@ -83,6 +84,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
             onTap: () async {
               setState(() => _selectedLanguage = 'km');
               await languageProvider.setLanguage('km');
+              // ignore: use_build_context_synchronously
               Navigator.pop(context, 'km');
             },
           ),
@@ -109,7 +111,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.kAccent.withOpacity(0.1)
+              ? AppTheme.kAccent.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: isSelected
@@ -123,7 +125,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
               height: 45,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.kAccent.withOpacity(0.2)
+                    ? AppTheme.kAccent.withValues(alpha: 0.2)
                     : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                 borderRadius: BorderRadius.circular(12),
               ),

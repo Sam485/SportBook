@@ -64,9 +64,8 @@ class AuthService {
           await _tokenServiceInstance.clearToken();
         }
       }
-    } catch (e) {
-      print('Background auth check error: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   // ✅ Check auth status and redirect appropriately (for other screens)
@@ -82,6 +81,7 @@ class AuthService {
     if (hasValidToken) {
       // Already authenticated, go to home if not already there
       if (currentRoute != AppRoutes.home) {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } else {
@@ -91,6 +91,7 @@ class AuthService {
         final refreshed = await _tokenServiceInstance.refreshAccessToken();
         if (refreshed) {
           if (currentRoute != AppRoutes.home) {
+            // ignore: use_build_context_synchronously
             Navigator.pushReplacementNamed(context, AppRoutes.home);
           }
           return;
@@ -100,6 +101,7 @@ class AuthService {
       // No valid token, go to login
       await _tokenServiceInstance.clearToken();
       if (currentRoute != AppRoutes.login) {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, AppRoutes.login);
       }
     }
@@ -109,9 +111,8 @@ class AuthService {
   Future<void> logout() async {
     try {
       await _tokenServiceInstance.clearToken();
-    } catch (e) {
-      print('Logout error: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
     _navigateToLogin();
   }
 
@@ -160,7 +161,6 @@ class AuthService {
         }
       }
     } catch (e) {
-      print('Token check on resume error: $e');
       await _tokenServiceInstance.clearToken();
       _navigateToLogin();
     }

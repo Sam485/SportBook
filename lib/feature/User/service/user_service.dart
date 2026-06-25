@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sportbook/feature/User/model/change_pass_reqeuest_dto.dart';
 import 'package:sportbook/feature/User/model/login_request_dto.dart';
-import 'package:sportbook/feature/User/model/login_response_%20model.dart';
+import 'package:sportbook/feature/User/model/login_response_model.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';

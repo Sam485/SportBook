@@ -165,7 +165,7 @@ class _ClubCardState extends State<ClubCard>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.login);
+              Navigator.pushNamed(context, AppRoutes.landing);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -213,7 +213,6 @@ class _ClubCardState extends State<ClubCard>
           _isFavorited = wasFavorited;
           _isFavoriting = false;
         });
-        debugPrint('Failed to toggle favorite: $e');
       }
     }
   }
@@ -265,7 +264,6 @@ class _ClubCardState extends State<ClubCard>
           arguments: widget.club,
         );
       }
-      debugPrint('Failed to fetch full club data: $e');
     } finally {
       if (!_isDisposed && mounted) {
         setState(() {
@@ -302,7 +300,6 @@ class _ClubCardState extends State<ClubCard>
           arguments: widget.club,
         );
       }
-      debugPrint('Failed to fetch full club data: $e');
     } finally {
       if (!_isDisposed && mounted) {
         setState(() {
@@ -335,8 +332,8 @@ class _ClubCardState extends State<ClubCard>
             InkWell(
               onTap: _handleBookPressed,
               borderRadius: BorderRadius.circular(22),
-              splashColor: AppTheme.kAccent.withOpacity(0.1),
-              highlightColor: AppTheme.kAccent.withOpacity(0.05),
+              splashColor: AppTheme.kAccent.withValues(alpha: 0.1),
+              highlightColor: AppTheme.kAccent.withValues(alpha: 0.05),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -368,7 +365,7 @@ class _ClubCardState extends State<ClubCard>
                                 itemBuilder: (_, i) => Image.network(
                                   urls[i],
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
+                                  errorBuilder: (_, _, _) => Container(
                                     color: isDark
                                         ? AppTheme.kCardAlt
                                         : AppTheme.kLightCardAlt,
@@ -455,7 +452,7 @@ class _ClubCardState extends State<ClubCard>
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: _isFavorited
@@ -497,7 +494,7 @@ class _ClubCardState extends State<ClubCard>
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: Colors.white24),
                                   ),
@@ -535,11 +532,11 @@ class _ClubCardState extends State<ClubCard>
                                         color: i == _page
                                             ? AppTheme.kAccent
                                             : (isDark
-                                                  ? Colors.white.withOpacity(
-                                                      0.35,
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.35,
                                                     )
-                                                  : Colors.black.withOpacity(
-                                                      0.35,
+                                                  : Colors.black.withValues(
+                                                      alpha: 0.35,
                                                     )),
                                         borderRadius: BorderRadius.circular(3),
                                       ),
@@ -567,7 +564,7 @@ class _ClubCardState extends State<ClubCard>
                               height: 34,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: c.color.withOpacity(0.2),
+                                color: c.color.withValues(alpha: 0.2),
                                 border: Border.all(color: c.color, width: 1.8),
                               ),
                               alignment: Alignment.center,
@@ -712,7 +709,9 @@ class _ClubCardState extends State<ClubCard>
                               children: [
                                 Icon(
                                   Icons.favorite_rounded,
-                                  color: AppTheme.kAccent.withOpacity(0.7),
+                                  color: AppTheme.kAccent.withValues(
+                                    alpha: 0.7,
+                                  ),
                                   size: 12,
                                 ),
                                 const SizedBox(width: 2),
@@ -741,7 +740,9 @@ class _ClubCardState extends State<ClubCard>
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.kAccent.withOpacity(0.35),
+                                      color: AppTheme.kAccent.withValues(
+                                        alpha: 0.35,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -769,7 +770,7 @@ class _ClubCardState extends State<ClubCard>
             if (_isNavigating)
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Center(
@@ -788,12 +789,12 @@ class _ClubCardState extends State<ClubCard>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
+        color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOpen
-              ? Colors.greenAccent.withOpacity(0.7)
-              : Colors.redAccent.withOpacity(0.7),
+              ? Colors.greenAccent.withValues(alpha: 0.7)
+              : Colors.redAccent.withValues(alpha: 0.7),
         ),
       ),
       child: Row(

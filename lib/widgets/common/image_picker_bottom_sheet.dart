@@ -35,6 +35,7 @@ class _ImagePickerSheet extends StatelessWidget {
       );
       if (image != null) onImageSelected(File(image.path));
     } else if (status.isPermanentlyDenied) {
+      // ignore: use_build_context_synchronously
       _showPermissionDeniedDialog(context, 'Gallery');
     }
   }
@@ -49,6 +50,7 @@ class _ImagePickerSheet extends StatelessWidget {
       );
       if (image != null) onImageSelected(File(image.path));
     } else if (status.isPermanentlyDenied) {
+      // ignore: use_build_context_synchronously
       _showPermissionDeniedDialog(context, 'Camera');
     }
   }
@@ -175,9 +177,11 @@ class _ImagePickerSheet extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppTheme.kAccent.withOpacity(0.12),
+                color: AppTheme.kAccent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.kAccent.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppTheme.kAccent.withValues(alpha: 0.3),
+                ),
               ),
               child: Icon(icon, color: AppTheme.kAccent, size: 22),
             ),

@@ -58,7 +58,7 @@ class StepCategory extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: sel
-                    ? AppTheme.kAccent.withOpacity(0.15)
+                    ? AppTheme.kAccent.withValues(alpha: 0.15)
                     : (isDark ? AppTheme.kCard : AppTheme.kLightCard),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
@@ -70,7 +70,7 @@ class StepCategory extends StatelessWidget {
                 boxShadow: sel
                     ? [
                         BoxShadow(
-                          color: AppTheme.kAccent.withOpacity(0.25),
+                          color: AppTheme.kAccent.withValues(alpha: 0.25),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -84,7 +84,7 @@ class StepCategory extends StatelessWidget {
                     height: 52,
                     decoration: BoxDecoration(
                       color: sel
-                          ? AppTheme.kAccent.withOpacity(0.2)
+                          ? AppTheme.kAccent.withValues(alpha: 0.2)
                           : (isDark
                                 ? AppTheme.kCardAlt
                                 : AppTheme.kLightCardAlt),
@@ -144,7 +144,7 @@ class StepCategory extends StatelessWidget {
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

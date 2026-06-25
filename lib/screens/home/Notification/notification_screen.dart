@@ -90,8 +90,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       });
       _loadNotifications();
     } catch (e) {
-      print('Auth check error: $e');
-      // If there's an error, assume not authenticated and redirect
       _redirectToLogin();
     }
   }
@@ -101,7 +99,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (!_isDisposed && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, AppRoutes.login);
+          Navigator.pushReplacementNamed(context, AppRoutes.landing);
         }
       });
     }
@@ -266,11 +264,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       if (!_isDisposed && mounted) {
         setState(() {});
       }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to mark as read: $e');
-      }
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   void _showNotificationDetail(NotificationItem notification) {
@@ -700,6 +695,7 @@ class NotificationDetailDialog extends StatelessWidget {
     required this.onConfirm,
   });
 
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;

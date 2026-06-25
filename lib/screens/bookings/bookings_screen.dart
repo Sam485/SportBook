@@ -32,6 +32,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   int _refreshCounter = 0;
   bool _isCheckingAuth = true;
   bool _isAuthenticated = false;
+  bool _isDisposed = false; // ✅ Added to track disposed state
 
   // Get the list of bookings from the response
   List<BookingModel> get _bookings => _bookingsData?.data ?? [];
@@ -65,20 +66,28 @@ class _BookingsScreenState extends State<BookingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh data when screen becomes visible again
-    if (_isAuthenticated && !_isLoading && _bookingsData != null && mounted) {
+    // ✅ Check if mounted and not disposed before calling setState
+    if (_isAuthenticated &&
+        !_isLoading &&
+        _bookingsData != null &&
+        mounted &&
+        !_isDisposed) {
       _fetchBookings();
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true; // ✅ Mark as disposed
     _searchController.dispose();
     super.dispose();
   }
 
   // ✅ Check if user is authenticated
   Future<void> _checkAuthentication() async {
+    // ✅ Check if widget is still mounted
+    if (!mounted || _isDisposed) return;
+
     setState(() {
       _isCheckingAuth = true;
     });
@@ -93,38 +102,46 @@ class _BookingsScreenState extends State<BookingsScreen> {
           final refreshed = await _tokenService.refreshAccessToken();
           if (!refreshed) {
             _isAuthenticated = false;
-            setState(() {
-              _isCheckingAuth = false;
-            });
+            if (mounted && !_isDisposed) {
+              setState(() {
+                _isCheckingAuth = false;
+              });
+            }
             return;
           }
         } else {
           _isAuthenticated = false;
-          setState(() {
-            _isCheckingAuth = false;
-          });
+          if (mounted && !_isDisposed) {
+            setState(() {
+              _isCheckingAuth = false;
+            });
+          }
           return;
         }
       }
 
       _isAuthenticated = true;
-      setState(() {
-        _isCheckingAuth = false;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
 
       // Load bookings if authenticated
       _fetchBookings();
     } catch (e) {
-      print('Auth check error: $e');
       _isAuthenticated = false;
-      setState(() {
-        _isCheckingAuth = false;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
     }
   }
 
   Future<void> _fetchBookings() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || !mounted || _isDisposed) return;
 
     setState(() {
       _isLoading = true;
@@ -139,7 +156,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
         status: _selectedStatus,
       );
 
-      if (mounted) {
+      // ✅ Check if widget is still mounted and not disposed
+      if (mounted && !_isDisposed) {
         setState(() {
           _bookingsData = data;
           _isLoading = false;
@@ -148,7 +166,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
+      // ✅ Check if widget is still mounted and not disposed
+      if (mounted && !_isDisposed) {
         setState(() {
           _errorMessage = e.toString();
           _hasError = true;
@@ -159,12 +178,14 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Future<void> _refreshBookings() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || !mounted || _isDisposed) return;
     await _fetchBookings();
   }
 
   void _changeStatus(String? status) {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || !mounted || _isDisposed) return;
     setState(() {
       _selectedStatus = status ?? '';
       _currentPage = 1;
@@ -176,11 +197,16 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   // ✅ Navigate to login screen
   void _navigateToLogin() {
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    // ✅ Check if widget is still mounted and not disposed
+    if (!mounted || _isDisposed) return;
+    Navigator.pushNamed(context, AppRoutes.landing);
   }
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -194,7 +220,12 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   Icons.arrow_back_ios,
                   color: isDark ? Colors.white : Colors.black,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  // ✅ Check if widget is still mounted
+                  if (mounted && !_isDisposed) {
+                    Navigator.pop(context);
+                  }
+                },
               ),
               title: Text(
                 'my_bookings'.tr(context),
@@ -247,6 +278,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   // ✅ Login required state
   Widget _buildLoginRequiredState(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -313,6 +347,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildStatusFilterButton(BuildContext context, bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return PopupMenuButton<String>(
       icon: Icon(
         Icons.filter_list,
@@ -330,6 +367,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildErrorState(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -375,6 +415,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildEmptyState(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -424,6 +467,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _searchBar(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
     if (!_isAuthenticated) return const SizedBox.shrink();
 
     return Padding(
@@ -447,8 +492,10 @@ class _BookingsScreenState extends State<BookingsScreen> {
                     ),
                   ),
               onChanged: (value) {
-                // Search with debounce
-                _fetchBookings();
+                // ✅ Check if widget is still mounted
+                if (mounted && !_isDisposed) {
+                  _fetchBookings();
+                }
               },
             ),
           ),
@@ -458,6 +505,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildPagination(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
     if (_bookingsData == null) return const SizedBox.shrink();
 
     final totalPages = (_bookingsData!.total / _limit).ceil();
@@ -470,10 +519,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
           IconButton(
             onPressed: _currentPage > 1
                 ? () {
-                    setState(() {
-                      _currentPage--;
-                    });
-                    _fetchBookings();
+                    // ✅ Check if widget is still mounted
+                    if (mounted && !_isDisposed) {
+                      setState(() {
+                        _currentPage--;
+                      });
+                      _fetchBookings();
+                    }
                   }
                 : null,
             icon: Icon(
@@ -492,10 +544,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
           IconButton(
             onPressed: _currentPage < totalPages
                 ? () {
-                    setState(() {
-                      _currentPage++;
-                    });
-                    _fetchBookings();
+                    // ✅ Check if widget is still mounted
+                    if (mounted && !_isDisposed) {
+                      setState(() {
+                        _currentPage++;
+                      });
+                      _fetchBookings();
+                    }
                   }
                 : null,
             icon: Icon(

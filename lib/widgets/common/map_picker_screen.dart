@@ -7,7 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme.dart';
-import '../../translations/app_translations.dart';
 
 class MapPickerScreen extends StatefulWidget {
   final double? initialLat;
@@ -33,7 +32,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   bool _isResolving = false;
   bool _isFetchingGps = false;
   String _resolvedLabel = '';
-  bool _isInitialLoad = true;
   bool _isDisposed = false;
 
   // ── Search state ────────────────────────────────────────────────────────────
@@ -47,10 +45,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize with existing location or default
     _initializeLocation();
-    
+
     _searchFocus.addListener(() {
       if (!_searchFocus.hasFocus) {
         Future.delayed(const Duration(milliseconds: 150), () {
@@ -85,41 +83,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     }
   }
 
-  Future<void> _loadCurrentLocation() async {
-    if (_isDisposed) return;
-    
-    final status = await Permission.location.status;
-    
-    if (status.isGranted) {
-      await _goToCurrentLocation(animateMap: false);
-    } else if (status.isDenied) {
-      final newStatus = await Permission.location.request();
-      if (newStatus.isGranted) {
-        await _goToCurrentLocation(animateMap: false);
-      }
-    }
-    
-    if (_isDisposed) return;
-    
-    // Resolve label for the current pin location
-    await _resolveLabel(_pinLocation);
-    
-    setState(() {
-      _isInitialLoad = false;
-    });
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDisposed && mounted) {
-        _mapController.move(_pinLocation, 14);
-      }
-    });
-  }
-
   // ── Reverse-geocode ──────────────────────────────────────────────────────────
 
   Future<void> _resolveLabel(LatLng point) async {
     if (_isDisposed) return;
-    
+
     if (mounted) {
       setState(() => _isResolving = true);
     }
@@ -136,7 +104,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ? p.subAdministrativeArea!
             : p.administrativeArea ??
                   '${point.latitude.toStringAsFixed(4)}, '
-                  '${point.longitude.toStringAsFixed(4)}';
+                      '${point.longitude.toStringAsFixed(4)}';
         setState(() => _resolvedLabel = label);
       }
     } catch (_) {
@@ -158,7 +126,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   void _onSearchChanged(String query) {
     if (_isDisposed) return;
-    
+
     _debounce?.cancel();
     if (query.trim().isEmpty) {
       if (mounted && !_isDisposed) {
@@ -169,18 +137,18 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       }
       return;
     }
-    
+
     if (mounted && !_isDisposed) {
       setState(() => _isGeocoding = true);
     }
-    
+
     _debounce = Timer(const Duration(milliseconds: 600), () async {
       if (_isDisposed) return;
-      
+
       try {
         final locations = await locationFromAddress(query.trim());
         if (!mounted || _isDisposed) return;
-        
+
         final results = <_SearchResult>[];
         for (final loc in locations.take(5)) {
           final pt = LatLng(loc.latitude, loc.longitude);
@@ -206,7 +174,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           } catch (_) {}
           results.add(_SearchResult(label: label, point: pt));
         }
-        
+
         if (mounted && !_isDisposed) {
           setState(() {
             _results = results;
@@ -226,7 +194,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   void _selectResult(_SearchResult result) {
     if (_isDisposed) return;
-    
+
     _searchCtrl.text = result.label;
     _searchFocus.unfocus();
     setState(() {
@@ -240,7 +208,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   void _clearSearch() {
     if (_isDisposed) return;
-    
+
     _searchCtrl.clear();
     setState(() {
       _results = [];
@@ -252,11 +220,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   Future<void> _goToCurrentLocation({bool animateMap = true}) async {
     if (_isDisposed) return;
-    
+
     if (mounted) {
       setState(() => _isFetchingGps = true);
     }
-    
+
     try {
       var status = await Permission.location.status;
       if (status.isDenied) status = await Permission.location.request();
@@ -290,15 +258,15 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           accuracy: LocationAccuracy.high,
         ),
       );
-      
+
       final newPin = LatLng(pos.latitude, pos.longitude);
-      
+
       if (_isDisposed) return;
-      
+
       setState(() => _pinLocation = newPin);
-      
+
       await _resolveLabel(newPin);
-      
+
       if (mounted && !_isDisposed) {
         _searchCtrl.text = _resolvedLabel;
         if (animateMap) {
@@ -359,7 +327,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 },
                 onMapEvent: (event) {
                   if ((event is MapEventMoveEnd ||
-                      event is MapEventScrollWheelZoom) && !_isDisposed) {
+                          event is MapEventScrollWheelZoom) &&
+                      !_isDisposed) {
                     _resolveLabel(_pinLocation);
                     if (!_isSearching) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -508,7 +477,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           _CircleButton(
                             isDark: isDark,
                             isLoading: _isFetchingGps,
-                            onTap: _isFetchingGps ? null : () => _goToCurrentLocation(animateMap: true),
+                            onTap: _isFetchingGps
+                                ? null
+                                : () => _goToCurrentLocation(animateMap: true),
                             child: Icon(
                               Icons.my_location_rounded,
                               color: AppTheme.kAccent,
@@ -666,9 +637,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                               ),
                             const SizedBox(width: 6),
                             Text(
-                              _isResolving
-                                  ? 'Loading...'
-                                  : _resolvedLabel,
+                              _isResolving ? 'Loading...' : _resolvedLabel,
                               style: TextStyle(
                                 color: isDark
                                     ? AppTheme.kTextSub

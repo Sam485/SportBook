@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme.dart';
 import '../../../translations/app_translations.dart';
 
+// ignore: constant_identifier_names
 enum PaymentMethod { khqr, cash, aba, wing, pi_pay, true_money }
 
 class StepPayment extends StatefulWidget {
@@ -490,7 +491,7 @@ class _GenericPaymentDetail extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0A1828) : AppTheme.kLightCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Column(
         children: [
@@ -499,7 +500,7 @@ class _GenericPaymentDetail extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -534,9 +535,9 @@ class _GenericPaymentDetail extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withOpacity(0.25)),
+              border: Border.all(color: color.withValues(alpha: 0.25)),
             ),
             child: Column(
               children: [
@@ -572,7 +573,7 @@ class _GenericPaymentDetail extends StatelessWidget {
                 isDark: isDark,
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -924,7 +925,7 @@ class _PaymentCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected
-              ? accentColor.withOpacity(0.08)
+              ? accentColor.withValues(alpha: 0.08)
               : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -942,14 +943,14 @@ class _PaymentCard extends StatelessWidget {
               height: 52,
               decoration: BoxDecoration(
                 color: selected
-                    ? accentColor.withOpacity(0.15)
+                    ? accentColor.withValues(alpha: 0.15)
                     : (isDark
                           ? const Color(0xFF1E1E2E)
                           : AppTheme.kLightCardAlt),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: selected
-                      ? accentColor.withOpacity(0.4)
+                      ? accentColor.withValues(alpha: 0.4)
                       : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 ),
               ),
@@ -979,10 +980,10 @@ class _PaymentCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: badgeColor.withOpacity(0.15),
+                          color: badgeColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: badgeColor.withOpacity(0.4),
+                            color: badgeColor.withValues(alpha: 0.4),
                           ),
                         ),
                         child: Text(
@@ -1050,7 +1051,9 @@ class _KhqrDetail extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0A1828) : AppTheme.kLightCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF0072CE).withOpacity(0.35)),
+        border: Border.all(
+          color: const Color(0xFF0072CE).withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         children: [
@@ -1059,7 +1062,7 @@ class _KhqrDetail extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0072CE).withOpacity(0.15),
+                  color: const Color(0xFF0072CE).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -1110,10 +1113,10 @@ class _KhqrDetail extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0072CE).withOpacity(0.12),
+              color: const Color(0xFF0072CE).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
-                color: const Color(0xFF0072CE).withOpacity(0.35),
+                color: const Color(0xFF0072CE).withValues(alpha: 0.35),
               ),
             ),
             child: Text(
@@ -1224,7 +1227,9 @@ class _CashDetail extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A120A) : AppTheme.kLightCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.35)),
+        border: Border.all(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         children: [
@@ -1233,7 +1238,7 @@ class _CashDetail extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.15),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -1272,10 +1277,10 @@ class _CashDetail extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withOpacity(0.08),
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFFF59E0B).withOpacity(0.25),
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
               ),
             ),
             child: Column(
@@ -1313,9 +1318,9 @@ class _CashDetail extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.08),
+              color: Colors.orange.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.withOpacity(0.25)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1390,9 +1395,9 @@ class _InstructionRow extends StatelessWidget {
           width: 22,
           height: 22,
           decoration: BoxDecoration(
-            color: AppTheme.kAccent.withOpacity(0.15),
+            color: AppTheme.kAccent.withValues(alpha: 0.15),
             shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.kAccent.withOpacity(0.4)),
+            border: Border.all(color: AppTheme.kAccent.withValues(alpha: 0.4)),
           ),
           child: Center(
             child: Text(

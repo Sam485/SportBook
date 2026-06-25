@@ -1,4 +1,4 @@
-// home_screen.dart - COMPLETE FIXED VERSION WITH PHNOM PENH DEFAULT
+// home_screen.dart - WITH FIXED DISTANCE (20km) - NO DISTANCE SELECTOR
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/di/service_locator.dart';
@@ -32,6 +32,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isInitialized = false; // ✅ Prevent double initialization
+
   String _selectedCat = 'all';
   String _locationLabel = 'Phnom Penh';
   bool _isDisposed = false;
@@ -46,7 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Location for nearby search
   double? _currentLat = _defaultLat;
   double? _currentLng = _defaultLng;
-  int _radius = 20; // Default radius in km
+
+  // ✅ FIXED DISTANCE - 20km (removed user selection)
+  static const int _radius = 20;
 
   // SharedPreferences keys
   static const String _prefLat = 'user_lat';
@@ -145,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.login);
+              Navigator.pushNamed(context, AppRoutes.landing);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -163,11 +167,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final isAuth = await _isAuthenticated();
 
     if (!isAuth) {
+      // ignore: use_build_context_synchronously
       _showLoginRequiredDialog(context);
       return;
     }
 
     final result = await Navigator.pushNamed(
+      // ignore: use_build_context_synchronously
       context,
       AppRoutes.bookingFlow,
       arguments: club,
@@ -198,10 +204,8 @@ class _HomeScreenState extends State<HomeScreen> {
       await prefs.setDouble(_prefLng, lng);
       await prefs.setString(_prefLocationLabel, label);
       await prefs.setBool(_prefHasLocation, true);
-      print('📍 Location saved to preferences: $label ($lat, $lng)');
-    } catch (e) {
-      print('Failed to save location: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   Future<Map<String, dynamic>?> _loadLocationFromPrefs() async {
@@ -210,7 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final hasLocation = prefs.getBool(_prefHasLocation) ?? false;
 
       if (!hasLocation) {
-        print('📍 No saved location found, using default Phnom Penh');
         return null;
       }
 
@@ -219,12 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final label = prefs.getString(_prefLocationLabel) ?? 'Phnom Penh';
 
       if (lat != null && lng != null) {
-        print('📍 Loaded location from preferences: $label ($lat, $lng)');
         return {'lat': lat, 'lng': lng, 'label': label};
       }
       return null;
     } catch (e) {
-      print('Failed to load location: $e');
       return null;
     }
   }
@@ -257,7 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } catch (e) {
-        print('⚠️ User profile not available (not logged in): $e');
         final savedLocation = await _loadLocationFromPrefs();
         if (savedLocation != null) {
           _currentLat = savedLocation['lat'];
@@ -279,7 +279,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _bookingsData = bookingsData;
         _hasBookingsError = false;
       } catch (e) {
-        print('⚠️ Bookings not available (not logged in): $e');
         _bookingsData = null;
         _hasBookingsError = true;
       }
@@ -298,7 +297,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading initial data: $e');
       if (!_isDisposed && mounted) {
         setState(() {
           _isLoading = false;
@@ -319,12 +317,11 @@ class _HomeScreenState extends State<HomeScreen> {
             .fetchNearbyClubs(
               lat: _currentLat!,
               lng: _currentLng!,
-              radius: _radius,
+              radius: _radius, // ✅ Fixed distance
             )
             .timeout(
               const Duration(seconds: 15),
               onTimeout: () {
-                print('⚠️ Nearby clubs timeout, falling back to all clubs');
                 return Future.value([]);
               },
             );
@@ -334,19 +331,15 @@ class _HomeScreenState extends State<HomeScreen> {
           limit: 100,
         );
         _clubService.setNearbyClubs(allClubsDto.data);
-        print('✅ Loaded ${allClubsDto.data.length} clubs (no location)');
       }
     } catch (e) {
-      print('❌ Nearby clubs failed, falling back to all clubs: $e');
       try {
         final allClubsDto = await _clubService.getAllSportClub(
           page: 1,
           limit: 100,
         );
         _clubService.setNearbyClubs(allClubsDto.data);
-        print('✅ Loaded ${allClubsDto.data.length} clubs as fallback');
       } catch (fallbackError) {
-        print('❌ Fallback also failed: $fallbackError');
         _clubService.setNearbyClubs([]);
       }
     }
@@ -359,7 +352,11 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = true;
       });
 
-      await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
+      await _clubService.fetchNearbyClubs(
+        lat: lat,
+        lng: lng,
+        radius: _radius, // ✅ Fixed distance
+      );
 
       await _saveLocationToPrefs(lat: lat, lng: lng, label: _locationLabel);
 
@@ -370,7 +367,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Failed to refresh nearby clubs: $e');
       try {
         final allClubsDto = await _clubService.getAllSportClub(
           page: 1,
@@ -396,14 +392,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _clubService = getIt<SportClubService>();
-    _bookingService = getIt<BookingService>();
 
-    _clubService.addListener(_onServiceChanged);
+    // ✅ Prevent double initialization
+    if (!_isInitialized) {
+      _isInitialized = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      initialLoad();
-    });
+      _clubService = getIt<SportClubService>();
+      _bookingService = getIt<BookingService>();
+
+      _clubService.addListener(_onServiceChanged);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        initialLoad();
+      });
+    }
   }
 
   @override
@@ -455,7 +457,6 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       enableDrag: false,
-      isDismissible: false,
       builder: (context) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.60,
@@ -549,31 +550,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _refreshNearbyClubs(double lat, double lng) async {
-    try {
-      await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
-
-      await _saveLocationToPrefs(lat: lat, lng: lng, label: _locationLabel);
-
-      if (!_isDisposed && mounted) {
-        setState(() {
-          _refreshCounter++;
-        });
-      }
-    } catch (e) {
-      if (!_isDisposed && mounted) {
-        print('Failed to refresh nearby clubs: $e');
-        try {
-          final allClubsDto = await _clubService.getAllSportClub(
-            page: 1,
-            limit: 100,
-          );
-          _clubService.setNearbyClubs(allClubsDto.data);
-        } catch (_) {}
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -629,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppTheme.kAccent, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.kAccent.withOpacity(0.3),
+                color: AppTheme.kAccent.withValues(alpha: 0.3),
                 blurRadius: 10,
               ),
             ],
@@ -851,7 +827,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   boxShadow: sel
                       ? [
                           BoxShadow(
-                            color: AppTheme.kAccent.withOpacity(0.3),
+                            color: AppTheme.kAccent.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -990,7 +966,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try expanding your search radius or changing location',
+                'Try changing your location to find clubs nearby',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
@@ -998,48 +974,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Radius: ',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : AppTheme.kLightText,
-                      fontSize: 14,
-                    ),
+              ElevatedButton(
+                onPressed: _openLocationPicker,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.kAccent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 10,
                   ),
-                  DropdownButton<int>(
-                    value: _radius,
-                    dropdownColor: isDark
-                        ? AppTheme.kCard
-                        : AppTheme.kLightCard,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : AppTheme.kLightText,
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 5, child: Text('5 km')),
-                      DropdownMenuItem(value: 10, child: Text('10 km')),
-                      DropdownMenuItem(value: 20, child: Text('20 km')),
-                      DropdownMenuItem(value: 50, child: Text('50 km')),
-                    ],
-                    onChanged: (newRadius) async {
-                      if (newRadius != null && mounted) {
-                        setState(() {
-                          _radius = newRadius;
-                          _isLoading = true;
-                        });
-
-                        await _loadClubsWithFallback();
-
-                        if (mounted) {
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        }
-                      }
-                    },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                ],
+                ),
+                child: Text(
+                  'change_location'.tr(context),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),

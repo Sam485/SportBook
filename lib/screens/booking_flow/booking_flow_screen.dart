@@ -30,7 +30,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   late final SportClubService _clubService;
 
   // ✅ Authentication state
-  bool _isAuthChecked = false;
   bool _isAuthenticated = false;
   bool _isAuthLoading = true;
 
@@ -138,7 +137,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   String get _courtName {
-    return _selectedSlot?.name ?? 'Court ${_selectedCourtId}';
+    return _selectedSlot?.name ?? 'Court $_selectedCourtId';
   }
 
   int get _pricePerHour {
@@ -187,7 +186,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
       if (hasValidToken) {
         _isAuthenticated = true;
-        print('✅ User is authenticated');
       } else {
         // Try to refresh token
         final refreshToken = await tokenService.getRefreshToken();
@@ -195,22 +193,16 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           final refreshed = await tokenService.refreshAccessToken();
           _isAuthenticated = refreshed;
           if (refreshed) {
-            print('✅ Token refreshed successfully');
-          } else {
-            print('⚠️ Token refresh failed');
-          }
+          } else {}
         } else {
           _isAuthenticated = false;
-          print('⚠️ User is not authenticated');
         }
       }
     } catch (e) {
-      print('Auth check error: $e');
       _isAuthenticated = false;
     }
 
     setState(() {
-      _isAuthChecked = true;
       _isAuthLoading = false;
     });
   }
@@ -248,9 +240,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.kAccent.withOpacity(0.1),
+                color: AppTheme.kAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.kAccent.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppTheme.kAccent.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
@@ -291,7 +285,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               // ✅ Navigate to login with return route
               Navigator.pushNamed(
                 context,
-                AppRoutes.login,
+                AppRoutes.landing,
                 arguments: {
                   'returnTo': AppRoutes.bookingFlow,
                   'club': widget.target,
@@ -336,7 +330,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
       if (!mounted) return;
 
-      if (clubData?.slots == null || clubData!.slots!.isEmpty) {
+      if (clubData.slots == null || clubData.slots!.isEmpty) {
         setState(() {
           _clubWithSlots = widget.target;
           _isLoading = false;
@@ -808,9 +802,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         margin: const EdgeInsets.only(right: 16),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: widget.target.color.withOpacity(0.2),
+          color: widget.target.color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: widget.target.color.withOpacity(0.5)),
+          border: Border.all(color: widget.target.color.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -820,7 +814,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: widget.target.color.withOpacity(0.25),
+                color: widget.target.color.withValues(alpha: 0.25),
                 border: Border.all(color: widget.target.color, width: 1.5),
               ),
               alignment: Alignment.center,
@@ -885,7 +879,7 @@ class _StepIndicator extends StatelessWidget {
                   color: done
                       ? AppTheme.kAccent
                       : active
-                      ? AppTheme.kAccent.withOpacity(0.2)
+                      ? AppTheme.kAccent.withValues(alpha: 0.2)
                       : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                   border: Border.all(
                     color: done || active
@@ -1027,7 +1021,7 @@ class _BottomBar extends StatelessWidget {
                         _dot(),
                       ] else if (selectedCourt != null) ...[
                         Text(
-                          'Court ${selectedCourt}',
+                          'Court $selectedCourt',
                           style: TextStyle(
                             color: isDark ? Colors.white : AppTheme.kLightText,
                             fontSize: 12,
@@ -1129,7 +1123,7 @@ class _BottomBar extends StatelessWidget {
                       boxShadow: (isLastStep ? canConfirm : canProceed)
                           ? [
                               BoxShadow(
-                                color: AppTheme.kAccent.withOpacity(0.35),
+                                color: AppTheme.kAccent.withValues(alpha: 0.35),
                                 blurRadius: 14,
                                 offset: const Offset(0, 5),
                               ),
@@ -1177,9 +1171,9 @@ class _BottomBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

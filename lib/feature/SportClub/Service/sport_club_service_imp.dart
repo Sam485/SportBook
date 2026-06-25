@@ -258,7 +258,6 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
       _favoritedClubIds = favoritesDto.data.map((club) => club.id).toSet();
       _favoriteClubs = favoritesDto.data;
     } catch (e) {
-      print('Failed to load favorites: $e');
       _favoritedClubIds = {};
       _favoriteClubs = [];
     }
@@ -333,8 +332,6 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
 
         // Remove from favoriteClubs list
         _favoriteClubs.removeWhere((club) => club.id == clubId);
-
-        print('Club $clubId removed from favorites');
       } else {
         // Add to favorited IDs
         _favoritedClubIds.add(clubId);
@@ -354,7 +351,6 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
         // Only add if not already in favorites
         if (!_favoriteClubs.any((c) => c.id == clubId)) {
           _favoriteClubs.add(club);
-          print('Club $clubId added to favorites');
         }
       }
 
@@ -363,7 +359,6 @@ class SportClubServiceImp extends ChangeNotifier implements SportClubService {
 
       return response;
     } catch (e) {
-      print('Toggle favorite error: $e');
       rethrow;
     }
   }

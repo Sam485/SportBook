@@ -131,7 +131,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.login);
+              Navigator.pushNamed(context, AppRoutes.landing);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -193,7 +193,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
           _isFavorited = wasFavorited;
           _isFavoriting = false;
         });
-        debugPrint('Failed to toggle favorite: $e');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -298,7 +297,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  (isDark ? AppTheme.kBg : AppTheme.kLightBg).withOpacity(0.85),
+                  (isDark ? AppTheme.kBg : AppTheme.kLightBg).withValues(
+                    alpha: 0.85,
+                  ),
                 ],
                 stops: const [0.55, 1.0],
               ),
@@ -324,8 +325,8 @@ class _ClubDetailedState extends State<ClubDetailed> {
                     color: i == _page
                         ? AppTheme.kAccent
                         : (isDark
-                              ? Colors.white.withOpacity(0.35)
-                              : Colors.black.withOpacity(0.35)),
+                              ? Colors.white.withValues(alpha: 0.35)
+                              : Colors.black.withValues(alpha: 0.35)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -344,7 +345,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
+                color: Colors.black.withValues(alpha: 0.45),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -366,11 +367,11 @@ class _ClubDetailedState extends State<ClubDetailed> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
+                color: Colors.black.withValues(alpha: 0.45),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: _isFavorited
-                      ? AppTheme.kAccent.withOpacity(0.5)
+                      ? AppTheme.kAccent.withValues(alpha: 0.5)
                       : Colors.transparent,
                   width: 1.5,
                 ),
@@ -404,7 +405,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           width: double.infinity,
           height: 260,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+          errorBuilder: (_, _, _) => Container(
             color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
             child: Icon(
               Icons.image_not_supported,
@@ -481,7 +482,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 '–',
                 style: TextStyle(
                   color: (isDark ? Colors.white : AppTheme.kLightText)
-                      .withOpacity(0.4),
+                      .withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -523,9 +524,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
   Widget _statPill(IconData icon, String label, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color.withOpacity(0.3)),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -633,9 +634,11 @@ class _ClubDetailedState extends State<ClubDetailed> {
             (cat) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.kAccent.withOpacity(0.1),
+                color: AppTheme.kAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.kAccent.withOpacity(0.35)),
+                border: Border.all(
+                  color: AppTheme.kAccent.withValues(alpha: 0.35),
+                ),
               ),
               child: Text(
                 cat.toString(),
@@ -780,7 +783,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.kAccent.withOpacity(0.4),
+                          color: AppTheme.kAccent.withValues(alpha: 0.4),
                           blurRadius: 12,
                           spreadRadius: 2,
                         ),
@@ -829,7 +832,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
       child: Text(
         widget.target.description.isNotEmpty
             ? widget.target.description
-            : '${widget.target.name} ' + 'about_description'.tr(context),
+            : '${widget.target.name} ${'about_description'.tr(context)}',
         style: TextStyle(
           color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
           fontSize: 13,
@@ -871,7 +874,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
     child: Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
       decoration: BoxDecoration(
-        color: (isDark ? AppTheme.kBg : AppTheme.kLightBg).withOpacity(0.95),
+        color: (isDark ? AppTheme.kBg : AppTheme.kLightBg).withValues(
+          alpha: 0.95,
+        ),
         border: Border(
           top: BorderSide(
             color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
@@ -898,7 +903,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
             icon: Icons.share_rounded,
             label: 'share'.tr(context),
             onTap: () {
-              // TODO: Implement share functionality
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('share_feature_coming_soon'.tr(context)),
@@ -968,12 +972,12 @@ class _ClubDetailedState extends State<ClubDetailed> {
   Widget _openCloseBadge() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
-      color: Colors.black.withOpacity(0.45),
+      color: Colors.black.withValues(alpha: 0.45),
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
         color: _isOpen
-            ? Colors.greenAccent.withOpacity(0.7)
-            : Colors.redAccent.withOpacity(0.7),
+            ? Colors.greenAccent.withValues(alpha: 0.7)
+            : Colors.redAccent.withValues(alpha: 0.7),
       ),
     ),
     child: Row(

@@ -272,9 +272,11 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.kAccent.withOpacity(0.1),
+                color: AppTheme.kAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.kAccent.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppTheme.kAccent.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
@@ -358,10 +360,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     }
   }
 
-  String _formatDateForApi(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
   String _generateId() {
     final now = DateTime.now();
     return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
@@ -423,8 +421,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         paymentMethod: _paymentMethod,
         transactionRef: transactionId,
       );
-
-      print('Creating booking with data: ${booking.toJson()}');
 
       final result = await _bookingService.createBooking(booking);
 
@@ -616,7 +612,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 Icon(
                   Icons.lock_outline_rounded,
                   size: 80,
-                  color: Colors.orange.withOpacity(0.6),
+                  color: Colors.orange.withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -730,7 +726,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             : 'payment_success_desc'.tr(context),
                         style: TextStyle(
                           color: (isDark ? Colors.white : AppTheme.kLightText)
-                              .withOpacity(0.5),
+                              .withValues(alpha: 0.5),
                           fontSize: 14,
                           height: 1.6,
                         ),
@@ -835,7 +831,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             side: BorderSide(
                               color:
                                   (isDark ? Colors.white : AppTheme.kLightText)
-                                      .withOpacity(0.15),
+                                      .withValues(alpha: 0.15),
                               width: 1.5,
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -911,7 +907,7 @@ class _SuccessAnimation extends StatelessWidget {
       height: 160,
       child: AnimatedBuilder(
         animation: rippleController,
-        builder: (_, __) {
+        builder: (_, _) {
           return Stack(
             alignment: Alignment.center,
             children: [
@@ -939,7 +935,7 @@ class _SuccessAnimation extends StatelessWidget {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.kAccent.withOpacity(0.12),
+                  color: AppTheme.kAccent.withValues(alpha: 0.12),
                 ),
               ),
 
@@ -951,7 +947,7 @@ class _SuccessAnimation extends StatelessWidget {
                   color: AppTheme.kAccent,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.kAccent.withOpacity(0.4),
+                      color: AppTheme.kAccent.withValues(alpha: 0.4),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
@@ -961,7 +957,7 @@ class _SuccessAnimation extends StatelessWidget {
 
               AnimatedBuilder(
                 animation: checkScale,
-                builder: (_, __) => Opacity(
+                builder: (_, _) => Opacity(
                   opacity: checkOpacity.value,
                   child: Transform.scale(
                     scale: checkScale.value,
@@ -1049,9 +1045,11 @@ class _BookingPillCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: AppTheme.kAccent.withOpacity(0.1),
+              color: AppTheme.kAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: AppTheme.kAccent.withOpacity(0.3)),
+              border: Border.all(
+                color: AppTheme.kAccent.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1154,7 +1152,7 @@ class _DetailRow extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: AppTheme.kAccent.withOpacity(0.08),
+              color: AppTheme.kAccent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppTheme.kAccent, size: 16),

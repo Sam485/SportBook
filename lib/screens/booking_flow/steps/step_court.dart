@@ -138,9 +138,9 @@ class StepCourt extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -225,14 +225,14 @@ class StepCourt extends StatelessWidget {
                 color: sel
                     ? AppTheme.kAccent
                     : !isAvailable
-                    ? Colors.grey.withOpacity(0.3)
+                    ? Colors.grey.withValues(alpha: 0.3)
                     : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 width: sel ? 2.5 : 1,
               ),
               boxShadow: sel
                   ? [
                       BoxShadow(
-                        color: AppTheme.kAccent.withOpacity(0.35),
+                        color: AppTheme.kAccent.withValues(alpha: 0.35),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -240,8 +240,8 @@ class StepCourt extends StatelessWidget {
                   : null,
               color: !isAvailable
                   ? (isDark
-                        ? Colors.grey.withOpacity(0.15)
-                        : Colors.grey.withOpacity(0.1))
+                        ? Colors.grey.withValues(alpha: 0.15)
+                        : Colors.grey.withValues(alpha: 0.1))
                   : null,
             ),
             child: ClipRRect(
@@ -254,7 +254,7 @@ class StepCourt extends StatelessWidget {
                     Image.network(
                       img,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: isDark
                             ? AppTheme.kCardAlt
                             : AppTheme.kLightCardAlt,
@@ -262,7 +262,7 @@ class StepCourt extends StatelessWidget {
                           Icons.sports,
                           color: isAvailable
                               ? AppTheme.kAccent
-                              : Colors.grey.withOpacity(0.5),
+                              : Colors.grey.withValues(alpha: 0.5),
                           size: 32,
                         ),
                       ),
@@ -290,7 +290,7 @@ class StepCourt extends StatelessWidget {
                         Icons.sports,
                         color: isAvailable
                             ? AppTheme.kAccent
-                            : Colors.grey.withOpacity(0.5),
+                            : Colors.grey.withValues(alpha: 0.5),
                         size: 32,
                       ),
                     ),
@@ -319,7 +319,7 @@ class StepCourt extends StatelessWidget {
                   // Unavailable overlay
                   if (!isAvailable)
                     Container(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       child: Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -327,7 +327,7 @@ class StepCourt extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.8),
+                            color: Colors.red.withValues(alpha: 0.8),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -374,7 +374,7 @@ class StepCourt extends StatelessWidget {
                           height: 26,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             border: Border.all(color: Colors.white24),
                           ),
                           child: const Icon(
@@ -454,8 +454,8 @@ class StepCourt extends StatelessWidget {
         opaque: false,
         barrierColor: Colors.black87,
         transitionDuration: const Duration(milliseconds: 220),
-        pageBuilder: (_, __, ___) => _SingleImageViewer(url: url, label: label),
-        transitionsBuilder: (_, a, __, c) =>
+        pageBuilder: (_, _, _) => _SingleImageViewer(url: url, label: label),
+        transitionsBuilder: (_, a, _, c) =>
             FadeTransition(opacity: a, child: c),
       ),
     );
@@ -478,7 +478,7 @@ class _SingleImageViewer extends StatelessWidget {
             child: Image.network(
               url,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
+              errorBuilder: (_, _, _) => const Icon(
                 Icons.broken_image_outlined,
                 color: Colors.white38,
                 size: 64,

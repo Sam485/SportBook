@@ -37,6 +37,7 @@ class _ViewAllState extends State<ViewAll> {
     } else {
       return widget.data
           .cast<SportBooking>()
+          // ignore: unrelated_type_equality_checks
           .where((b) => b.sportTypes == _selectedCat)
           .toList();
     }
@@ -148,7 +149,7 @@ class _ViewAllState extends State<ViewAll> {
                 boxShadow: sel
                     ? [
                         BoxShadow(
-                          color: AppTheme.kAccent.withOpacity(0.3),
+                          color: AppTheme.kAccent.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),

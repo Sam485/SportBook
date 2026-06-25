@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _rememberMe = false;
+  String? _errorMessage; // ✅ Added for error message
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
 
@@ -30,7 +31,38 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // ✅ Get user-friendly error message
+  String _getUserFriendlyErrorMessage(String error) {
+    final msg = error.toLowerCase();
+
+    if (msg.contains('invalid credentials') ||
+        msg.contains('wrong password') ||
+        msg.contains('password is incorrect') ||
+        msg.contains('invalid email or password')) {
+      return 'Invalid email or password. Please try again.';
+    } else if (msg.contains('user not found') || msg.contains('no user')) {
+      return 'User not found. Please check your username or email.';
+    } else if (msg.contains('timeout') || msg.contains('timed out')) {
+      return 'Connection timeout. Please check your internet.';
+    } else if (msg.contains('network') || msg.contains('internet')) {
+      return 'Network error. Please check your connection.';
+    } else if (msg.contains('401') || msg.contains('unauthorized')) {
+      return 'Wrong user or password.';
+    } else if (msg.contains('500') || msg.contains('server')) {
+      return 'Server error. Please try again later.';
+    } else if (msg.contains('locked') || msg.contains('too many attempts')) {
+      return 'Account locked due to too many failed attempts. Please try again later.';
+    } else {
+      return 'Login failed: ${error.replaceAll('Exception: ', '')}';
+    }
+  }
+
   Future<void> _handleLogin() async {
+    // ✅ Clear previous error
+    setState(() {
+      _errorMessage = null;
+    });
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -50,28 +82,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         // Show success message
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Login successful!'),
-        //     backgroundColor: Colors.green,
-        //     duration: const Duration(seconds: 2),
-        //   ),
-        // );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
 
         // Navigate to home
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
       if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text(
-        //       'Login failed: ${e.toString().replaceAll('Exception: ', '')}',
-        //     ),
-        //     backgroundColor: Colors.red,
-        //     duration: const Duration(seconds: 3),
-        //   ),
-        // );
+        final errorMsg = _getUserFriendlyErrorMessage(e.toString());
+        setState(() {
+          _errorMessage = errorMsg;
+        });
+
+        // ✅ Show error in SnackBar as well
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -85,6 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      appBar: AppBar(),
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Center(
@@ -119,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.kAccent.withOpacity(0.1),
+            color: AppTheme.kAccent.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(Icons.sports, color: AppTheme.kAccent, size: 32),
@@ -134,6 +171,14 @@ class _LoginScreenState extends State<LoginScreen> {
             letterSpacing: -0.5,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Please sign in to continue',
+          style: TextStyle(
+            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
@@ -146,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -177,6 +222,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
+              onChanged: (_) {
+                // ✅ Clear error when user types
+                if (_errorMessage != null && mounted) {
+                  setState(() {
+                    _errorMessage = null;
+                  });
+                }
+              },
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter phone or username';
@@ -243,6 +296,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
+              onChanged: (_) {
+                // ✅ Clear error when user types
+                if (_errorMessage != null && mounted) {
+                  setState(() {
+                    _errorMessage = null;
+                  });
+                }
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your password';
@@ -338,8 +399,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 GestureDetector(
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.forgetPass),
+                  onTap: () => Navigator.pushReplacementNamed(
+                    context,
+                    AppRoutes.forgetPass,
+                  ),
                   child: Text(
                     'Forgot Password?',
                     style: TextStyle(
@@ -437,7 +500,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.otpLogin),
+                    Navigator.pushReplacementNamed(context, AppRoutes.otpLogin),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
                     color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
@@ -487,7 +550,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
+          onTap: () =>
+              Navigator.pushReplacementNamed(context, AppRoutes.signup),
           child: Text(
             'Sign Up',
             style: TextStyle(

@@ -51,26 +51,15 @@ class BookingRepository {
   Future<BookingModel> createBooking(CreateBookingModel booking) async {
     try {
       final data = booking.toJson();
-      print('📤 Sending booking request:');
-      print('📤 URL: /bookings');
-      print('📤 Data: $data');
 
       final response = await _dio.post('/bookings', data: data);
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response data: ${response.data}');
-
       return BookingModel.fromJson(response.data);
     } on DioException catch (e) {
-      print('❌ Dio Error:');
-      print('❌ Status: ${e.response?.statusCode}');
-      print('❌ Data: ${e.response?.data}');
-      print('❌ Message: ${e.message}');
       throw Exception(
         'Failed to create booking: ${e.response?.data ?? e.message}',
       );
     } catch (e) {
-      print('❌ Unexpected Error: $e');
       throw Exception('Failed to create booking: $e');
     }
   }
@@ -78,13 +67,9 @@ class BookingRepository {
   // Cancel a booking
   Future<BookingModel> cancelBooking(int id) async {
     try {
-      print('📤 Cancelling booking: $id');
-
       // Try POST first (most common)
       try {
         final response = await _dio.put('/bookings/$id/cancel');
-        print('📥 Cancel response status: ${response.statusCode}');
-        print('📥 Cancel response data: ${response.data}');
 
         // Handle different response formats
         if (response.data != null) {
@@ -104,13 +89,11 @@ class BookingRepository {
       } on DioException catch (e) {
         // If POST fails with 405 (Method Not Allowed), try PUT or PATCH
         if (e.response?.statusCode == 405) {
-          print('POST method not allowed, trying PUT...');
           try {
             final response = await _dio.put('/bookings/$id/cancel');
             return BookingModel.fromJson(response.data);
           } on DioException catch (putError) {
             if (putError.response?.statusCode == 405) {
-              print('PUT method not allowed, trying PATCH...');
               final response = await _dio.patch('/bookings/$id/cancel');
               return BookingModel.fromJson(response.data);
             }
@@ -120,11 +103,6 @@ class BookingRepository {
         rethrow;
       }
     } on DioException catch (e) {
-      print('❌ Dio Error cancelling booking:');
-      print('❌ Status: ${e.response?.statusCode}');
-      print('❌ Data: ${e.response?.data}');
-      print('❌ Message: ${e.message}');
-
       // If we get a 404, the booking might already be cancelled or doesn't exist
       if (e.response?.statusCode == 404) {
         throw Exception('Booking not found or already cancelled');
@@ -134,7 +112,6 @@ class BookingRepository {
         'Failed to cancel booking: ${e.response?.data ?? e.message}',
       );
     } catch (e) {
-      print('❌ Unexpected Error cancelling booking: $e');
       throw Exception('Failed to cancel booking: $e');
     }
   }

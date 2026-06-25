@@ -33,31 +33,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       final route = ModalRoute.of(context);
       final args = route?.settings.arguments;
 
-      print('🔵 ResetPasswordScreen - Route name: ${route?.settings.name}');
-      print('🔵 ResetPasswordScreen - Args received: $args');
-      print('🔵 ResetPasswordScreen - Args type: ${args.runtimeType}');
-
       if (args is Map<String, dynamic>) {
         final phone = args['phoneNumber'] as String? ?? '';
         final token = args['firebaseToken'] as String? ?? '';
-
-        print('🔵 ResetPasswordScreen - Phone from args: $phone');
-        print(
-          '🔵 ResetPasswordScreen - Token from args: ${token.isNotEmpty ? token.substring(0, 30) + '...' : 'EMPTY'}',
-        );
-        print('🔵 ResetPasswordScreen - Token length: ${token.length}');
-        print('🔵 ResetPasswordScreen - All keys: ${args.keys}');
 
         setState(() {
           _phoneNumber = phone;
           _firebaseToken = token;
         });
       } else {
-        print('⚠️ ResetPasswordScreen - No arguments received or wrong type');
-        print(
-          '⚠️ ResetPasswordScreen - Trying to get from route settings directly...',
-        );
-
         // Try to get from route settings directly
         try {
           final routeArgs = ModalRoute.of(context)?.settings.arguments;
@@ -66,12 +50,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               _phoneNumber = routeArgs['phoneNumber'] ?? '';
               _firebaseToken = routeArgs['firebaseToken'] ?? '';
             });
-            print(
-              '🔵 ResetPasswordScreen - Retrieved from route settings: $_phoneNumber',
-            );
           }
+        // ignore: empty_catches
         } catch (e) {
-          print('⚠️ ResetPasswordScreen - Error getting args: $e');
         }
       }
     });
@@ -109,10 +90,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    print('🔵 ResetPasswordScreen - Resetting password...');
-    print(
-      '🔵 ResetPasswordScreen - Firebase Token: ${_firebaseToken.substring(0, 30)}...',
-    );
 
     setState(() => _isLoading = true);
 
@@ -203,7 +180,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.kAccent.withOpacity(0.1),
+                  color: AppTheme.kAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -248,8 +225,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: _firebaseToken.isNotEmpty
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : Colors.red.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _firebaseToken.isNotEmpty
@@ -299,8 +276,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? AppTheme.kCardAlt.withOpacity(0.3)
-                      : AppTheme.kLightCardAlt.withOpacity(0.3),
+                      ? AppTheme.kCardAlt.withValues(alpha: 0.3)
+                      : AppTheme.kLightCardAlt.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,

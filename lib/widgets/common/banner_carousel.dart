@@ -16,7 +16,6 @@ class BannerCarousel extends StatefulWidget {
 class _BannerCarouselState extends State<BannerCarousel> {
   int _page = 0;
   final Map<int, bool> _hasError = {};
-  final Map<int, bool> _isLoading = {};
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +121,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                             banner.imageUrl,
                             width: MediaQuery.of(context).size.width,
                             fit: BoxFit.fitWidth,
-                            errorBuilder: (_, __, ___) {
+                            errorBuilder: (_, _, _) {
                               // Mark this banner as having an error
                               _hasError[index] = true;
                               return _buildErrorWidget(isDark);
@@ -160,8 +159,8 @@ class _BannerCarouselState extends State<BannerCarousel> {
                     color: i == _page
                         ? AppTheme.kAccent
                         : (isDark
-                              ? Colors.white.withOpacity(0.35)
-                              : Colors.black.withOpacity(0.35)),
+                              ? Colors.white.withValues(alpha: 0.35)
+                              : Colors.black.withValues(alpha: 0.35)),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),

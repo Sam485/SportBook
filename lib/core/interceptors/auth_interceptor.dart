@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Auth/service/auth_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
@@ -57,7 +56,6 @@ class AuthInterceptor extends Interceptor {
         }
       }
     } catch (e) {
-      print('Error adding auth token: $e');
       // Don't call logout here to avoid recursion
     }
 
@@ -122,7 +120,6 @@ class AuthInterceptor extends Interceptor {
 
         handler.next(err);
       } catch (e) {
-        print('Token refresh error: $e');
         _isRefreshing = false;
         _pendingRequests.clear();
         // Don't call logout here to avoid recursion
