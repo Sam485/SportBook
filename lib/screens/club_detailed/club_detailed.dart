@@ -131,7 +131,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.login);
+              Navigator.pushNamed(context, AppRoutes.landing);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -193,7 +193,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
           _isFavorited = wasFavorited;
           _isFavoriting = false;
         });
-        debugPrint('Failed to toggle favorite: $e');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

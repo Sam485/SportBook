@@ -165,7 +165,7 @@ class _ClubCardState extends State<ClubCard>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.login);
+              Navigator.pushNamed(context, AppRoutes.landing);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -213,7 +213,6 @@ class _ClubCardState extends State<ClubCard>
           _isFavorited = wasFavorited;
           _isFavoriting = false;
         });
-        debugPrint('Failed to toggle favorite: $e');
       }
     }
   }
@@ -265,7 +264,6 @@ class _ClubCardState extends State<ClubCard>
           arguments: widget.club,
         );
       }
-      debugPrint('Failed to fetch full club data: $e');
     } finally {
       if (!_isDisposed && mounted) {
         setState(() {
@@ -302,7 +300,6 @@ class _ClubCardState extends State<ClubCard>
           arguments: widget.club,
         );
       }
-      debugPrint('Failed to fetch full club data: $e');
     } finally {
       if (!_isDisposed && mounted) {
         setState(() {

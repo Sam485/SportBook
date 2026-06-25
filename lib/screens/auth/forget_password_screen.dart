@@ -375,7 +375,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pop(context),
+          onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
           child: Text(
             'Sign In',
             style: TextStyle(

@@ -1,4 +1,4 @@
-// screens/settings/settings_screen.dart
+// screens/settings/settings_screen.dart - FULLY FIXED VERSION
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -80,6 +80,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _onUserServiceChanged() {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && mounted) {
         setState(() {
@@ -90,6 +93,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _onClubServiceChanged() {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && mounted) {
         setState(() {
@@ -104,6 +110,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Future<void> _checkAuthentication() async {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     setState(() {
       _isCheckingAuth = true;
     });
@@ -117,32 +126,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final refreshed = await _tokenService.refreshAccessToken();
           if (!refreshed) {
             _isAuthenticated = false;
-            setState(() {
-              _isCheckingAuth = false;
-            });
+            if (mounted && !_isDisposed) {
+              setState(() {
+                _isCheckingAuth = false;
+              });
+            }
             return;
           }
         } else {
           _isAuthenticated = false;
-          setState(() {
-            _isCheckingAuth = false;
-          });
+          if (mounted && !_isDisposed) {
+            setState(() {
+              _isCheckingAuth = false;
+            });
+          }
           return;
         }
       }
 
       _isAuthenticated = true;
-      setState(() {
-        _isCheckingAuth = false;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
 
       // Load all data if authenticated
       await _loadAllData();
     } catch (e) {
       _isAuthenticated = false;
-      setState(() {
-        _isCheckingAuth = false;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
     }
   }
 
@@ -151,13 +168,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Future<void> _loadAllData() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     await Future.wait([_loadUserProfile(), _loadBookings(), _loadFavorites()]);
   }
 
   Future<void> _refreshAllData() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     setState(() {
       _isLoading = true;
@@ -166,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     await _loadAllData();
 
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       setState(() {
         _isLoading = false;
         _isBookingsLoading = false;
@@ -175,12 +194,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _refreshBookings() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
     await _loadBookings();
   }
 
   Future<void> _refreshFavorites() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
     await _loadFavorites();
   }
 
@@ -189,10 +210,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Future<void> _loadNotificationSettings() async {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool(_notificationsKey) ?? true;
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _isNotificationsEnabled = enabled;
         });
@@ -210,6 +234,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _toggleNotifications(bool value) async {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     setState(() {
       _isNotificationsEnabled = value;
     });
@@ -218,31 +245,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     try {
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() => _isLoading = true);
       }
 
       await _userService.getProfile();
-      if (mounted) {
+
+      if (mounted && !_isDisposed) {
         setState(() {
           _user = _userService.currentUser;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> _loadBookings() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       setState(() {
         _isBookingsLoading = true;
       });
@@ -251,14 +281,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final data = await _bookingService.getAllBookings(page: 1, limit: 100);
 
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _bookingsData = data;
           _isBookingsLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _isBookingsLoading = false;
         });
@@ -267,11 +297,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadFavorites() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     try {
       await _clubService.fetchFavorite();
-      if (mounted) {
+
+      if (mounted && !_isDisposed) {
         setState(() {
           _favoriteCount = _clubService.favoriteCount;
         });
@@ -281,11 +313,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _loadCurrentLanguage() {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     final languageProvider = Provider.of<LanguageProvider>(
       context,
       listen: false,
     );
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       setState(() {
         _currentLanguage = languageProvider.currentLanguage.toUpperCase();
       });
@@ -318,7 +353,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   void _navigateToHistory() {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     Navigator.push(
       context,
@@ -327,32 +363,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             HistoryBookingsScreen(bookings: _bookingsData?.data ?? []),
       ),
     ).then((_) {
-      _refreshBookings();
+      if (mounted && !_isDisposed) {
+        _refreshBookings();
+      }
     });
   }
 
   void _navigateToFavorites() {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const FavoriteClub()),
     ).then((_) {
-      _refreshFavorites();
+      if (mounted && !_isDisposed) {
+        _refreshFavorites();
+      }
     });
   }
 
   void _navigateToEditProfile() async {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const EditProfileScreen()),
     );
 
-    if (result != null && mounted) {
+    if (result != null && mounted && !_isDisposed) {
       await _loadUserProfile();
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('profile_updated'.tr(context))));
@@ -361,7 +403,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToPasswordSecurity() {
-    if (!_isAuthenticated) return;
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     Navigator.push(
       context,
@@ -370,6 +413,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLanguageSelector() async {
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
+
     final selectedLanguage = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -377,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => LanguageSelector(currentLanguage: _currentLanguage),
     );
 
-    if (selectedLanguage != null && mounted) {
+    if (selectedLanguage != null && mounted && !_isDisposed) {
       setState(() {
         _currentLanguage = selectedLanguage.toUpperCase();
       });
@@ -385,6 +431,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAppearanceSelector() async {
+    // ✅ Check if widget is still mounted and not disposed
+    if (!_isAuthenticated || _isDisposed || !mounted) return;
+
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     final selectedTheme = await showModalBottomSheet(
@@ -395,12 +444,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           AppearanceSelector(currentTheme: themeProvider.currentTheme),
     );
 
-    if (selectedTheme != null && mounted) {
+    if (selectedTheme != null && mounted && !_isDisposed) {
       setState(() {});
     }
   }
 
   void _signOut() async {
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -428,12 +480,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _tokenService.clearToken();
               _userService.clearUser();
 
-              Navigator.pushNamedAndRemoveUntil(
+              if (mounted && !_isDisposed) {
                 // ignore: use_build_context_synchronously
-                context,
-                AppRoutes.login,
-                (route) => false,
-              );
+                Navigator.pushNamed(context, AppRoutes.landing);
+              }
             },
             style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
             child: Text('sign_out'.tr(context)),
@@ -445,7 +495,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ✅ Navigate to login
   void _navigateToLogin() {
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    // ✅ Check if widget is still mounted and not disposed
+    if (_isDisposed || !mounted) return;
+    Navigator.pushNamed(context, AppRoutes.landing);
   }
 
   // ============================================================
@@ -454,6 +506,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Return empty widget if disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -523,6 +578,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ✅ Login required state
   Widget _buildLoginRequiredState(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -593,6 +651,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Widget _header() {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Row(
@@ -616,6 +677,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _profileInfo(bool isDark) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
     if (!_isAuthenticated) return const SizedBox.shrink();
 
     if (_isLoading) {
@@ -883,6 +946,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String subTitle, {
     required VoidCallback onTap,
   }) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
@@ -959,6 +1025,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _multipleButton(ThemeProvider themeProvider) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
@@ -1022,7 +1091,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Switch(
                         value: _isNotificationsEnabled,
                         onChanged: _isAuthenticated
-                            ? _toggleNotifications
+                            ? (value) {
+                                // ✅ Check if widget is still mounted
+                                if (mounted && !_isDisposed) {
+                                  _toggleNotifications(value);
+                                }
+                              }
                             : null,
                         activeThumbColor: AppTheme.kAccent,
                       ),
@@ -1197,6 +1271,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _signOutButton() {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
     if (!_isAuthenticated) return const SizedBox.shrink();
 
     return Padding(
@@ -1221,6 +1297,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _badge(String data) {
+    // ✅ Check if widget is disposed
+    if (_isDisposed) return const SizedBox.shrink();
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(

@@ -1,5 +1,4 @@
 // feature/Auth/service/auth_service.dart
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
@@ -65,9 +64,8 @@ class AuthService {
           await _tokenServiceInstance.clearToken();
         }
       }
-    // ignore: empty_catches
-    } catch (e) {
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   // ✅ Check auth status and redirect appropriately (for other screens)
@@ -113,11 +111,8 @@ class AuthService {
   Future<void> logout() async {
     try {
       await _tokenServiceInstance.clearToken();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Logout error: $e');
-      }
-    }
+      // ignore: empty_catches
+    } catch (e) {}
     _navigateToLogin();
   }
 
@@ -166,9 +161,6 @@ class AuthService {
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Token check on resume error: $e');
-      }
       await _tokenServiceInstance.clearToken();
       _navigateToLogin();
     }

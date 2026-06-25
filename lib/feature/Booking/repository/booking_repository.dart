@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/Booking/model/create_booking_model.dart';
 import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
@@ -52,9 +51,6 @@ class BookingRepository {
   Future<BookingModel> createBooking(CreateBookingModel booking) async {
     try {
       final data = booking.toJson();
-      if (kDebugMode) {
-        print('📤 Data: $data');
-      }
 
       final response = await _dio.post('/bookings', data: data);
 
@@ -116,9 +112,6 @@ class BookingRepository {
         'Failed to cancel booking: ${e.response?.data ?? e.message}',
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Unexpected Error cancelling booking: $e');
-      }
       throw Exception('Failed to cancel booking: $e');
     }
   }

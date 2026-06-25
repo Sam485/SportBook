@@ -1,6 +1,5 @@
 // lib/feature/Auth/service/firebase_otp_service.dart
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 
 class FirebaseOtpService {
   FirebaseOtpService._internal();
@@ -55,9 +54,6 @@ class FirebaseOtpService {
   }) async {
     final verificationId = verificationIdOverride ?? _verificationId;
     if (verificationId == null) {
-      if (kDebugMode) {
-        print('❌ [verifyOtp] No verification ID found');
-      }
       throw FirebaseAuthException(
         code: 'missing-verification-id',
         message: 'No OTP was requested yet. Please request a code first.',
@@ -76,9 +72,6 @@ class FirebaseOtpService {
       if (user != null) {
         return user;
       } else {
-        if (kDebugMode) {
-          print('⚠️ [verifyOtp] No user found after sign in');
-        }
         return null;
       }
     } catch (e) {

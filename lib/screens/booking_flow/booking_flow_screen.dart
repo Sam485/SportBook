@@ -285,7 +285,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               // ✅ Navigate to login with return route
               Navigator.pushNamed(
                 context,
-                AppRoutes.login,
+                AppRoutes.landing,
                 arguments: {
                   'returnTo': AppRoutes.bookingFlow,
                   'club': widget.target,

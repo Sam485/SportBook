@@ -5,7 +5,8 @@ import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'verify_screen.dart'; // ✅ Add this import
+import 'package:sportbook/screens/auth/policy_privacy_screen.dart';
+import 'verify_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -82,7 +83,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             password: _passwordController.text.trim(),
           );
 
-          // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -119,6 +119,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 3),
       ),
+    );
+  }
+
+  // ✅ Navigate to Privacy Policy
+  void _navigateToPrivacyPolicy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
     );
   }
 
@@ -411,8 +419,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Terms and Conditions
+            // ✅ Terms and Conditions with clickable links
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
                   width: 20,
@@ -431,11 +440,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'I agree to the Terms of Service and Privacy Policy',
-                    style: TextStyle(
-                      color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-                      fontSize: 12,
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
+                      children: [
+                        const TextSpan(text: 'I agree to the '),
+                        WidgetSpan(
+                          child: GestureDetector(
+                            onTap: _navigateToPrivacyPolicy,
+                            child: Text(
+                              'Privacy Policy',
+                              style: TextStyle(
+                                color: AppTheme.kAccent,
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -561,7 +588,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
+          onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
           child: Text(
             'Sign In',
             style: TextStyle(
