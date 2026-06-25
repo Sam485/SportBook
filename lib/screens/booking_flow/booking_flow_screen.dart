@@ -1,8 +1,10 @@
+// booking_flow_screen.dart - WITH AUTHENTICATION VALIDATION
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/dto/slot_dto.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/booking_flow/steps/step_payment.dart';
 import 'package:sportbook/screens/booking_flow/steps/success.dart';
@@ -27,6 +29,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   late final SportClubService _clubService;
 
+  // ✅ Authentication state
+  bool _isAuthChecked = false;
+  bool _isAuthenticated = false;
+  bool _isAuthLoading = true;
+
   // State variables
   SportClubModel? _clubWithSlots;
   bool _isLoading = true;
@@ -34,8 +41,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   // Local state for booking
   String? _selectedCategory;
-  int? _selectedCourtId; // This stores the slot ID
-  SlotDto? _selectedSlot; // This stores the full slot object
+  int? _selectedCourtId;
+  SlotDto? _selectedSlot;
   DateTime? _selectedDate;
   TimeOfDay? _selectedStartTime;
   TimeOfDay? _selectedEndTime;
@@ -144,6 +151,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     _page = PageController();
     _clubService = getIt<SportClubService>();
 
+    // ✅ Check authentication status on init
+    _checkAuthentication();
+
     // Check if we already have slots from the passed data
     if (widget.target.slots != null && widget.target.slots!.isNotEmpty) {
       setState(() {
@@ -165,8 +175,153 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     super.dispose();
   }
 
+  // ✅ Enhanced authentication check (like home screen)
+  Future<void> _checkAuthentication() async {
+    setState(() {
+      _isAuthLoading = true;
+    });
+
+    try {
+      final tokenService = getIt<TokenService>();
+      final hasValidToken = await tokenService.hasValidTokenAsync();
+
+      if (hasValidToken) {
+        _isAuthenticated = true;
+        print('✅ User is authenticated');
+      } else {
+        // Try to refresh token
+        final refreshToken = await tokenService.getRefreshToken();
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          final refreshed = await tokenService.refreshAccessToken();
+          _isAuthenticated = refreshed;
+          if (refreshed) {
+            print('✅ Token refreshed successfully');
+          } else {
+            print('⚠️ Token refresh failed');
+          }
+        } else {
+          _isAuthenticated = false;
+          print('⚠️ User is not authenticated');
+        }
+      }
+    } catch (e) {
+      print('Auth check error: $e');
+      _isAuthenticated = false;
+    }
+
+    setState(() {
+      _isAuthChecked = true;
+      _isAuthLoading = false;
+    });
+  }
+
+  // ✅ Show login required dialog (like home screen)
+  void _showLoginRequiredDialog(BuildContext context, {String? message}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'login_required'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message ?? 'login_to_complete_booking'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.kAccent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.kAccent.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppTheme.kAccent,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'you_need_account_to_book'.tr(context),
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : AppTheme.kLightText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'cancel'.tr(context),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // ✅ Navigate to login with return route
+              Navigator.pushNamed(
+                context,
+                AppRoutes.login,
+                arguments: {
+                  'returnTo': AppRoutes.bookingFlow,
+                  'club': widget.target,
+                },
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.kAccent,
+              foregroundColor: Colors.black,
+            ),
+            child: Text('login'.tr(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Handle booking confirmation with auth check (like home screen)
+  void _handleConfirm() async {
+    // If not authenticated, show login dialog
+    if (!_isAuthenticated) {
+      _showLoginRequiredDialog(context);
+      return;
+    }
+
+    // User is authenticated, proceed with booking
+    _paymentKey.currentState?.handleConfirm();
+  }
+
   Future<void> _fetchClubWithSlots() async {
-    // Check if widget is still mounted before updating state
     if (!mounted) return;
 
     setState(() {
@@ -179,7 +334,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         widget.target.id,
       );
 
-      // Check if widget is still mounted after async operation
       if (!mounted) return;
 
       if (clubData?.slots == null || clubData!.slots!.isEmpty) {
@@ -203,7 +357,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         }
       });
     } catch (e) {
-      // Check if widget is still mounted before updating state
       if (!mounted) return;
 
       setState(() {
@@ -242,13 +395,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     }
   }
 
-  void _handleConfirm() {
-    _paymentKey.currentState?.handleConfirm();
-  }
-
   void _onPaymentConfirmed() {
-    // ✅ Check if widget is still mounted
     if (!mounted) return;
+
+    // ✅ Double check authentication before proceeding
+    if (!_isAuthenticated) {
+      _showLoginRequiredDialog(context);
+      return;
+    }
 
     if (_selectedSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -309,71 +463,31 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       'pricePerHour': _pricePerHour,
     };
 
-    // ✅ Save the current context for navigation
-    final currentContext = context;
-
-    // ✅ Navigate to success page with proper callbacks
+    // ✅ Navigate to success page with auth status
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => PaymentSuccessPage(
           bookingData: bookingData,
+          isAuthenticated: _isAuthenticated, // ✅ Pass auth status
           onGoHome: () {
-            // ✅ Pop until home screen is reached
             Navigator.of(context).popUntil((route) {
               return route.settings.name == AppRoutes.home;
             });
           },
           onViewBooking: () {
-            // ✅ Push bookings and remove everything else
             Navigator.of(context).pushNamedAndRemoveUntil(
               AppRoutes.allbookings,
               (route) => false,
               arguments: true,
             );
           },
+          onLoginRequired: () {
+            // ✅ Return to booking flow if login needed
+            _showLoginRequiredDialog(context);
+          },
         ),
       ),
     );
-  }
-
-  // ✅ Safe navigation callback for Go Home
-  void _safeNavigateHome() {
-    // Check if mounted before navigation
-    if (!mounted) return;
-
-    try {
-      final context = this.context;
-      if (Navigator.of(context, rootNavigator: true).canPop()) {
-        Navigator.of(context).popUntil((r) => r.isFirst);
-      } else {
-        // If can't pop to first, just pop
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      // If navigation fails, just pop
-      try {
-        Navigator.of(context).pop();
-      } catch (_) {}
-    }
-  }
-
-  // ✅ Safe navigation callback for View Booking
-  void _safeNavigateBooking() {
-    // Check if mounted before navigation
-    if (!mounted) return;
-
-    try {
-      final context = this.context;
-      if (Navigator.of(context, rootNavigator: true).canPop()) {
-        Navigator.of(context).popUntil((r) => r.isFirst);
-      } else {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      try {
-        Navigator.of(context).pop();
-      } catch (_) {}
-    }
   }
 
   // Callbacks from steps
@@ -387,7 +501,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   void _onCourtSelected(int courtId) {
     if (!mounted) return;
 
-    // Find the full slot object
     final slot = _clubWithSlots?.slots?.firstWhere(
       (s) => s.id == courtId,
       orElse: () => _clubWithSlots!.slots!.first,
@@ -422,7 +535,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       appBar: _buildAppBar(isDark),
-      body: _isLoading
+      body: _isLoading || _isAuthLoading
           ? _buildLoadingState(isDark)
           : _errorMessage != null
           ? _buildErrorState(isDark)
@@ -441,7 +554,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'loading_courts'.tr(context),
+            _isAuthLoading
+                ? 'checking_account'.tr(context)
+                : 'loading_courts'.tr(context),
             style: TextStyle(
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
               fontSize: 14,
@@ -641,7 +756,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           canProceed: _canProceed,
           onBack: _back,
           onNext: _next,
-          onConfirm: _handleConfirm,
+          onConfirm: _handleConfirm, // ✅ Use auth-checked handler
           selectedCategory: _selectedCategory,
           selectedCourt: _selectedCourtId,
           selectedDate: _selectedDate,
@@ -650,6 +765,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           isDark: isDark,
           canConfirm: _canConfirm,
           courtName: _courtName,
+          isAuthenticated: _isAuthenticated, // ✅ Pass auth status
         ),
       ],
     );
@@ -830,6 +946,7 @@ class _BottomBar extends StatelessWidget {
   final bool isDark;
   final bool canConfirm;
   final String? courtName;
+  final bool isAuthenticated; // ✅ Added
 
   const _BottomBar({
     required this.step,
@@ -846,6 +963,7 @@ class _BottomBar extends StatelessWidget {
     required this.isDark,
     required this.canConfirm,
     this.courtName,
+    this.isAuthenticated = false, // ✅ Default to false
   });
 
   bool get isLastStep => step == totalSteps - 1;
@@ -1053,6 +1171,37 @@ class _BottomBar extends StatelessWidget {
               ),
             ],
           ),
+          // ✅ Show authentication status info
+          if (isLastStep && !isAuthenticated) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.lock_outline_rounded,
+                    color: Colors.orange,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'login_to_complete_booking'.tr(context),
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/feature/Category/model/category_model.dart';
 import '../../../core/theme.dart';
 import '../../../translations/app_translations.dart';
 
@@ -6,7 +7,7 @@ class StepCategory extends StatelessWidget {
   final VoidCallback onNext;
   final Function(String) onCategorySelected;
   final String? selectedCategory;
-  final List<dynamic> categories;
+  final List<CategoryModel> categories; // ✅ Changed to List<CategoryModel>
 
   const StepCategory({
     super.key,
@@ -42,8 +43,10 @@ class StepCategory extends StatelessWidget {
         const SizedBox(height: 24),
 
         ...categories.map((category) {
-          final categoryStr = category.toString();
+          // ✅ Use category.name instead of toString()
+          final categoryStr = category.name;
           final sel = selectedCategory == categoryStr;
+
           return GestureDetector(
             onTap: () {
               onCategorySelected(categoryStr);
@@ -96,7 +99,7 @@ class StepCategory extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      _getEmojiForCategory(categoryStr),
+                      _getEmojiForCategory(category.name),
                       style: const TextStyle(fontSize: 26),
                     ),
                   ),
@@ -106,7 +109,7 @@ class StepCategory extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _getTranslatedCategoryName(categoryStr, context),
+                          _getTranslatedCategoryName(category.name, context),
                           style: TextStyle(
                             color: sel
                                 ? AppTheme.kAccent
@@ -117,7 +120,7 @@ class StepCategory extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          _subtitle(categoryStr, context),
+                          _subtitle(category.name, context),
                           style: TextStyle(
                             color: isDark
                                 ? AppTheme.kTextSub
@@ -170,6 +173,8 @@ class StepCategory extends StatelessWidget {
         return '🚴';
       case 'running':
         return '🏃';
+      case 'volleyball':
+        return '🏐';
       default:
         return '🏅';
     }
@@ -199,6 +204,8 @@ class StepCategory extends StatelessWidget {
         return 'sport_cycling'.tr(context);
       case 'running':
         return 'sport_running'.tr(context);
+      case 'volleyball':
+        return 'sport_volleyball'.tr(context);
       default:
         return category;
     }
@@ -228,6 +235,8 @@ class StepCategory extends StatelessWidget {
         return 'cycling_subtitle'.tr(context);
       case 'running':
         return 'running_subtitle'.tr(context);
+      case 'volleyball':
+        return 'volleyball_subtitle'.tr(context);
       default:
         return 'book_your_session'.tr(context);
     }

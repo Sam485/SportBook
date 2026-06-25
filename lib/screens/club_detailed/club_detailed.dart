@@ -1,7 +1,11 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/booking_flow/booking_flow_screen.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
@@ -15,7 +19,12 @@ class ClubDetailed extends StatefulWidget {
 
 class _ClubDetailedState extends State<ClubDetailed> {
   int _page = 0;
-  bool _saved = false;
+  bool _isFavoriting = false;
+  bool _isFavorited = false;
+  bool _isDisposed = false;
+
+  late final SportClubService _clubService;
+  late final TokenService _tokenService;
 
   bool get _isOpen {
     final now = TimeOfDay.now();
@@ -40,6 +49,169 @@ class _ClubDetailedState extends State<ClubDetailed> {
     } else {
       return nowM >= openMinutes && nowM < closeMinutes;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _clubService = getIt<SportClubService>();
+    _tokenService = getIt<TokenService>();
+
+    // Check if this club is already favorited
+    _isFavorited = _clubService.isClubFavorited(widget.target.id);
+
+    // Listen to service changes
+    _clubService.addListener(_onServiceChanged);
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _clubService.removeListener(_onServiceChanged);
+    super.dispose();
+  }
+
+  void _onServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        final isNowFavorited = _clubService.isClubFavorited(widget.target.id);
+        if (_isFavorited != isNowFavorited) {
+          setState(() {
+            _isFavorited = isNowFavorited;
+          });
+        }
+      }
+    });
+  }
+
+  // ✅ Check if user is authenticated
+  Future<bool> _isAuthenticated() async {
+    try {
+      return await _tokenService.hasValidTokenAsync();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ✅ Show login required dialog
+  void _showLoginRequiredDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'login_required'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          'login_to_favorite'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'cancel'.tr(context),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.login);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.kAccent,
+              foregroundColor: Colors.black,
+            ),
+            child: Text('login'.tr(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Toggle favorite with auth check
+  Future<void> _toggleFavorite() async {
+    if (_isFavoriting) return;
+
+    // Check if user is authenticated
+    final isAuth = await _isAuthenticated();
+
+    if (!isAuth) {
+      _showLoginRequiredDialog();
+      return;
+    }
+
+    final wasFavorited = _isFavorited;
+
+    setState(() {
+      _isFavoriting = true;
+      _isFavorited = !_isFavorited;
+    });
+
+    try {
+      await _clubService.toggleFavorite(widget.target.id);
+
+      if (!_isDisposed && mounted) {
+        final isNowFavorited = _clubService.isClubFavorited(widget.target.id);
+
+        setState(() {
+          _isFavorited = isNowFavorited;
+          _isFavoriting = false;
+        });
+
+        // Show feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isNowFavorited
+                  ? 'added_to_favorites'.tr(context)
+                  : 'removed_from_favorites'.tr(context),
+            ),
+            duration: const Duration(seconds: 1),
+            backgroundColor: isNowFavorited ? Colors.green : Colors.grey,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _isFavorited = wasFavorited;
+          _isFavoriting = false;
+        });
+        debugPrint('Failed to toggle favorite: $e');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('failed_to_update_favorite'.tr(context)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showBookingSheet(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingFlowScreen(target: widget.target),
+      ),
+    );
   }
 
   @override
@@ -161,6 +333,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             ),
           ),
 
+        // Back button
         Positioned(
           left: 12,
           top: 10,
@@ -183,24 +356,41 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
         ),
 
+        // ✅ Favorite button (replacing chat)
         Positioned(
           right: 12,
           top: 10,
-          child: InkWell(
-            onTap: () => setState(() => _saved = !_saved),
-            borderRadius: BorderRadius.circular(30),
+          child: GestureDetector(
+            onTap: _toggleFavorite,
             child: Container(
               width: 36,
               height: 36,
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.45),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isFavorited
+                      ? AppTheme.kAccent.withOpacity(0.5)
+                      : Colors.transparent,
+                  width: 1.5,
+                ),
               ),
-              child: Icon(
-                _saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: _saved ? Colors.redAccent : Colors.white,
-                size: 18,
-              ),
+              child: _isFavoriting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: AppTheme.kAccent,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Icon(
+                      _isFavorited
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: _isFavorited ? AppTheme.kAccent : Colors.white,
+                      size: 18,
+                    ),
             ),
           ),
         ),
@@ -650,7 +840,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
   );
 
   Widget _suggestions(bool isDark) {
-    // Since we don't have static data anymore, show a message or empty
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -692,23 +881,35 @@ class _ClubDetailedState extends State<ClubDetailed> {
       ),
       child: Row(
         children: [
+          // ✅ Favorite button (replacing chat)
           _navIconBtn(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: 'chat'.tr(context),
-            onTap: () {},
+            icon: _isFavorited
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            label: _isFavorited ? 'saved'.tr(context) : 'save'.tr(context),
+            color: _isFavorited ? AppTheme.kAccent : null,
+            onTap: _toggleFavorite,
             isDark: isDark,
           ),
           const SizedBox(width: 10),
+
+          // ✅ Share button (replacing the second favorite)
           _navIconBtn(
-            icon: _saved
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
-            label: _saved ? 'saved'.tr(context) : 'save'.tr(context),
-            color: _saved ? Colors.redAccent : null,
-            onTap: () => setState(() => _saved = !_saved),
+            icon: Icons.share_rounded,
+            label: 'share'.tr(context),
+            onTap: () {
+              // TODO: Implement share functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('share_feature_coming_soon'.tr(context)),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
             isDark: isDark,
           ),
           const SizedBox(width: 14),
+
           Expanded(
             child: ElevatedButton(
               onPressed: () => _showBookingSheet(context),
@@ -798,16 +999,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
       ],
     ),
   );
-
-  void _showBookingSheet(BuildContext context) {
-    // Navigate directly to booking flow with the club
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BookingFlowScreen(target: widget.target),
-      ),
-    );
-  }
 }
 
 class _MapGridPainter extends CustomPainter {

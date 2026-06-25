@@ -4,6 +4,8 @@ import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
 import 'package:sportbook/feature/Booking/service/booking_service.dart';
+import 'package:sportbook/feature/Token/service/token_service.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booked_card.dart';
 
@@ -18,31 +20,53 @@ class BookingsScreen extends StatefulWidget {
 class _BookingsScreenState extends State<BookingsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final BookingService _bookingService = getIt<BookingService>();
+  final TokenService _tokenService = getIt<TokenService>();
 
   GetAllBookingDto? _bookingsData;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _hasError = false;
   String _selectedStatus = '';
   int _currentPage = 1;
   final int _limit = 10;
   int _refreshCounter = 0;
+  bool _isCheckingAuth = true;
+  bool _isAuthenticated = false;
 
   // Get the list of bookings from the response
   List<BookingModel> get _bookings => _bookingsData?.data ?? [];
 
+  // ✅ Get user-friendly error message
+  String get _userFriendlyErrorMessage {
+    if (_errorMessage == null) return 'something_went_wrong'.tr(context);
+
+    final msg = _errorMessage!.toLowerCase();
+    if (msg.contains('timeout') || msg.contains('timed out')) {
+      return 'connection_timeout'.tr(context);
+    } else if (msg.contains('network') || msg.contains('internet')) {
+      return 'network_error'.tr(context);
+    } else if (msg.contains('401') || msg.contains('unauthorized')) {
+      return 'unauthorized'.tr(context);
+    } else if (msg.contains('500') || msg.contains('server')) {
+      return 'server_error'.tr(context);
+    } else if (msg.contains('404') || msg.contains('not found')) {
+      return 'not_found'.tr(context);
+    } else {
+      return 'something_went_wrong'.tr(context);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _fetchBookings();
+    _checkAuthentication();
   }
-
-  // In BookingsScreen, ensure data is refreshed when the screen is viewed
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Refresh data when screen becomes visible again
-    if (!_isLoading && _bookingsData != null) {
+    if (_isAuthenticated && !_isLoading && _bookingsData != null && mounted) {
       _fetchBookings();
     }
   }
@@ -53,10 +77,59 @@ class _BookingsScreenState extends State<BookingsScreen> {
     super.dispose();
   }
 
+  // ✅ Check if user is authenticated
+  Future<void> _checkAuthentication() async {
+    setState(() {
+      _isCheckingAuth = true;
+    });
+
+    try {
+      final hasValidToken = await _tokenService.hasValidTokenAsync();
+
+      if (!hasValidToken) {
+        // Try to refresh token
+        final refreshToken = await _tokenService.getRefreshToken();
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          final refreshed = await _tokenService.refreshAccessToken();
+          if (!refreshed) {
+            _isAuthenticated = false;
+            setState(() {
+              _isCheckingAuth = false;
+            });
+            return;
+          }
+        } else {
+          _isAuthenticated = false;
+          setState(() {
+            _isCheckingAuth = false;
+          });
+          return;
+        }
+      }
+
+      _isAuthenticated = true;
+      setState(() {
+        _isCheckingAuth = false;
+      });
+
+      // Load bookings if authenticated
+      _fetchBookings();
+    } catch (e) {
+      print('Auth check error: $e');
+      _isAuthenticated = false;
+      setState(() {
+        _isCheckingAuth = false;
+      });
+    }
+  }
+
   Future<void> _fetchBookings() async {
+    if (!_isAuthenticated) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _hasError = false;
     });
 
     try {
@@ -71,12 +144,14 @@ class _BookingsScreenState extends State<BookingsScreen> {
           _bookingsData = data;
           _isLoading = false;
           _refreshCounter++;
+          _hasError = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
+          _hasError = true;
           _isLoading = false;
         });
       }
@@ -84,15 +159,24 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Future<void> _refreshBookings() async {
+    if (!_isAuthenticated) return;
     await _fetchBookings();
   }
 
   void _changeStatus(String? status) {
+    if (!_isAuthenticated) return;
     setState(() {
       _selectedStatus = status ?? '';
       _currentPage = 1;
+      _hasError = false;
+      _errorMessage = null;
     });
     _fetchBookings();
+  }
+
+  // ✅ Navigate to login screen
+  void _navigateToLogin() {
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override
@@ -117,13 +201,19 @@ class _BookingsScreenState extends State<BookingsScreen> {
                 style: AppTheme.tsTitleAdaptive(context),
               ),
               centerTitle: true,
-              actions: [_buildStatusFilterButton(context, isDark)],
+              actions: _isAuthenticated
+                  ? [_buildStatusFilterButton(context, isDark)]
+                  : null,
             )
           : null,
       body: SafeArea(
-        child: _isLoading
+        child: _isCheckingAuth
             ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
+            : !_isAuthenticated
+            ? _buildLoginRequiredState(isDark)
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _hasError && _bookings.isEmpty
             ? _buildErrorState(isDark)
             : _bookings.isEmpty
             ? _buildEmptyState(isDark)
@@ -140,7 +230,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
                             'booking_${_bookings[i].id}_$_refreshCounter',
                           ),
                           booking: _bookings[i],
-                          onBookingUpdated: _refreshBookings, // ✅ Pass callback
+                          onBookingUpdated: _refreshBookings,
                         ),
                         childCount: _bookings.length,
                       ),
@@ -151,6 +241,73 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  // ✅ Login required state
+  Widget _buildLoginRequiredState(bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              size: 80,
+              color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'login_required'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'login_to_view_bookings'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 200,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _navigateToLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.kAccent,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.login_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'login'.tr(context),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -180,47 +337,36 @@ class _BookingsScreenState extends State<BookingsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline_rounded,
-              color: Colors.redAccent,
+              Icons.wifi_off_rounded,
               size: 64,
+              color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
             ),
             const SizedBox(height: 16),
             Text(
-              'failed_to_load_bookings'.tr(context),
+              _userFriendlyErrorMessage,
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage ?? 'unknown_error'.tr(context),
-              style: TextStyle(
-                color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
               onPressed: _fetchBookings,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.kAccent,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
+                  horizontal: 24,
                   vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: Text(
-                'retry'.tr(context),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: Text('retry'.tr(context)),
             ),
           ],
         ),
@@ -278,6 +424,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _searchBar(bool isDark) {
+    if (!_isAuthenticated) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(

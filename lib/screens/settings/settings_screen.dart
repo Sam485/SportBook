@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
+import 'package:sportbook/feature/Booking/service/booking_service.dart';
+import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/settings/features/appearance_selection.dart';
 import 'package:sportbook/screens/settings/features/editing_profile.dart';
 import 'package:sportbook/screens/settings/features/favorite_club.dart';
@@ -13,8 +18,6 @@ import 'package:sportbook/screens/settings/features/history_booking.dart';
 import 'package:sportbook/screens/settings/features/language_selection.dart';
 import 'package:sportbook/screens/settings/features/password_security.dart';
 import 'package:sportbook/translations/app_translations.dart';
-import '../../core/theme.dart';
-import '../../feature/static/models/models.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 
@@ -29,20 +32,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isNotificationsEnabled = true;
   bool _isLoading = true;
   bool _isDisposed = false;
+  int _refreshCounter = 0;
+  bool _isCheckingAuth = true;
+  bool _isAuthenticated = false;
 
   // User profile data
   UserModel? _user;
+
+  // Booking data
+  GetAllBookingDto? _bookingsData;
+  bool _isBookingsLoading = true;
+  String? _bookingsError;
+
+  // Favorite clubs
+  int _favoriteCount = 0;
 
   // Static avatar URL for now
   final String _staticAvatarUrl =
       'https://imgs.search.brave.com/EipFQVm-X300u0qBZX5vva8FbVwDEBUGookALc-rjNM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMucGV4ZWxzLmNv/bS9waG90b3MvMTUz/OTM1OTAvcGV4ZWxz/LXBob3RvLTE1Mzkz/NTkwL2ZyZWUtcGhv/dG8tb2YtcGhvdG8t/b2YtYS1zaGlydGxl/c3MtaGFuZHNvbWUt/bWFuLWFnYWluc3Qt/dGhlLXNreS5qcGVn/P2F1dG89Y29tcHJl/c3MmY3M9dGlueXNy/Z2ImZHByPTEmdz01/MDA';
 
-  // Sample history bookings
-  final List<SportBooking> _historyBookings = [];
-
-  // Repositories and services
+  // Services
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
+  final _bookingService = getIt<BookingService>();
+  final _clubService = getIt<SportClubService>();
 
   // Language state
   late String _currentLanguage;
@@ -54,8 +67,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _userService.addListener(_onUserServiceChanged);
-    _loadUserProfile();
-    _loadSampleHistoryBookings();
+    _clubService.addListener(_onClubServiceChanged);
+    _checkAuthentication();
     _loadCurrentLanguage();
     _loadNotificationSettings();
   }
@@ -64,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _isDisposed = true;
     _userService.removeListener(_onUserServiceChanged);
+    _clubService.removeListener(_onClubServiceChanged);
     super.dispose();
   }
 
@@ -72,18 +86,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!_isDisposed && mounted) {
         setState(() {
           _user = _userService.currentUser;
+          _refreshCounter++;
         });
       }
     });
   }
 
+  void _onClubServiceChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _favoriteCount = _clubService.favoriteCount;
+          _refreshCounter++;
+        });
+      }
+    });
+  }
+
+  // ============================================================
+  // AUTHENTICATION CHECK
+  // ============================================================
+
+  Future<void> _checkAuthentication() async {
+    setState(() {
+      _isCheckingAuth = true;
+    });
+
+    try {
+      final hasValidToken = await _tokenService.hasValidTokenAsync();
+
+      if (!hasValidToken) {
+        final refreshToken = await _tokenService.getRefreshToken();
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          final refreshed = await _tokenService.refreshAccessToken();
+          if (!refreshed) {
+            _isAuthenticated = false;
+            setState(() {
+              _isCheckingAuth = false;
+            });
+            return;
+          }
+        } else {
+          _isAuthenticated = false;
+          setState(() {
+            _isCheckingAuth = false;
+          });
+          return;
+        }
+      }
+
+      _isAuthenticated = true;
+      setState(() {
+        _isCheckingAuth = false;
+      });
+
+      // Load all data if authenticated
+      await _loadAllData();
+    } catch (e) {
+      print('Auth check error: $e');
+      _isAuthenticated = false;
+      setState(() {
+        _isCheckingAuth = false;
+      });
+    }
+  }
+
+  // ============================================================
+  // REFRESH METHODS
+  // ============================================================
+
+  Future<void> _loadAllData() async {
+    if (!_isAuthenticated) return;
+
+    await Future.wait([_loadUserProfile(), _loadBookings(), _loadFavorites()]);
+  }
+
+  Future<void> _refreshAllData() async {
+    if (!_isAuthenticated) return;
+
+    setState(() {
+      _isLoading = true;
+      _isBookingsLoading = true;
+    });
+
+    await _loadAllData();
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _isBookingsLoading = false;
+        _refreshCounter++;
+      });
+    }
+  }
+
+  Future<void> _refreshBookings() async {
+    if (!_isAuthenticated) return;
+    await _loadBookings();
+  }
+
+  Future<void> _refreshFavorites() async {
+    if (!_isAuthenticated) return;
+    await _loadFavorites();
+  }
+
+  // ============================================================
+  // LOAD METHODS
+  // ============================================================
+
   Future<void> _loadNotificationSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool(_notificationsKey) ?? true;
-      setState(() {
-        _isNotificationsEnabled = enabled;
-      });
+      if (mounted) {
+        setState(() {
+          _isNotificationsEnabled = enabled;
+        });
+      }
     } catch (e) {}
   }
 
@@ -103,36 +222,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    if (!_isAuthenticated) return;
+
     try {
-      setState(() => _isLoading = true);
+      if (mounted) {
+        setState(() => _isLoading = true);
+      }
 
-      final hasValidToken = await _tokenService.hasValidTokenAsync();
-
-      if (hasValidToken) {
-        await _userService.getProfile();
+      await _userService.getProfile();
+      if (mounted) {
         setState(() {
           _user = _userService.currentUser;
           _isLoading = false;
         });
-      } else {
-        setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load profile: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() => _isLoading = false);
       }
     }
   }
 
-  void _loadSampleHistoryBookings() {
-    // Add sample history bookings - replace with your actual data
+  Future<void> _loadBookings() async {
+    if (!_isAuthenticated) return;
+
+    if (mounted) {
+      setState(() {
+        _isBookingsLoading = true;
+        _bookingsError = null;
+      });
+    }
+
+    try {
+      final data = await _bookingService.getAllBookings(page: 1, limit: 100);
+
+      if (mounted) {
+        setState(() {
+          _bookingsData = data;
+          _isBookingsLoading = false;
+          _refreshCounter++;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _bookingsError = e.toString();
+          _isBookingsLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    if (!_isAuthenticated) return;
+
+    try {
+      await _clubService.fetchFavorite();
+      if (mounted) {
+        setState(() {
+          _favoriteCount = _clubService.favoriteCount;
+          _refreshCounter++;
+        });
+      }
+    } catch (e) {
+      print('Failed to load favorites: $e');
+    }
   }
 
   void _loadCurrentLanguage() {
@@ -140,30 +294,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       listen: false,
     );
-    setState(() {
-      _currentLanguage = languageProvider.currentLanguage.toUpperCase();
-    });
+    if (mounted) {
+      setState(() {
+        _currentLanguage = languageProvider.currentLanguage.toUpperCase();
+      });
+    }
   }
 
-  // Navigation Methods
+  // ============================================================
+  // COMPUTED PROPERTIES
+  // ============================================================
+
+  int get _totalBookings => _bookingsData?.data.length ?? 0;
+
+  int get _upcomingBookingsCount {
+    if (_bookingsData == null) return 0;
+    return _bookingsData!.data.where((booking) {
+      final status = booking.status.toLowerCase();
+      return status == 'pending' || status == 'confirmed';
+    }).length;
+  }
+
+  int get _completedBookingsCount {
+    if (_bookingsData == null) return 0;
+    return _bookingsData!.data.where((booking) {
+      return booking.status.toLowerCase() == 'completed';
+    }).length;
+  }
+
+  // ============================================================
+  // NAVIGATION METHODS
+  // ============================================================
+
   void _navigateToHistory() {
+    if (!_isAuthenticated) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
-            HistoryBookingsScreen(historyBookings: _historyBookings),
+            HistoryBookingsScreen(bookings: _bookingsData?.data ?? []),
       ),
-    );
+    ).then((_) {
+      _refreshBookings();
+    });
   }
 
   void _navigateToFavorites() {
+    if (!_isAuthenticated) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const FavoriteClub()),
-    );
+    ).then((_) {
+      _refreshFavorites();
+    });
   }
 
   void _navigateToEditProfile() async {
+    if (!_isAuthenticated) return;
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const EditProfileScreen()),
@@ -171,14 +361,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (result != null && mounted) {
       await _loadUserProfile();
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('profile_updated'.tr(context))));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('profile_updated'.tr(context))));
+      }
     }
   }
 
   void _navigateToPasswordSecurity() {
+    if (!_isAuthenticated) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const PasswordSecurityScreen()),
@@ -197,7 +390,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _currentLanguage = selectedLanguage.toUpperCase();
       });
-      setState(() {});
     }
   }
 
@@ -247,7 +439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               Navigator.pushNamedAndRemoveUntil(
                 context,
-                '/login',
+                AppRoutes.login,
                 (route) => false,
               );
             },
@@ -259,6 +451,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ✅ Navigate to login
+  void _navigateToLogin() {
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
+  }
+
+  // ============================================================
+  // BUILD METHOD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
@@ -266,53 +467,142 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Scaffold(
+          backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
           body: SafeArea(
-            child: CustomScrollView(
-              scrollBehavior: const ScrollBehavior().copyWith(
-                overscroll: false,
-              ),
-              slivers: [
-                SliverToBoxAdapter(child: _header()),
-                SliverToBoxAdapter(child: _profileInfo(isDark)),
-                SliverToBoxAdapter(
-                  child: _singleButton(
-                    'account'.tr(context).toUpperCase(),
-                    Icons.history,
-                    'history_bookings'.tr(context),
-                    'view_past_sessions'.tr(context),
-                    onTap: _navigateToHistory,
+            child: _isCheckingAuth
+                ? const Center(child: CircularProgressIndicator())
+                : !_isAuthenticated
+                ? _buildLoginRequiredState(isDark)
+                : RefreshIndicator(
+                    onRefresh: _refreshAllData,
+                    color: AppTheme.kAccent,
+                    backgroundColor: isDark
+                        ? AppTheme.kCard
+                        : AppTheme.kLightCard,
+                    child: CustomScrollView(
+                      scrollBehavior: const ScrollBehavior().copyWith(
+                        overscroll: false,
+                      ),
+                      slivers: [
+                        SliverToBoxAdapter(child: _header()),
+                        SliverToBoxAdapter(child: _profileInfo(isDark)),
+                        SliverToBoxAdapter(
+                          child: _singleButton(
+                            'account'.tr(context).toUpperCase(),
+                            Icons.history,
+                            'history_bookings'.tr(context),
+                            _isBookingsLoading
+                                ? 'loading'.tr(context)
+                                : '${_totalBookings} ${'total_bookings'.tr(context)}',
+                            onTap: _navigateToHistory,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: _singleButton(
+                            'favorites'.tr(context).toUpperCase(),
+                            Icons.favorite_rounded,
+                            'favorites'.tr(context),
+                            '$_favoriteCount ${'favorite_clubs'.tr(context)}',
+                            onTap: _navigateToFavorites,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: _multipleButton(themeProvider),
+                        ),
+                        SliverToBoxAdapter(
+                          child: _singleButton(
+                            'security'.tr(context).toUpperCase(),
+                            Icons.lock_outline,
+                            'password_security'.tr(context),
+                            'last_changed'.tr(context),
+                            onTap: _navigateToPasswordSecurity,
+                          ),
+                        ),
+                        SliverToBoxAdapter(child: _signOutButton()),
+                        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      ],
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: _singleButton(
-                    'favorites'.tr(context).toUpperCase(),
-                    Icons.favorite_rounded,
-                    'favorites'.tr(context),
-                    'view_favorite_clubs'.tr(context),
-                    onTap: _navigateToFavorites,
-                  ),
-                ),
-                SliverToBoxAdapter(child: _multipleButton(themeProvider)),
-                SliverToBoxAdapter(
-                  child: _singleButton(
-                    'security'.tr(context).toUpperCase(),
-                    Icons.lock_outline,
-                    'password_security'.tr(context),
-                    'last_changed'.tr(context),
-                    onTap: _navigateToPasswordSecurity,
-                  ),
-                ),
-                SliverToBoxAdapter(child: _signOutButton()),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              ],
-            ),
           ),
         );
       },
     );
   }
 
+  // ✅ Login required state
+  Widget _buildLoginRequiredState(bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              size: 80,
+              color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'login_required'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'login_to_view_settings'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 200,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _navigateToLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.kAccent,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.login_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'login'.tr(context),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // WIDGET BUILDERS
+  // ============================================================
+
   Widget _header() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Row(
@@ -322,16 +612,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: AppTheme.tsTitleAdaptive(context),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.settings, color: AppTheme.textPrimary(context)),
-          ),
+          if (_isAuthenticated)
+            IconButton(
+              onPressed: _refreshAllData,
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: AppTheme.textPrimary(context),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _profileInfo(bool isDark) {
+    if (!_isAuthenticated) return const SizedBox.shrink();
+
     if (_isLoading) {
       return Padding(
         padding: const EdgeInsets.all(20.0),
@@ -492,11 +788,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             children: [
                               Text(
-                                '12',
+                                _isBookingsLoading ? '...' : '$_totalBookings',
                                 style: AppTheme.tsTitleAdaptive(context),
                               ),
                               Text(
                                 'total_bookings'.tr(context),
+                                style: AppTheme.tsSubAdaptive(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        height: 60,
+                        decoration: AppTheme.cardDecorationAdaptive(context)
+                            .copyWith(
+                              borderRadius: BorderRadius.zero,
+                              color: AppTheme.cardAlt(context),
+                            ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6.0),
+                          child: Column(
+                            children: [
+                              Text(
+                                _isBookingsLoading
+                                    ? '...'
+                                    : '$_upcomingBookingsCount',
+                                style: AppTheme.tsTitleAdaptive(context),
+                              ),
+                              Text(
+                                'upcoming'.tr(context),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
@@ -520,13 +843,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             children: [
                               Text(
-                                _user!.isVerified ? '3' : '0',
+                                _isBookingsLoading
+                                    ? '...'
+                                    : '$_completedBookingsCount',
                                 style: AppTheme.tsTitleAdaptive(context),
                               ),
                               Text(
-                                _user!.isVerified
-                                    ? 'upcoming'.tr(context)
-                                    : 'unverified'.tr(context),
+                                'completed'.tr(context),
                                 style: AppTheme.tsSubAdaptive(context),
                               ),
                             ],
@@ -543,7 +866,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: ElevatedButton(
                     onPressed: _navigateToEditProfile,
                     style: AppTheme.elevatedButtonStyle(
-                      backgroundColor: AppTheme.kAccent.withValues(alpha: 0.5),
+                      backgroundColor: AppTheme.kAccent.withOpacity(0.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -580,7 +903,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(label, style: AppTheme.tsBodyAdaptive(context)),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: onTap,
+            onTap: _isAuthenticated ? onTap : null,
             child: Container(
               width: double.infinity,
               height: 60,
@@ -608,22 +931,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         children: [
                           Text(
                             title,
-                            style: AppTheme.tsLabelAdaptive(
-                              context,
-                            ).copyWith(fontSize: 14.5),
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.kLightText,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           Text(
                             subTitle,
-                            style: AppTheme.tsSubAdaptive(
-                              context,
-                            ).copyWith(fontSize: 12),
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppTheme.kTextSub
+                                  : AppTheme.kLightTextSub,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: AppTheme.textSub(context),
+                      color: _isAuthenticated
+                          ? AppTheme.textSub(context)
+                          : AppTheme.textSub(context).withOpacity(0.3),
                       size: 16,
                     ),
                   ],
@@ -699,7 +1031,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Switch(
                         value: _isNotificationsEnabled,
-                        onChanged: _toggleNotifications,
+                        onChanged: _isAuthenticated
+                            ? _toggleNotifications
+                            : null,
                         activeColor: AppTheme.kAccent,
                       ),
                     ],
@@ -708,7 +1042,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               // Language
               GestureDetector(
-                onTap: _showLanguageSelector,
+                onTap: _isAuthenticated ? _showLanguageSelector : null,
                 child: Container(
                   width: double.infinity,
                   height: 60,
@@ -738,17 +1072,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Text(
                                 'language'.tr(context),
-                                style: AppTheme.tsLabelAdaptive(
-                                  context,
-                                ).copyWith(fontSize: 14.5),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppTheme.kLightText,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                               Text(
                                 _currentLanguage == 'EN'
                                     ? 'english'.tr(context)
                                     : 'khmer'.tr(context),
-                                style: AppTheme.tsSubAdaptive(
-                                  context,
-                                ).copyWith(fontSize: 12),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppTheme.kTextSub
+                                      : AppTheme.kLightTextSub,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -759,7 +1100,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(width: 10),
                             Icon(
                               Icons.arrow_forward_ios,
-                              color: AppTheme.textSub(context),
+                              color: _isAuthenticated
+                                  ? AppTheme.textSub(context)
+                                  : AppTheme.textSub(context).withOpacity(0.3),
                               size: 16,
                             ),
                           ],
@@ -771,7 +1114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               // Appearance
               GestureDetector(
-                onTap: _showAppearanceSelector,
+                onTap: _isAuthenticated ? _showAppearanceSelector : null,
                 child: Container(
                   width: double.infinity,
                   height: 60,
@@ -804,9 +1147,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Text(
                                 'appearance'.tr(context),
-                                style: AppTheme.tsLabelAdaptive(
-                                  context,
-                                ).copyWith(fontSize: 14.5),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppTheme.kLightText,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                               Text(
                                 themeProvider.currentTheme == 'dark'
@@ -814,9 +1161,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     : (themeProvider.currentTheme == 'light'
                                           ? 'light_mode'.tr(context)
                                           : 'system_default'.tr(context)),
-                                style: AppTheme.tsSubAdaptive(
-                                  context,
-                                ).copyWith(fontSize: 12),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppTheme.kTextSub
+                                      : AppTheme.kLightTextSub,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -833,7 +1183,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(width: 10),
                             Icon(
                               Icons.arrow_forward_ios,
-                              color: AppTheme.textSub(context),
+                              color: _isAuthenticated
+                                  ? AppTheme.textSub(context)
+                                  : AppTheme.textSub(context).withOpacity(0.3),
                               size: 16,
                             ),
                           ],
@@ -851,6 +1203,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _signOutButton() {
+    if (!_isAuthenticated) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
@@ -873,13 +1227,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _badge(String data) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: 30,
       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.border(context)),
+        border: Border.all(
+          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+        ),
         borderRadius: BorderRadius.circular(15),
-        color: AppTheme.bg(context),
+        color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
       ),
       child: Center(child: Text(data, style: AppTheme.tsBodyAdaptive(context))),
     );

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,8 +26,6 @@ void main() async {
   if (!getIt.isRegistered<GlobalKey<NavigatorState>>()) {
     getIt.registerSingleton<GlobalKey<NavigatorState>>(navigatorKey);
   }
-
-  await dotenv.load(fileName: ".env");
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

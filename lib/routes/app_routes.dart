@@ -21,7 +21,6 @@ class AppRoutes {
   static const String home = '/';
   static const String bookingFlow = '/booking';
   static const String clubDetailed = '/club-detailed';
-  static const String landing = '/landing';
   static const String verify = '/verify';
   static const String bookedDetailed = '/booked-detailed';
   static const String notification = '/notification';

@@ -3,6 +3,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class BannerCarousel extends StatefulWidget {
   final List<BannerModel>? banners;
@@ -14,13 +15,15 @@ class BannerCarousel extends StatefulWidget {
 
 class _BannerCarouselState extends State<BannerCarousel> {
   int _page = 0;
+  final Map<int, bool> _hasError = {};
+  final Map<int, bool> _isLoading = {};
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final banners = widget.banners;
 
-    // Show loading or empty state
+    // Show loading state
     if (banners == null) {
       return Container(
         height: 150,
@@ -29,9 +32,19 @@ class _BannerCarouselState extends State<BannerCarousel> {
           color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         ),
         child: const Center(
-          child: CircularProgressIndicator(
-            color: AppTheme.kAccent,
-            strokeWidth: 2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: AppTheme.kAccent,
+                strokeWidth: 2,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Loading banners...',
+                style: TextStyle(color: AppTheme.kTextSub, fontSize: 12),
+              ),
+            ],
           ),
         ),
       );
@@ -45,11 +58,23 @@ class _BannerCarouselState extends State<BannerCarousel> {
           color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
         ),
         child: Center(
-          child: Text(
-            'No banners available',
-            style: TextStyle(
-              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.image_outlined,
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                size: 40,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'no_banners'.tr(context),
+                style: TextStyle(
+                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -59,7 +84,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
       children: [
         CarouselSlider(
           options: CarouselOptions(
-            height: 120,
+            height: 100,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayAnimationDuration: const Duration(milliseconds: 800),
@@ -73,39 +98,43 @@ class _BannerCarouselState extends State<BannerCarousel> {
               });
             },
           ),
-          items: banners.map((banner) {
+          items: banners.asMap().entries.map((entry) {
+            final index = entry.key;
+            final banner = entry.value;
+
             return Builder(
               builder: (BuildContext context) {
+                // Check if this banner has an error
+                final hasError = _hasError[index] ?? false;
+
                 return ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: Image.network(
-                    banner.imageUrl, // Adjust this based on your BannerModel
+                  child: Container(
                     width: MediaQuery.of(context).size.width,
-                    fit: BoxFit.fitWidth,
-                    errorBuilder: (_, __, ___) => Container(
+                    decoration: BoxDecoration(
                       color: isDark
                           ? AppTheme.kCardAlt
                           : AppTheme.kLightCardAlt,
-                      child: Icon(
-                        Icons.image_not_supported,
-                        color: isDark
-                            ? AppTheme.kTextSub
-                            : AppTheme.kLightTextSub,
-                        size: 36,
-                      ),
                     ),
-                    loadingBuilder: (_, c, p) => p == null
-                        ? c
-                        : Container(
-                            color: isDark
-                                ? AppTheme.kCardAlt
-                                : AppTheme.kLightCardAlt,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: AppTheme.kAccent,
-                                strokeWidth: 2,
-                              ),
-                            ),
+                    child: hasError
+                        ? _buildErrorWidget(isDark)
+                        : Image.network(
+                            banner.imageUrl,
+                            width: MediaQuery.of(context).size.width,
+                            fit: BoxFit.fitWidth,
+                            errorBuilder: (_, __, ___) {
+                              // Mark this banner as having an error
+                              _hasError[index] = true;
+                              return _buildErrorWidget(isDark);
+                            },
+                            loadingBuilder: (_, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                // Image loaded successfully
+                                return child;
+                              }
+                              // Image is still loading
+                              return _buildLoadingWidget(isDark);
+                            },
                           ),
                   ),
                 );
@@ -140,6 +169,51 @@ class _BannerCarouselState extends State<BannerCarousel> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildLoadingWidget(bool isDark) {
+    return Container(
+      color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppTheme.kAccent, strokeWidth: 2),
+            SizedBox(height: 8),
+            Text(
+              'Loading...',
+              style: TextStyle(color: AppTheme.kTextSub, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(bool isDark) {
+    return Container(
+      color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              size: 40,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'image_not_available'.tr(context),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

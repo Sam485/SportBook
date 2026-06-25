@@ -72,4 +72,6 @@ abstract class SportClubService extends ChangeNotifier {
   bool isClubFavorited(int clubId);
   Set<int> get favoritedClubIds;
   Future<SportClubModel> getClubByIdWithSlots(int id);
+  void setNearbyClubs(List<SportClubModel> clubs);
+
 }

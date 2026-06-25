@@ -1,3 +1,4 @@
+// payment_success.dart - WITH AUTHENTICATION VALIDATION
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sportbook/core/di/service_locator.dart';
@@ -13,12 +14,16 @@ class PaymentSuccessPage extends StatefulWidget {
   final VoidCallback onGoHome;
   final VoidCallback onViewBooking;
   final Map<String, dynamic>? bookingData;
+  final bool isAuthenticated; // ✅ Added
+  final VoidCallback? onLoginRequired; // ✅ Added
 
   const PaymentSuccessPage({
     super.key,
     required this.onGoHome,
     required this.onViewBooking,
     this.bookingData,
+    this.isAuthenticated = false,
+    this.onLoginRequired,
   });
 
   @override
@@ -70,6 +75,20 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   @override
   void initState() {
     super.initState();
+
+    // ✅ Check authentication before proceeding
+    if (!widget.isAuthenticated) {
+      HapticFeedback.lightImpact();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showAuthRequiredDialog();
+      });
+      return;
+    }
+
+    _initializeBooking();
+  }
+
+  void _initializeBooking() {
     HapticFeedback.heavyImpact();
 
     // Extract booking data
@@ -115,17 +134,22 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       _date = '—';
     }
 
-    // Get time - use the String format from bookingData (already in 24-hour format)
+    // Get time
     _startTime = data['startTime'] as String? ?? '00:00';
     _endTime = data['endTime'] as String? ?? '00:00';
-
-    // Format time range for display (convert to 12-hour for display)
     _timeRange =
         '${_formatTimeForDisplay(_startTime)} – ${_formatTimeForDisplay(_endTime)}';
 
     _bookingId = _generateId();
 
     // Setup animations
+    _setupAnimations();
+
+    // Create the booking after animations start
+    _createBooking();
+  }
+
+  void _setupAnimations() {
     _checkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -213,9 +237,103 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     Future.delayed(const Duration(milliseconds: 650), () {
       if (mounted) _buttonController.forward();
     });
+  }
 
-    // Create the booking after animations start
-    _createBooking();
+  // ✅ Show authentication required dialog
+  void _showAuthRequiredDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'authentication_required'.tr(context),
+          style: TextStyle(
+            color: isDark ? Colors.white : AppTheme.kLightText,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'please_login_to_complete_booking'.tr(context),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.kAccent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.kAccent.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.lock_rounded,
+                    color: AppTheme.kAccent,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'booking_requires_login'.tr(context),
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : AppTheme.kLightText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // ✅ Go back to booking flow
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: Text(
+              'go_back'.tr(context),
+              style: TextStyle(
+                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // ✅ Navigate to login
+              if (widget.onLoginRequired != null) {
+                widget.onLoginRequired!();
+              } else {
+                Navigator.pushNamed(context, AppRoutes.login);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.kAccent,
+              foregroundColor: Colors.black,
+            ),
+            child: Text('login_now'.tr(context)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -249,11 +367,20 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
   }
 
-  // ============================================================
-  // _createBooking() method
-  // ============================================================
+  // ✅ Enhanced booking creation with authentication check
   Future<void> _createBooking() async {
-    // Check if already creating or widget is unmounted
+    // Double check authentication
+    if (!widget.isAuthenticated) {
+      if (mounted) {
+        setState(() {
+          _isCreatingBooking = false;
+          _errorMessage = 'Authentication required';
+        });
+        _showAuthRequiredDialog();
+      }
+      return;
+    }
+
     if (_isCreatingBooking || !mounted) return;
 
     // Validate slot ID
@@ -284,10 +411,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     });
 
     try {
-      // Generate transaction ID
       final transactionId = CreateBookingModel.generateTransactionId();
 
-      // Use the String times directly (already in 24-hour format)
       final booking = CreateBookingModel(
         slotId: _slotId,
         sportClubId: _clubId,
@@ -311,7 +436,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           _bookingId = '#BK-${result.id.toString().padLeft(6, '0')}';
         });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Booking created successfully!'),
@@ -342,11 +466,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   // ============================================================
 
   void _navigateToHome() {
-    // ✅ Check if mounted
     if (!mounted) return;
 
     try {
-      // Try to use the navigator key first
       final navState = _navigatorKey.currentState;
       if (navState != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -357,7 +479,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
               navState.pushReplacementNamed(AppRoutes.home);
             }
           } catch (e) {
-            // Fallback: use context
             if (mounted) {
               try {
                 Navigator.of(context).popUntil((route) => route.isFirst);
@@ -370,7 +491,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         return;
       }
 
-      // Fallback: use context
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -383,7 +503,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         });
       }
     } catch (e) {
-      // Final fallback
       if (mounted) {
         try {
           Navigator.of(context).popUntil((route) => route.isFirst);
@@ -395,9 +514,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   }
 
   void _navigateToBookingDetail() {
-    // ✅ Check if mounted and booking exists
     if (!mounted || _createdBooking == null) {
-      // If no booking, go to bookings list
       _navigateToBookings();
       return;
     }
@@ -407,7 +524,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       if (navState != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           try {
-            // Navigate to booking detail
             navState.pushAndRemoveUntil(
               MaterialPageRoute(
                 builder: (_) => BookedDetailed(booking: _createdBooking!),
@@ -415,14 +531,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
               (route) => route.isFirst,
             );
           } catch (e) {
-            // Fallback: navigate to bookings list
             _navigateToBookings();
           }
         });
         return;
       }
 
-      // Fallback: use context
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -440,7 +554,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         });
       }
     } catch (e) {
-      // Final fallback
       _navigateToBookings();
     }
   }
@@ -478,7 +591,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         });
       }
     } catch (e) {
-      // Final fallback
       if (mounted) {
         Navigator.of(
           context,
@@ -491,6 +603,87 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ✅ Show auth required UI if not authenticated
+    if (!widget.isAuthenticated) {
+      return Scaffold(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 80,
+                  color: Colors.orange.withOpacity(0.6),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'authentication_required'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'please_login_to_complete_booking'.tr(context),
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    if (widget.onLoginRequired != null) {
+                      widget.onLoginRequired!();
+                    } else {
+                      Navigator.pushNamed(context, AppRoutes.login);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.kAccent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    'login_to_continue'.tr(context),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'go_back'.tr(context),
+                    style: TextStyle(
+                      color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ✅ Show normal success UI if authenticated
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
@@ -547,7 +740,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         const SizedBox(height: 8),
                         Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.orange, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 12,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -578,7 +774,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   position: _buttonSlide,
                   child: Column(
                     children: [
-                      // View Booking Button - Navigate to booking detail
+                      // View Booking Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -625,7 +821,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       ),
                       const SizedBox(height: 12),
 
-                      // Go Home Button - Pop to home
+                      // Go Home Button
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(

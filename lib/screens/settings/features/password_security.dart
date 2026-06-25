@@ -259,64 +259,6 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                     : Text('change_password'.tr(context)),
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Two-Factor Authentication
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: AppTheme.cardDecorationAdaptive(context),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.verified_user, color: Colors.green),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'two_factor_auth'.tr(context),
-                          style: TextStyle(
-                            color: isDark ? Colors.white : AppTheme.kLightText,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'two_factor_desc'.tr(context),
-                          style: TextStyle(
-                            color: isDark
-                                ? AppTheme.kTextSub
-                                : AppTheme.kLightTextSub,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: false,
-                    onChanged: (value) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('two_factor_coming_soon'.tr(context)),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    activeColor: AppTheme.kAccent,
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
