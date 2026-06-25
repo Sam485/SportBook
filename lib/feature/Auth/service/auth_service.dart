@@ -1,4 +1,5 @@
 // feature/Auth/service/auth_service.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Token/service/token_service.dart';
@@ -64,8 +65,8 @@ class AuthService {
           await _tokenServiceInstance.clearToken();
         }
       }
+    // ignore: empty_catches
     } catch (e) {
-      print('Background auth check error: $e');
     }
   }
 
@@ -82,6 +83,7 @@ class AuthService {
     if (hasValidToken) {
       // Already authenticated, go to home if not already there
       if (currentRoute != AppRoutes.home) {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } else {
@@ -91,6 +93,7 @@ class AuthService {
         final refreshed = await _tokenServiceInstance.refreshAccessToken();
         if (refreshed) {
           if (currentRoute != AppRoutes.home) {
+            // ignore: use_build_context_synchronously
             Navigator.pushReplacementNamed(context, AppRoutes.home);
           }
           return;
@@ -100,6 +103,7 @@ class AuthService {
       // No valid token, go to login
       await _tokenServiceInstance.clearToken();
       if (currentRoute != AppRoutes.login) {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, AppRoutes.login);
       }
     }
@@ -110,7 +114,9 @@ class AuthService {
     try {
       await _tokenServiceInstance.clearToken();
     } catch (e) {
-      print('Logout error: $e');
+      if (kDebugMode) {
+        print('Logout error: $e');
+      }
     }
     _navigateToLogin();
   }
@@ -160,7 +166,9 @@ class AuthService {
         }
       }
     } catch (e) {
-      print('Token check on resume error: $e');
+      if (kDebugMode) {
+        print('Token check on resume error: $e');
+      }
       await _tokenServiceInstance.clearToken();
       _navigateToLogin();
     }

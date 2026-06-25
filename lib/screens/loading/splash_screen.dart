@@ -31,7 +31,6 @@ class _SplashScreenState extends State<SplashScreen> {
         await _authService.checkAndRedirectFromSplash(context);
       }
     } catch (e) {
-      print('Auth check error: $e');
       // ✅ Don't set state here - just let the error be handled
     }
   }
@@ -66,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: AppTheme.kAccent,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.kAccent.withOpacity(0.3),
+                      color: AppTheme.kAccent.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),

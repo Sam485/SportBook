@@ -115,7 +115,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
       // Load bookings if authenticated
       _fetchBookings();
     } catch (e) {
-      print('Auth check error: $e');
       _isAuthenticated = false;
       setState(() {
         _isCheckingAuth = false;

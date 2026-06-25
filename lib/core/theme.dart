@@ -25,7 +25,6 @@ class AppTheme {
     colorScheme: const ColorScheme.dark(
       primary: kAccent,
       surface: kCard,
-      background: kBg,
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith(
@@ -33,8 +32,8 @@ class AppTheme {
       ),
       trackColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected)
-            ? kAccent.withOpacity(0.4)
-            : Colors.grey.withOpacity(0.3),
+            ? kAccent.withValues(alpha: 0.4)
+            : Colors.grey.withValues(alpha: 0.3),
       ),
     ),
     appBarTheme: const AppBarTheme(
@@ -62,8 +61,6 @@ class AppTheme {
     colorScheme: const ColorScheme.light(
       primary: kAccent,
       surface: kLightCard,
-      background: kLightBg,
-      onBackground: kLightText,
       onSurface: kLightText,
     ),
     switchTheme: SwitchThemeData(
@@ -72,8 +69,8 @@ class AppTheme {
       ),
       trackColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected)
-            ? kAccent.withOpacity(0.4)
-            : Colors.grey.withOpacity(0.3),
+            ? kAccent.withValues(alpha: 0.4)
+            : Colors.grey.withValues(alpha: 0.3),
       ),
     ),
     appBarTheme: const AppBarTheme(
@@ -122,7 +119,7 @@ class AppTheme {
 
   /// Secondary text color (white70 equivalent)
   static Color textSecondary(BuildContext context) =>
-      _isDark(context) ? Colors.white70 : kLightText.withOpacity(0.75);
+      _isDark(context) ? Colors.white70 : kLightText.withValues(alpha: 0.75);
 
   static bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
@@ -230,7 +227,7 @@ class AppTheme {
     border: Border.all(color: kBorder),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withValues(alpha: 0.3),
         blurRadius: 12,
         offset: const Offset(0, 5),
       ),
@@ -250,8 +247,8 @@ class AppTheme {
       boxShadow: [
         BoxShadow(
           color: isDark
-              ? Colors.black.withOpacity(0.3)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.black.withValues(alpha: 0.3)
+              : Colors.black.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, 5),
         ),

@@ -197,9 +197,8 @@ class _BookedCardState extends State<BookedCard> {
         });
         widget.onBookingUpdated?.call();
       }
-    } catch (e) {
-      print('Failed to refresh booking: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   void _showQrDialog() {
@@ -224,7 +223,7 @@ class _BookedCardState extends State<BookedCard> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.kAccent.withOpacity(0.1),
+                      color: AppTheme.kAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -351,7 +350,7 @@ class _BookedCardState extends State<BookedCard> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.kAccent.withOpacity(0.1),
+                  color: AppTheme.kAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -458,7 +457,7 @@ class _BookedCardState extends State<BookedCard> {
       height: 50 * (MediaQuery.of(context).size.height / 300),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         border: Border.all(color: color, width: 2),
         borderRadius: BorderRadius.circular(12),
         image: hasImage
@@ -533,7 +532,7 @@ class _BookedCardState extends State<BookedCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: _statusColor.withOpacity(0.15),
+        color: _statusColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -571,7 +570,7 @@ class _BookedCardState extends State<BookedCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -615,7 +614,7 @@ class _BookedCardState extends State<BookedCard> {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: _isCancelling

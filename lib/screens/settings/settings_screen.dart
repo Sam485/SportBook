@@ -32,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isNotificationsEnabled = true;
   bool _isLoading = true;
   bool _isDisposed = false;
-  int _refreshCounter = 0;
   bool _isCheckingAuth = true;
   bool _isAuthenticated = false;
 
@@ -42,7 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Booking data
   GetAllBookingDto? _bookingsData;
   bool _isBookingsLoading = true;
-  String? _bookingsError;
 
   // Favorite clubs
   int _favoriteCount = 0;
@@ -86,7 +84,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!_isDisposed && mounted) {
         setState(() {
           _user = _userService.currentUser;
-          _refreshCounter++;
         });
       }
     });
@@ -97,7 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!_isDisposed && mounted) {
         setState(() {
           _favoriteCount = _clubService.favoriteCount;
-          _refreshCounter++;
         });
       }
     });
@@ -143,7 +139,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Load all data if authenticated
       await _loadAllData();
     } catch (e) {
-      print('Auth check error: $e');
       _isAuthenticated = false;
       setState(() {
         _isCheckingAuth = false;
@@ -175,7 +170,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _isLoading = false;
         _isBookingsLoading = false;
-        _refreshCounter++;
       });
     }
   }
@@ -203,6 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _isNotificationsEnabled = enabled;
         });
       }
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -210,6 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_notificationsKey, enabled);
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -249,7 +245,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       setState(() {
         _isBookingsLoading = true;
-        _bookingsError = null;
       });
     }
 
@@ -260,13 +255,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _bookingsData = data;
           _isBookingsLoading = false;
-          _refreshCounter++;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _bookingsError = e.toString();
           _isBookingsLoading = false;
         });
       }
@@ -281,12 +274,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         setState(() {
           _favoriteCount = _clubService.favoriteCount;
-          _refreshCounter++;
         });
       }
-    } catch (e) {
-      print('Failed to load favorites: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   void _loadCurrentLanguage() {
@@ -438,6 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _userService.clearUser();
 
               Navigator.pushNamedAndRemoveUntil(
+                // ignore: use_build_context_synchronously
                 context,
                 AppRoutes.login,
                 (route) => false,
@@ -493,7 +485,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'history_bookings'.tr(context),
                             _isBookingsLoading
                                 ? 'loading'.tr(context)
-                                : '${_totalBookings} ${'total_bookings'.tr(context)}',
+                                : '$_totalBookings ${'total_bookings'.tr(context)}',
                             onTap: _navigateToHistory,
                           ),
                         ),
@@ -601,8 +593,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Widget _header() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Row(
@@ -683,7 +673,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ? Image.network(
                                 _user!.avatarUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (_, _, _) => Container(
                                   color: AppTheme.cardAlt(context),
                                   child: Icon(
                                     Icons.person,
@@ -706,7 +696,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             : Image.network(
                                 _staticAvatarUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (_, _, _) => Container(
                                   color: AppTheme.cardAlt(context),
                                   child: Icon(
                                     Icons.person,
@@ -866,7 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: ElevatedButton(
                     onPressed: _navigateToEditProfile,
                     style: AppTheme.elevatedButtonStyle(
-                      backgroundColor: AppTheme.kAccent.withOpacity(0.5),
+                      backgroundColor: AppTheme.kAccent.withValues(alpha: 0.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -955,7 +945,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icons.arrow_forward_ios,
                       color: _isAuthenticated
                           ? AppTheme.textSub(context)
-                          : AppTheme.textSub(context).withOpacity(0.3),
+                          : AppTheme.textSub(context).withValues(alpha: 0.3),
                       size: 16,
                     ),
                   ],
@@ -1034,7 +1024,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: _isAuthenticated
                             ? _toggleNotifications
                             : null,
-                        activeColor: AppTheme.kAccent,
+                        activeThumbColor: AppTheme.kAccent,
                       ),
                     ],
                   ),
@@ -1102,7 +1092,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Icons.arrow_forward_ios,
                               color: _isAuthenticated
                                   ? AppTheme.textSub(context)
-                                  : AppTheme.textSub(context).withOpacity(0.3),
+                                  : AppTheme.textSub(
+                                      context,
+                                    ).withValues(alpha: 0.3),
                               size: 16,
                             ),
                           ],
@@ -1185,7 +1177,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Icons.arrow_forward_ios,
                               color: _isAuthenticated
                                   ? AppTheme.textSub(context)
-                                  : AppTheme.textSub(context).withOpacity(0.3),
+                                  : AppTheme.textSub(
+                                      context,
+                                    ).withValues(alpha: 0.3),
                               size: 16,
                             ),
                           ],

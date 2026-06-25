@@ -65,16 +65,6 @@ class _BookedDetailedState extends State<BookedDetailed> {
     return colors[b.sportClub.id % colors.length];
   }
 
-  String get _initials {
-    final parts = b.sportClub.name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return b.sportClub.name.isNotEmpty
-        ? b.sportClub.name[0].toUpperCase()
-        : '?';
-  }
-
   String _formatDate(DateTime date) {
     final months = [
       'Jan',
@@ -125,9 +115,8 @@ class _BookedDetailedState extends State<BookedDetailed> {
           _currentBooking = updatedBooking;
         });
       }
-    } catch (e) {
-      print('Failed to refresh booking: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   @override
@@ -162,7 +151,6 @@ class _BookedDetailedState extends State<BookedDetailed> {
   }
 
   Widget _header(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = _clubColor;
     final hasImage = b.slot.imageUrl.isNotEmpty;
 
@@ -193,9 +181,9 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.7),
-                  Colors.black.withOpacity(0.9),
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.7),
+                  Colors.black.withValues(alpha: 0.9),
                 ],
                 stops: const [0.0, 0.4, 0.7, 1.0],
               ),
@@ -212,7 +200,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 Navigator.pop(context, true), // ✅ Return true to refresh
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(12),
@@ -231,7 +219,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           right: 16,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -273,7 +261,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: _statusColor.withOpacity(0.9),
+                        color: _statusColor.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -291,7 +279,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.9),
+                        color: color.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -310,8 +298,8 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       ),
                       decoration: BoxDecoration(
                         color: _paymentStatus.toLowerCase() == 'paid'
-                            ? Colors.green.withOpacity(0.9)
-                            : Colors.orange.withOpacity(0.9),
+                            ? Colors.green.withValues(alpha: 0.9)
+                            : Colors.orange.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -340,7 +328,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 Text(
                   b.sportClub.name,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -579,7 +567,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -737,7 +725,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -777,7 +765,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -971,9 +959,11 @@ class _BookedDetailedState extends State<BookedDetailed> {
 
       if (mounted) {
         // ✅ Close the dialog
+        // ignore: use_build_context_synchronously
         Navigator.pop(context);
 
         // ✅ Show success message
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Booking cancelled successfully'),
@@ -988,6 +978,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
         // ✅ Go back to the previous screen after a short delay
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
+            // ignore: use_build_context_synchronously
             Navigator.pop(context, true); // Return true to indicate refresh
           }
         });
@@ -995,11 +986,14 @@ class _BookedDetailedState extends State<BookedDetailed> {
     } catch (e) {
       if (mounted) {
         // ✅ Close the dialog if it's still open
+        // ignore: use_build_context_synchronously
         if (Navigator.canPop(context)) {
+          // ignore: use_build_context_synchronously
           Navigator.pop(context);
         }
 
         // ✅ Show error message
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to cancel booking: ${e.toString()}'),

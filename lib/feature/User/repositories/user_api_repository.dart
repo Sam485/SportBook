@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:sportbook/feature/User/model/change_pass_reqeuest_dto.dart';
 import 'package:sportbook/feature/User/model/login_request_dto.dart';
-import 'package:sportbook/feature/User/model/login_response_%20model.dart';
+import 'package:sportbook/feature/User/model/login_response_model.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
@@ -72,41 +72,22 @@ class UserApiRepository {
     required String firebaseToken,
     required String fcmToken,
   }) async {
-    print('\n🔵 [API] loginWithFirebase STARTED');
-    print('📤 [API] Request Data:');
-    print('   └─ Firebase Token Length: ${firebaseToken.length}');
-    print(
-      '   └─ FCM Token: ${fcmToken.isEmpty ? 'empty' : fcmToken.substring(0, 30) + '...'}',
-    );
-
     try {
       final response = await dio.post(
         '/auth/phone-login',
         data: {'firebase_token': firebaseToken, 'fcm_token': fcmToken},
       );
 
-      print('📥 [API] Response Received:');
-      print('   └─ Status Code: ${response.statusCode}');
-      print('   └─ Data: ${response.data}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('✅ [API] Login successful');
         return LoginResponse.fromJson(response.data);
       } else {
-        print('❌ [API] Login failed with status: ${response.statusCode}');
         throw Exception('Phone login failed: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ [API] Dio Exception:');
-      print('   └─ Type: ${e.type}');
-      print('   └─ Message: ${e.message}');
-      print('   └─ Response: ${e.response?.data}');
-      print('   └─ Status Code: ${e.response?.statusCode}');
       throw Exception(
         'Server error: ${e.response?.data['message'] ?? e.message}',
       );
     } catch (e) {
-      print('❌ [API] Unexpected error: $e');
       throw Exception('Unexpected error: $e');
     }
   }
@@ -117,12 +98,6 @@ class UserApiRepository {
     required String firebaseToken,
     required String fcmToken,
   }) async {
-    print('\n🔵 [API] registerUserWithFirebase STARTED');
-    print('📤 [API] Request Data:');
-    print('   └─ Name: ${userData.name}');
-    print('   └─ Phone: ${userData.phone}');
-    print('   └─ Firebase Token Length: ${firebaseToken.length}');
-
     try {
       final response = await dio.post(
         '/auth/phone-register',
@@ -134,23 +109,16 @@ class UserApiRepository {
         },
       );
 
-      print('📥 [API] Response Received:');
-      print('   └─ Status Code: ${response.statusCode}');
-      print('   └─ Data: ${response.data}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('✅ [API] Registration successful');
         return LoginResponse.fromJson(response.data);
       } else {
         throw Exception('Phone registration failed: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ [API] Dio Exception: ${e.response?.data}');
       throw Exception(
         'Server error: ${e.response?.data['message'] ?? e.message}',
       );
     } catch (e) {
-      print('❌ [API] Unexpected error: $e');
       throw Exception('Unexpected error: $e');
     }
   }
@@ -210,10 +178,6 @@ class UserApiRepository {
   // ✅ FIXED: Avatar upload with proper multipart handling
   Future<UserModel> updateAvatar(File avatar) async {
     try {
-      print('🟢 [API] updateAvatar STARTED');
-      print('   └─ File path: ${avatar.path}');
-      print('   └─ File exists: ${await avatar.exists()}');
-
       // Check if file exists
       if (!await avatar.exists()) {
         throw Exception('File does not exist: ${avatar.path}');
@@ -221,7 +185,6 @@ class UserApiRepository {
 
       // Get file size
       final fileSize = await avatar.length();
-      print('   └─ File size: $fileSize bytes');
 
       // Check file size (max 5MB)
       if (fileSize > 5 * 1024 * 1024) {
@@ -239,9 +202,6 @@ class UserApiRepository {
       // Create FormData with the file
       final formData = FormData.fromMap({'avatar': multipartFile});
 
-      print('📤 [API] Uploading avatar...');
-      print('   └─ Filename: $fileName');
-
       final response = await dio.post(
         '/users/me/avatar',
         data: formData,
@@ -255,9 +215,6 @@ class UserApiRepository {
           },
         ),
       );
-
-      print('📥 [API] Response Status: ${response.statusCode}');
-      print('📥 [API] Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Try to parse the response
@@ -279,32 +236,19 @@ class UserApiRepository {
           }
           // If response just contains avatar URL
           else if (data.containsKey('avatar_url')) {
-            print('📥 [API] Response contains avatar_url only');
             // Fetch full user data
             updatedUser = await getProfile();
           }
         }
 
         // If we couldn't parse the response, fetch fresh user data
-        if (updatedUser == null) {
-          print(
-            '📥 [API] Could not parse response, fetching fresh user data...',
-          );
-          updatedUser = await getProfile();
-        }
+        updatedUser ??= await getProfile();
 
-        print('✅ [API] Avatar updated successfully');
         return updatedUser;
       } else {
         throw Exception('Upload failed: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ [API] Dio Exception:');
-      print('   └─ Type: ${e.type}');
-      print('   └─ Message: ${e.message}');
-      print('   └─ Response: ${e.response?.data}');
-      print('   └─ Status Code: ${e.response?.statusCode}');
-
       // Try to extract error message
       String errorMessage = 'Upload failed';
       if (e.response?.data != null) {
@@ -341,7 +285,6 @@ class UserApiRepository {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      print('❌ [API] Unexpected error: $e');
       throw Exception('Unexpected error: ${e.toString()}');
     }
   }
@@ -374,10 +317,6 @@ class UserApiRepository {
         data: request.toJson(),
       );
 
-      print('📥 [API] Change Password Response:');
-      print('   └─ Status Code: ${response.statusCode}');
-      print('   └─ Data: ${response.data}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         return;
       } else {
@@ -394,12 +333,6 @@ class UserApiRepository {
         throw Exception(errorMessage);
       }
     } on DioException catch (e) {
-      print('❌ [API] Dio Exception:');
-      print('   └─ Type: ${e.type}');
-      print('   └─ Message: ${e.message}');
-      print('   └─ Response: ${e.response?.data}');
-      print('   └─ Status Code: ${e.response?.statusCode}');
-
       String errorMessage = e.message ?? 'Network error';
       if (e.response?.data != null) {
         try {
@@ -434,7 +367,6 @@ class UserApiRepository {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      print('❌ [API] Unexpected error: $e');
       throw Exception('Unexpected error: ${e.toString()}');
     }
   }

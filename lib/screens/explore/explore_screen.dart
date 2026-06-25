@@ -5,7 +5,6 @@ import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
-import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart';
 import 'package:sportbook/translations/app_translations.dart';
@@ -26,12 +25,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isCategoriesLoading = true;
   String _errorMessage = '';
   bool _hasError = false;
-  bool _isDisposed = false;
   int _currentPage = 1;
   int _totalClubs = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-  bool _isInitialLoad = true;
 
   // Search debounce
   Timer? _searchDebounce;
@@ -39,7 +36,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   final _categoryService = getIt<CategoryService>();
-  late final SportClubService _clubService;
 
   List<CategoryModel> _categories = [];
   List<SportClubModel> _allClubs = [];
@@ -99,13 +95,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void initState() {
     super.initState();
-    _clubService = getIt<SportClubService>();
     _loadData();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
     _searchController.dispose();
     _searchDebounce?.cancel();
     super.dispose();
@@ -120,7 +114,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _allClubs = [];
       _currentPage = 1;
       _hasMore = true;
-      _isInitialLoad = true;
     });
 
     try {
@@ -135,7 +128,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         setState(() {
           _isLoading = false;
           _isCategoriesLoading = false;
-          _isInitialLoad = false;
           _hasError = false;
         });
       }
@@ -147,7 +139,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
           _hasError = true;
           _isLoading = false;
           _isCategoriesLoading = false;
-          _isInitialLoad = false;
         });
       }
     }
@@ -211,17 +202,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  Future<void> _refreshData() async {
-    setState(() {
-      _allClubs = [];
-      _currentPage = 1;
-      _hasMore = true;
-      _hasError = false;
-      _errorMessage = '';
-    });
-    await _loadAllClubs(reset: true);
-  }
-
   Future<void> _onRefresh() async {
     await _loadData();
   }
@@ -266,7 +246,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               SliverToBoxAdapter(child: _categoriesWidget(context)),
               SliverToBoxAdapter(
                 child: SectionHeader(
-                  title: '${'all_clubs'.tr(context)} (${_totalClubs})',
+                  title: '${'all_clubs'.tr(context)} ($_totalClubs)',
                   isDark: isDark,
                 ),
               ),
@@ -379,8 +359,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   'try_adjusting_search'.tr(context),
                   style: TextStyle(
                     color: isDark
-                        ? AppTheme.kTextSub.withOpacity(0.7)
-                        : AppTheme.kLightTextSub.withOpacity(0.7),
+                        ? AppTheme.kTextSub.withValues(alpha: 0.7)
+                        : AppTheme.kLightTextSub.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -594,7 +574,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   boxShadow: sel
                       ? [
                           BoxShadow(
-                            color: AppTheme.kAccent.withOpacity(0.3),
+                            color: AppTheme.kAccent.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),

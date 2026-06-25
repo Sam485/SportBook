@@ -18,7 +18,6 @@ class FirebaseConfig {
       }
       return null;
     } catch (e) {
-      print('Error getting Firebase ID token: $e');
       return null;
     }
   }
@@ -27,7 +26,6 @@ class FirebaseConfig {
     try {
       return await messaging.getToken();
     } catch (e) {
-      print('Error getting FCM token: $e');
       return null;
     }
   }
@@ -35,8 +33,7 @@ class FirebaseConfig {
   static Future<void> requestNotificationPermission() async {
     try {
       await messaging.requestPermission(alert: true, badge: true, sound: true);
-    } catch (e) {
-      print('Error requesting notification permission: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 }

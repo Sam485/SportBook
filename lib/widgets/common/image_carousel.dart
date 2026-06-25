@@ -49,19 +49,21 @@ class _ImageCarouselState extends State<ImageCarousel> {
     if (widget.imageUrls.length <= 1 || !_ctrl.hasClients) return;
     final v = d.primaryVelocity ?? 0;
     final c = _ctrl.page?.round() ?? 10000;
-    if (v < -300)
+    if (v < -300) {
       _ctrl.animateToPage(
         c + 1,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
-    else if (v > 300)
+    } else if (v > 300)
+      // ignore: curly_braces_in_flow_control_structures
       _ctrl.animateToPage(
         c - 1,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
     else
+      // ignore: curly_braces_in_flow_control_structures
       _ctrl.animateToPage(
         c,
         duration: const Duration(milliseconds: 300),
@@ -75,9 +77,9 @@ class _ImageCarouselState extends State<ImageCarousel> {
         opaque: false,
         barrierColor: Colors.black,
         transitionDuration: const Duration(milliseconds: 250),
-        pageBuilder: (_, __, ___) =>
+        pageBuilder: (_, _, _) =>
             _FullScreenViewer(imageUrls: widget.imageUrls, initialIndex: _page),
-        transitionsBuilder: (_, a, __, c) =>
+        transitionsBuilder: (_, a, _, c) =>
             FadeTransition(opacity: a, child: c),
       ),
     );
@@ -134,7 +136,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                 itemBuilder: (_, i) => Image.network(
                   urls[i],
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
                     child: Icon(
                       Icons.image_not_supported,
@@ -196,8 +198,8 @@ class _ImageCarouselState extends State<ImageCarousel> {
                           color: i == _page
                               ? AppTheme.kAccent
                               : (isDark
-                                    ? Colors.white.withOpacity(0.35)
-                                    : Colors.black.withOpacity(0.35)),
+                                    ? Colors.white.withValues(alpha: 0.35)
+                                    : Colors.black.withValues(alpha: 0.35)),
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -216,7 +218,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.45),
+                      color: Colors.black.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.white24),
                     ),
@@ -256,8 +258,8 @@ class _ImageCarouselState extends State<ImageCarousel> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _fav
-                          ? AppTheme.kAccent.withOpacity(0.85)
-                          : Colors.black.withOpacity(0.4),
+                          ? AppTheme.kAccent.withValues(alpha: 0.85)
+                          : Colors.black.withValues(alpha: 0.4),
                       border: Border.all(
                         color: _fav ? AppTheme.kAccent : Colors.white24,
                       ),
@@ -365,7 +367,7 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                         child: Image.network(
                           widget.imageUrls[i],
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => Icon(
+                          errorBuilder: (_, _, _) => Icon(
                             Icons.broken_image_outlined,
                             color: Colors.white38,
                             size: 64,
@@ -455,7 +457,7 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                         decoration: BoxDecoration(
                           color: i == _cur
                               ? AppTheme.kAccent
-                              : Colors.white.withOpacity(0.4),
+                              : Colors.white.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

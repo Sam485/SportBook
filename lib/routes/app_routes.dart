@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/screens/auth/forget_password_screen.dart';
-import 'package:sportbook/screens/auth/login_screen.dart';
+import 'package:sportbook/screens/auth/login_screeen.dart';
 import 'package:sportbook/screens/auth/reset_password_screen.dart';
 import 'package:sportbook/screens/auth/sign_in_with_otp_screen.dart';
 import 'package:sportbook/screens/auth/sign_up_screen.dart';

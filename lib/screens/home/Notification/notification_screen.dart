@@ -90,8 +90,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       });
       _loadNotifications();
     } catch (e) {
-      print('Auth check error: $e');
-      // If there's an error, assume not authenticated and redirect
       _redirectToLogin();
     }
   }
@@ -700,6 +698,7 @@ class NotificationDetailDialog extends StatelessWidget {
     required this.onConfirm,
   });
 
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;

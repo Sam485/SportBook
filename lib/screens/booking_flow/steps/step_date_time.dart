@@ -46,7 +46,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
 
   // Selected court slot info
   int _selectedCourtPrice = 0;
-  String _selectedCourtName = '';
 
   // Booked slots from API
   List<BookingModel> _userBookings = [];
@@ -137,7 +136,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     if (courtIndex >= 0 && courtIndex < slots.length) {
       final slot = slots[courtIndex];
       _selectedCourtPrice = slot.price;
-      _selectedCourtName = slot.name;
     }
   }
 
@@ -162,7 +160,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         });
       }
     } catch (e) {
-      print('Failed to fetch bookings: $e');
       if (mounted) {
         setState(() {
           _isLoadingBookings = false;
@@ -255,7 +252,6 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       }
 
       final hours = <int>[];
-      final now = DateTime.now();
       final isToday = _selectedDate != null && _isToday(_selectedDate!);
       final currentHour = _getCurrentHour();
 
@@ -576,9 +572,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                               ? Colors.white
                               : AppTheme.kLightText,
                         ),
-                        dialogBackgroundColor: isDark
-                            ? const Color(0xFF1A1A2E)
-                            : AppTheme.kLightCard,
+                        dialogTheme: DialogThemeData(
+                          backgroundColor: isDark
+                              ? const Color(0xFF1A1A2E)
+                              : AppTheme.kLightCard,
+                        ),
                       ),
                       child: child!,
                     );
@@ -635,7 +633,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.kAccent.withOpacity(0.2),
+                  color: AppTheme.kAccent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -685,20 +683,20 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                   color: sel
                       ? AppTheme.kAccent
                       : isToday
-                      ? AppTheme.kAccent.withOpacity(0.15)
+                      ? AppTheme.kAccent.withValues(alpha: 0.15)
                       : isPast || !hasAvailableSlots
                       ? (isDark
-                            ? AppTheme.kCardAlt.withOpacity(0.5)
-                            : AppTheme.kLightCardAlt.withOpacity(0.5))
+                            ? AppTheme.kCardAlt.withValues(alpha: 0.5)
+                            : AppTheme.kLightCardAlt.withValues(alpha: 0.5))
                       : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: sel
                         ? AppTheme.kAccent
                         : isToday
-                        ? AppTheme.kAccent.withOpacity(0.5)
+                        ? AppTheme.kAccent.withValues(alpha: 0.5)
                         : isPast || !hasAvailableSlots
-                        ? Colors.grey.withOpacity(0.3)
+                        ? Colors.grey.withValues(alpha: 0.3)
                         : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                     width: sel ? 1.5 : 1,
                   ),
@@ -712,9 +710,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         color: sel
                             ? const Color(0xFF0A1828)
                             : isWeekend && !isPast && hasAvailableSlots
-                            ? AppTheme.kAccent.withOpacity(0.7)
+                            ? AppTheme.kAccent.withValues(alpha: 0.7)
                             : isPast || !hasAvailableSlots
-                            ? Colors.grey.withOpacity(0.5)
+                            ? Colors.grey.withValues(alpha: 0.5)
                             : (isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub),
@@ -731,7 +729,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             : isToday
                             ? AppTheme.kAccent
                             : isPast || !hasAvailableSlots
-                            ? Colors.grey.withOpacity(0.5)
+                            ? Colors.grey.withValues(alpha: 0.5)
                             : (isDark ? Colors.white : AppTheme.kLightText),
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -744,9 +742,9 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       ).substring(0, 3),
                       style: TextStyle(
                         color: sel
-                            ? const Color(0xFF0A1828).withOpacity(0.7)
+                            ? const Color(0xFF0A1828).withValues(alpha: 0.7)
                             : isPast || !hasAvailableSlots
-                            ? Colors.grey.withOpacity(0.5)
+                            ? Colors.grey.withValues(alpha: 0.5)
                             : (isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub),
@@ -854,10 +852,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.kAccent.withOpacity(0.12),
+                      color: AppTheme.kAccent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.kAccent.withOpacity(0.35),
+                        color: AppTheme.kAccent.withValues(alpha: 0.35),
                       ),
                     ),
                     child: Row(
@@ -885,10 +883,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.2),
+                              color: Colors.orange.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.orange.withOpacity(0.3),
+                                color: Colors.orange.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
@@ -910,9 +908,11 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        border: Border.all(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -943,10 +943,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
+                          color: Colors.orange.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -1016,10 +1016,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.kAccent.withOpacity(0.12),
+                        color: AppTheme.kAccent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppTheme.kAccent.withOpacity(0.4),
+                          color: AppTheme.kAccent.withValues(alpha: 0.4),
                         ),
                       ),
                       child: Row(
@@ -1205,7 +1205,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: hours.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final h = hours[i];
           final label = _fmtH(h);

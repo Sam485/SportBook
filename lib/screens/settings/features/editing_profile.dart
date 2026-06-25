@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/translations/app_translations.dart';
-import 'package:sportbook/widgets/common/image_picker_bottom_sheet.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/widgets/common/map_picker_screen.dart';
@@ -202,7 +201,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub)
-                      .withOpacity(0.4),
+                      .withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -221,7 +220,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: AppTheme.kAccent.withOpacity(0.12),
+                    color: AppTheme.kAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -245,7 +244,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: AppTheme.kAccent.withOpacity(0.12),
+                    color: AppTheme.kAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -270,7 +269,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.12),
+                      color: Colors.red.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.delete_rounded, color: Colors.red),
@@ -499,7 +498,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           fit: BoxFit.cover,
                           width: 120,
                           height: 120,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (_, _, _) => Container(
                             color: isDark
                                 ? AppTheme.kCardAlt
                                 : AppTheme.kLightCardAlt,

@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
-import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
-import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'verify_screen.dart'; // ✅ Add this import
 
@@ -29,8 +27,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
   bool _agreeToTerms = false;
 
-  final _userService = getIt<UserService>();
-  final _tokenService = getIt<TokenService>();
   final _firebaseOtpService = getIt<FirebaseOtpService>();
 
   @override
@@ -162,7 +158,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.kAccent.withOpacity(0.1),
+            color: AppTheme.kAccent.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -201,7 +197,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
