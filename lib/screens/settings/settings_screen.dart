@@ -1,7 +1,9 @@
-// screens/settings/settings_screen.dart - FULLY FIXED VERSION
+// screens/settings/settings_screen.dart - WITH AVATAR UPDATE FUNCTIONALITY
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Booking/model/get_all_booking_dto.dart';
@@ -12,14 +14,14 @@ import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/settings/features/appearance_selection.dart';
-import 'package:sportbook/screens/settings/features/editing_profile.dart';
 import 'package:sportbook/screens/settings/features/favorite_club.dart';
 import 'package:sportbook/screens/settings/features/history_booking.dart';
 import 'package:sportbook/screens/settings/features/language_selection.dart';
-import 'package:sportbook/screens/settings/features/password_security.dart';
+import 'package:sportbook/screens/settings/features/profile_screen.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,9 +33,11 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isNotificationsEnabled = true;
   bool _isLoading = true;
+  bool _isSkeletonLoading = true;
   bool _isDisposed = false;
   bool _isCheckingAuth = true;
   bool _isAuthenticated = false;
+  bool _isFirstLoad = true;
 
   // User profile data
   UserModel? _user;
@@ -45,9 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Favorite clubs
   int _favoriteCount = 0;
 
-  // Static avatar URL for now
-  final String _staticAvatarUrl =
-      'https://imgs.search.brave.com/EipFQVm-X300u0qBZX5vva8FbVwDEBUGookALc-rjNM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMucGV4ZWxzLmNv/bS9waG90b3MvMTUz/OTM1OTAvcGV4ZWxz/LXBob3RvLTE1Mzkz/NTkwL2ZyZWUtcGhv/dG8tb2YtcGhvdG8t/b2YtYS1zaGlydGxl/c3MtaGFuZHNvbWUt/bWFuLWFnYWluc3Qt/dGhlLXNreS5qcGVn/P2F1dG89Y29tcHJl/c3MmY3M9dGlueXNy/Z2ImZHByPTEmdz01/MDA';
+  // Avatar state
+  File? _selectedAvatarImage;
+  bool _isAvatarLoading = false;
 
   // Services
   final _userService = getIt<UserService>();
@@ -80,7 +84,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _onUserServiceChanged() {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -93,7 +96,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _onClubServiceChanged() {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -110,11 +112,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Future<void> _checkAuthentication() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
 
     setState(() {
       _isCheckingAuth = true;
+      _isSkeletonLoading = true;
     });
 
     try {
@@ -129,6 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (mounted && !_isDisposed) {
               setState(() {
                 _isCheckingAuth = false;
+                _isSkeletonLoading = false;
               });
             }
             return;
@@ -138,6 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (mounted && !_isDisposed) {
             setState(() {
               _isCheckingAuth = false;
+              _isSkeletonLoading = false;
             });
           }
           return;
@@ -158,6 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted && !_isDisposed) {
         setState(() {
           _isCheckingAuth = false;
+          _isSkeletonLoading = false;
         });
       }
     }
@@ -168,19 +173,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Future<void> _loadAllData() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
-    await Future.wait([_loadUserProfile(), _loadBookings(), _loadFavorites()]);
+    try {
+      await Future.wait([
+        _loadUserProfile(),
+        _loadBookings(),
+        _loadFavorites(),
+      ]);
+    } catch (e) {
+      // Handle errors
+    } finally {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isSkeletonLoading = false;
+          _isFirstLoad = false;
+        });
+      }
+    }
   }
 
   Future<void> _refreshAllData() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     setState(() {
       _isLoading = true;
       _isBookingsLoading = true;
+      _isSkeletonLoading = true;
     });
 
     await _loadAllData();
@@ -189,18 +208,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _isLoading = false;
         _isBookingsLoading = false;
+        _isSkeletonLoading = false;
       });
     }
   }
 
   Future<void> _refreshBookings() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
     await _loadBookings();
   }
 
   Future<void> _refreshFavorites() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
     await _loadFavorites();
   }
@@ -210,7 +228,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Future<void> _loadNotificationSettings() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
 
     try {
@@ -221,7 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _isNotificationsEnabled = enabled;
         });
       }
-      // ignore: empty_catches
+    // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -229,12 +246,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_notificationsKey, enabled);
-      // ignore: empty_catches
+    // ignore: empty_catches
     } catch (e) {}
   }
 
   Future<void> _toggleNotifications(bool value) async {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
 
     setState(() {
@@ -245,7 +261,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     try {
@@ -269,7 +284,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadBookings() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     if (mounted && !_isDisposed) {
@@ -297,7 +311,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadFavorites() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     try {
@@ -308,12 +321,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _favoriteCount = _clubService.favoriteCount;
         });
       }
-      // ignore: empty_catches
+    // ignore: empty_catches
     } catch (e) {}
   }
 
   void _loadCurrentLanguage() {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
 
     final languageProvider = Provider.of<LanguageProvider>(
@@ -349,11 +361,266 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ============================================================
+  // AVATAR METHODS - NEW ADDED FUNCTIONALITY
+  // ============================================================
+
+  Future<void> _showAvatarPickerDialog() async {
+    if (_isAvatarLoading) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: (isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub)
+                      .withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'choose_photo'.tr(context),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.kLightText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildPickerOption(
+                icon: Icons.photo_library_rounded,
+                label: 'choose_from_library'.tr(context),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImageFromGallery();
+                },
+                isDark: isDark,
+              ),
+              _buildPickerOption(
+                icon: Icons.camera_alt_rounded,
+                label: 'take_a_photo'.tr(context),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhotoWithCamera();
+                },
+                isDark: isDark,
+              ),
+              if (_user?.avatarUrl != null || _selectedAvatarImage != null)
+                _buildPickerOption(
+                  icon: Icons.delete_rounded,
+                  label: 'remove_photo'.tr(context),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeAvatar();
+                  },
+                  isDark: isDark,
+                  isDestructive: true,
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPickerOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isDark,
+    bool isDestructive = false,
+  }) {
+    final color = isDestructive ? Colors.red : AppTheme.kAccent;
+    final textColor = isDestructive ? Colors.red : null;
+
+    return ListTile(
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: textColor ?? (isDark ? Colors.white : AppTheme.kLightText),
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    if (_isAvatarLoading) return;
+
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null && mounted && !_isDisposed) {
+        final file = File(image.path);
+        await _uploadAvatar(file);
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _takePhotoWithCamera() async {
+    if (_isAvatarLoading) return;
+
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null && mounted && !_isDisposed) {
+        final file = File(image.path);
+        await _uploadAvatar(file);
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to take photo: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadAvatar(File imageFile) async {
+    if (_isAvatarLoading) return;
+
+    setState(() {
+      _isAvatarLoading = true;
+      _selectedAvatarImage = imageFile;
+    });
+
+    try {
+      final updatedUser = await _userService.updateAvatar(imageFile);
+
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _user = updatedUser;
+          _selectedAvatarImage = null;
+          _isAvatarLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('avatar_updated'.tr(context)),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _selectedAvatarImage = null;
+          _isAvatarLoading = false;
+        });
+
+        String errorMessage = e.toString();
+        if (errorMessage.contains('Exception:')) {
+          errorMessage = errorMessage.replaceAll('Exception: ', '');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${'avatar_update_failed'.tr(context)}: $errorMessage',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeAvatar() async {
+    if (_isAvatarLoading) return;
+
+    setState(() {
+      _isAvatarLoading = true;
+    });
+
+    try {
+      // If your API has a remove avatar endpoint, call it here
+      // For now, we'll just show a message
+
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _selectedAvatarImage = null;
+          _isAvatarLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Remove avatar feature coming soon'),
+            backgroundColor: Colors.grey,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _isAvatarLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove avatar: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  // ============================================================
   // NAVIGATION METHODS
   // ============================================================
 
   void _navigateToHistory() {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     Navigator.push(
@@ -370,7 +637,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToFavorites() {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     Navigator.push(
@@ -382,38 +648,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     });
   }
-
-  void _navigateToEditProfile() async {
-    // ✅ Check if widget is still mounted and not disposed
-    if (!_isAuthenticated || _isDisposed || !mounted) return;
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-    );
-
-    if (result != null && mounted && !_isDisposed) {
-      await _loadUserProfile();
-      if (mounted && !_isDisposed) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('profile_updated'.tr(context))));
-      }
-    }
-  }
-
-  void _navigateToPasswordSecurity() {
-    // ✅ Check if widget is still mounted and not disposed
-    if (!_isAuthenticated || _isDisposed || !mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PasswordSecurityScreen()),
-    );
-  }
-
   void _showLanguageSelector() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     final selectedLanguage = await showModalBottomSheet(
@@ -431,7 +666,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAppearanceSelector() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -449,11 +683,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _signOut() async {
-    // ✅ Check if widget is still mounted and not disposed
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
+  Future<void> _signOut() async {
     if (_isDisposed || !mounted) return;
 
-    showDialog(
+    final shouldSignOut = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.card(context),
@@ -467,37 +704,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: Text(
               'cancel'.tr(context),
               style: const TextStyle(color: AppTheme.kTextSub),
             ),
           ),
           ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              await _tokenService.clearToken();
-              _userService.clearUser();
-
-              if (mounted && !_isDisposed) {
-                // ignore: use_build_context_synchronously
-                Navigator.pushNamed(context, AppRoutes.landing);
-              }
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
             child: Text('sign_out'.tr(context)),
           ),
         ],
       ),
     );
+
+    if (shouldSignOut != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _tokenService.clearToken();
+      _userService.clearUser();
+
+      setState(() {
+        _bookingsData = null;
+        _isAuthenticated = false;
+        _user = null;
+        _favoriteCount = 0;
+      });
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+      // ignore: empty_catches
+      } catch (e) {}
+
+      if (mounted && !_isDisposed) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted && !_isDisposed) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) => false,
+        );
+      }
+    } finally {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
-  // ✅ Navigate to login
   void _navigateToLogin() {
-    // ✅ Check if widget is still mounted and not disposed
     if (_isDisposed || !mounted) return;
-    Navigator.pushNamed(context, AppRoutes.landing);
+    Navigator.pushNamed(context, AppRoutes.login);
+  }
+
+  void _navigateToSignUp() {
+    if (_isDisposed || !mounted) return;
+    Navigator.pushNamed(context, AppRoutes.signup);
   }
 
   // ============================================================
@@ -506,7 +782,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Return empty widget if disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return Consumer<ThemeProvider>(
@@ -532,40 +807,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       slivers: [
                         SliverToBoxAdapter(child: _header()),
-                        SliverToBoxAdapter(child: _profileInfo(isDark)),
                         SliverToBoxAdapter(
-                          child: _singleButton(
-                            'account'.tr(context).toUpperCase(),
-                            Icons.history,
-                            'history_bookings'.tr(context),
-                            _isBookingsLoading
-                                ? 'loading'.tr(context)
-                                : '$_totalBookings ${'total_bookings'.tr(context)}',
-                            onTap: _navigateToHistory,
-                          ),
+                          child: _isSkeletonLoading
+                              ? _buildSkeletonProfile(isDark)
+                              : _profileInfo(isDark),
                         ),
                         SliverToBoxAdapter(
-                          child: _singleButton(
-                            'favorites'.tr(context).toUpperCase(),
-                            Icons.favorite_rounded,
-                            'favorites'.tr(context),
-                            '$_favoriteCount ${'favorite_clubs'.tr(context)}',
-                            onTap: _navigateToFavorites,
-                          ),
+                          child: _isSkeletonLoading
+                              ? _buildSkeletonButton(isDark)
+                              : _singleButton(
+                                  'account'.tr(context).toUpperCase(),
+                                  Icons.history,
+                                  'history_bookings'.tr(context),
+                                  _isBookingsLoading
+                                      ? 'loading'.tr(context)
+                                      : '$_totalBookings ${'total_bookings'.tr(context)}',
+                                  onTap: _navigateToHistory,
+                                ),
                         ),
                         SliverToBoxAdapter(
-                          child: _multipleButton(themeProvider),
+                          child: _isSkeletonLoading
+                              ? _buildSkeletonButton(isDark)
+                              : _singleButton(
+                                  'favorites'.tr(context).toUpperCase(),
+                                  Icons.favorite_rounded,
+                                  'favorites'.tr(context),
+                                  '$_favoriteCount ${'favorite_clubs'.tr(context)}',
+                                  onTap: _navigateToFavorites,
+                                ),
                         ),
                         SliverToBoxAdapter(
-                          child: _singleButton(
-                            'security'.tr(context).toUpperCase(),
-                            Icons.lock_outline,
-                            'password_security'.tr(context),
-                            'last_changed'.tr(context),
-                            onTap: _navigateToPasswordSecurity,
-                          ),
+                          child: _isSkeletonLoading
+                              ? _buildSkeletonMultipleButton(isDark)
+                              : _multipleButton(themeProvider),
                         ),
-                        SliverToBoxAdapter(child: _signOutButton()),
+                        SliverToBoxAdapter(
+                          child: _isSkeletonLoading
+                              ? _buildSkeletonSignOutButton(isDark)
+                              : _signOutButton(),
+                        ),
                         const SliverToBoxAdapter(child: SizedBox(height: 24)),
                       ],
                     ),
@@ -576,44 +856,402 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ✅ Login required state
+  // ============================================================
+  // SKELETON WIDGETS
+  // ============================================================
+
+  Widget _buildSkeletonProfile(bool isDark) {
+    final skeletonBaseColor = isDark
+        ? const Color(0xFF1E3A5F)
+        : const Color(0xFFE0E0E0);
+    final skeletonHighlightColor = isDark
+        ? const Color(0xFF2A4A6F)
+        : const Color(0xFFF5F5F5);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
+      child: Container(
+        width: double.infinity,
+        height: 230,
+        decoration: AppTheme.cardDecorationAdaptive(context),
+        child: Skeletonizer(
+          enabled: true,
+          effect: ShimmerEffect(
+            baseColor: skeletonBaseColor,
+            highlightColor: skeletonHighlightColor,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 16,
+                            width: 120,
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 12,
+                            width: 80,
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 12,
+                            width: 100,
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Expanded(
+                      child: Container(
+                        height: 60,
+                        margin: EdgeInsets.only(right: index < 2 ? 2 : 0),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
+                          borderRadius: BorderRadius.circular(
+                            index == 0 ? 20 : (index == 2 ? 20 : 0),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: 14,
+                              width: 30,
+                              color: isDark
+                                  ? AppTheme.kCard
+                                  : AppTheme.kLightCard,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              height: 10,
+                              width: 40,
+                              color: isDark
+                                  ? AppTheme.kCard
+                                  : AppTheme.kLightCard,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 45,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: AppTheme.kAccent.withValues(alpha: 0.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonButton(bool isDark) {
+    final skeletonBaseColor = isDark
+        ? const Color(0xFF1E3A5F)
+        : const Color(0xFFE0E0E0);
+    final skeletonHighlightColor = isDark
+        ? const Color(0xFF2A4A6F)
+        : const Color(0xFFF5F5F5);
+
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Skeletonizer(
+        enabled: true,
+        effect: ShimmerEffect(
+          baseColor: skeletonBaseColor,
+          highlightColor: skeletonHighlightColor,
+        ),
+        child: Container(
+          width: double.infinity,
+          height: 60,
+          decoration: AppTheme.cardDecorationAdaptive(context),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 45,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 14,
+                        width: 100,
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        height: 10,
+                        width: 150,
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 16,
+                  height: 16,
+                  color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonMultipleButton(bool isDark) {
+    final skeletonBaseColor = isDark
+        ? const Color(0xFF1E3A5F)
+        : const Color(0xFFE0E0E0);
+    final skeletonHighlightColor = isDark
+        ? const Color(0xFF2A4A6F)
+        : const Color(0xFFF5F5F5);
+
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 14,
+            width: 100,
+            color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+          ),
+          const SizedBox(height: 8),
+          Skeletonizer(
+            enabled: true,
+            effect: ShimmerEffect(
+              baseColor: skeletonBaseColor,
+              highlightColor: skeletonHighlightColor,
+            ),
+            child: Column(
+              children: List.generate(
+                3,
+                (index) => Container(
+                  width: double.infinity,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                    borderRadius: BorderRadius.only(
+                      topLeft: index == 0 ? Radius.circular(12) : Radius.zero,
+                      topRight: index == 0 ? Radius.circular(12) : Radius.zero,
+                      bottomLeft: index == 2
+                          ? Radius.circular(12)
+                          : Radius.zero,
+                      bottomRight: index == 2
+                          ? Radius.circular(12)
+                          : Radius.zero,
+                    ),
+                    border: Border(
+                      bottom: index < 2
+                          ? BorderSide(
+                              color: isDark
+                                  ? AppTheme.kBorder
+                                  : AppTheme.kLightBorder,
+                            )
+                          : BorderSide.none,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 45,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                height: 14,
+                                width: 100,
+                                color: isDark
+                                    ? AppTheme.kCardAlt
+                                    : AppTheme.kLightCardAlt,
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                height: 10,
+                                width: 120,
+                                color: isDark
+                                    ? AppTheme.kCardAlt
+                                    : AppTheme.kLightCardAlt,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 30,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          width: 16,
+                          height: 16,
+                          color: isDark
+                              ? AppTheme.kCardAlt
+                              : AppTheme.kLightCardAlt,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonSignOutButton(bool isDark) {
+    final skeletonBaseColor = isDark
+        ? const Color(0xFF1E3A5F)
+        : const Color(0xFFE0E0E0);
+    final skeletonHighlightColor = isDark
+        ? const Color(0xFF2A4A6F)
+        : const Color(0xFFF5F5F5);
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Skeletonizer(
+        enabled: true,
+        effect: ShimmerEffect(
+          baseColor: skeletonBaseColor,
+          highlightColor: skeletonHighlightColor,
+        ),
+        child: Container(
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.red.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // LOGIN REQUIRED STATE
+  // ============================================================
+
   Widget _buildLoginRequiredState(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.lock_outline_rounded,
-              size: 80,
-              color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                border: Border.all(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                size: 40,
+                color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
-              'login_required'.tr(context),
+              'you_are_not_signed_in'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'login_to_view_settings'.tr(context),
+              'sign_in_to_access_settings'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
+                fontWeight: FontWeight.w400,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
             SizedBox(
-              width: 200,
+              width: double.infinity,
               height: 50,
               child: ElevatedButton(
                 onPressed: _navigateToLogin,
@@ -623,20 +1261,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.login_rounded, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'login'.tr(context),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'sign_in'.tr(context),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton(
+                onPressed: _navigateToSignUp,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white : AppTheme.kLightText,
+                  side: BorderSide(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'create_account'.tr(context),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
                 ),
               ),
             ),
@@ -651,7 +1309,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================
 
   Widget _header() {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return Padding(
@@ -665,23 +1322,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Spacer(),
           if (_isAuthenticated)
             IconButton(
-              onPressed: _refreshAllData,
-              icon: Icon(
-                Icons.refresh_rounded,
-                color: AppTheme.textPrimary(context),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
               ),
+              icon: Icon(Icons.settings, color: AppTheme.textPrimary(context)),
             ),
         ],
       ),
     );
   }
 
+  // ============================================================
+  // UPDATED PROFILE INFO WITH AVATAR PICKER
+  // ============================================================
+
   Widget _profileInfo(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
     if (!_isAuthenticated) return const SizedBox.shrink();
 
-    if (_isLoading) {
+    if (_isLoading && _isFirstLoad) {
       return Padding(
         padding: const EdgeInsets.all(20.0),
         child: Center(
@@ -706,238 +1366,220 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
-      child: GestureDetector(
-        onTap: _navigateToEditProfile,
-        child: Container(
-          width: double.infinity,
-          height: 230,
-          decoration: AppTheme.cardDecorationAdaptive(context),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.kAccent, width: 1.8),
-                      ),
-                      alignment: Alignment.center,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(50),
-                        child:
-                            _user!.avatarUrl != null &&
-                                _user!.avatarUrl!.isNotEmpty
-                            ? Image.network(
-                                _user!.avatarUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  color: AppTheme.cardAlt(context),
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 36,
-                                    color: AppTheme.textSub(context),
-                                  ),
-                                ),
-                                loadingBuilder: (_, c, p) => p == null
-                                    ? c
-                                    : Container(
-                                        color: AppTheme.cardAlt(context),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppTheme.kAccent,
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      ),
-                              )
-                            : Image.network(
-                                _staticAvatarUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  color: AppTheme.cardAlt(context),
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 36,
-                                    color: AppTheme.textSub(context),
-                                  ),
-                                ),
-                                loadingBuilder: (_, c, p) => p == null
-                                    ? c
-                                    : Container(
-                                        color: AppTheme.cardAlt(context),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppTheme.kAccent,
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                      ),
+      padding: const EdgeInsets.all(10),
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // ============================================================
+            // AVATAR WITH PICKER - UPDATED WITH NEW FUNCTIONALITY
+            // ============================================================
+            GestureDetector(
+              onTap: _isAvatarLoading ? null : _showAvatarPickerDialog,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.kAccent, width: 1.8),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
+                    alignment: Alignment.center,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(50),
+                      child: _buildAvatarContent(isDark),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.kAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+                          width: 2,
+                        ),
+                      ),
+                      child: _isAvatarLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt,
+                              size: 16,
+                              color: Colors.black,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // User name
+            Text(_user!.fullName, style: AppTheme.tsTitleAdaptive(context)),
+            const SizedBox(height: 8),
+            // Stats row
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 60,
+                    decoration: AppTheme.cardDecorationAdaptive(context)
+                        .copyWith(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            bottomLeft: Radius.circular(20),
+                          ),
+                          color: AppTheme.cardAlt(context),
+                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _user!.fullName,
+                            _isBookingsLoading ? '...' : '$_totalBookings',
                             style: AppTheme.tsTitleAdaptive(context),
                           ),
                           Text(
-                            _user!.email,
-                            style: AppTheme.tsBodyAdaptive(context),
-                          ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_pin,
-                                color: AppTheme.kAccent,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 2),
-                              Expanded(
-                                child: Text(
-                                  _user!.location ?? '',
-                                  style: const TextStyle(
-                                    color: AppTheme.kAccent,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                            'total_bookings'.tr(context),
+                            style: AppTheme.tsSubAdaptive(context),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.edit, color: AppTheme.kAccent, size: 20),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 60,
-                        decoration: AppTheme.cardDecorationAdaptive(context)
-                            .copyWith(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                bottomLeft: Radius.circular(20),
-                              ),
-                              color: AppTheme.cardAlt(context),
-                            ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                _isBookingsLoading ? '...' : '$_totalBookings',
-                                style: AppTheme.tsTitleAdaptive(context),
-                              ),
-                              Text(
-                                'total_bookings'.tr(context),
-                                style: AppTheme.tsSubAdaptive(context),
-                              ),
-                            ],
-                          ),
+                Expanded(
+                  child: Container(
+                    height: 60,
+                    decoration: AppTheme.cardDecorationAdaptive(context)
+                        .copyWith(
+                          borderRadius: BorderRadius.zero,
+                          color: AppTheme.cardAlt(context),
                         ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            _isBookingsLoading
+                                ? '...'
+                                : '$_upcomingBookingsCount',
+                            style: AppTheme.tsTitleAdaptive(context),
+                          ),
+                          Text(
+                            'upcoming'.tr(context),
+                            style: AppTheme.tsSubAdaptive(context),
+                          ),
+                        ],
                       ),
                     ),
-                    Expanded(
-                      child: Container(
-                        height: 60,
-                        decoration: AppTheme.cardDecorationAdaptive(context)
-                            .copyWith(
-                              borderRadius: BorderRadius.zero,
-                              color: AppTheme.cardAlt(context),
-                            ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                _isBookingsLoading
-                                    ? '...'
-                                    : '$_upcomingBookingsCount',
-                                style: AppTheme.tsTitleAdaptive(context),
-                              ),
-                              Text(
-                                'upcoming'.tr(context),
-                                style: AppTheme.tsSubAdaptive(context),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        height: 60,
-                        decoration: AppTheme.cardDecorationAdaptive(context)
-                            .copyWith(
-                              borderRadius: const BorderRadius.only(
-                                topRight: Radius.circular(20),
-                                bottomRight: Radius.circular(20),
-                              ),
-                              color: AppTheme.cardAlt(context),
-                            ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                _isBookingsLoading
-                                    ? '...'
-                                    : '$_completedBookingsCount',
-                                style: AppTheme.tsTitleAdaptive(context),
-                              ),
-                              Text(
-                                'completed'.tr(context),
-                                style: AppTheme.tsSubAdaptive(context),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 45,
-                  child: ElevatedButton(
-                    onPressed: _navigateToEditProfile,
-                    style: AppTheme.elevatedButtonStyle(
-                      backgroundColor: AppTheme.kAccent.withValues(alpha: 0.5),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.edit, size: 18),
-                        const SizedBox(width: 5),
-                        Text('edit_profile'.tr(context)),
-                      ],
+                Expanded(
+                  child: Container(
+                    height: 60,
+                    decoration: AppTheme.cardDecorationAdaptive(context)
+                        .copyWith(
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                          color: AppTheme.cardAlt(context),
+                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            _isBookingsLoading
+                                ? '...'
+                                : '$_completedBookingsCount',
+                            style: AppTheme.tsTitleAdaptive(context),
+                          ),
+                          Text(
+                            'completed'.tr(context),
+                            style: AppTheme.tsSubAdaptive(context),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
   }
+
+  // Helper method to build avatar content
+  Widget _buildAvatarContent(bool isDark) {
+    if (_isAvatarLoading) {
+      return Container(
+        color: AppTheme.cardAlt(context),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.kAccent,
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (_selectedAvatarImage != null) {
+      return Image.file(_selectedAvatarImage!, fit: BoxFit.cover);
+    }
+
+    final avatarUrl = _user?.avatarUrl;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return Image.network(
+        avatarUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _buildAvatarPlaceholder(isDark),
+        loadingBuilder: (_, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: AppTheme.cardAlt(context),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.kAccent,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    return _buildAvatarPlaceholder(isDark);
+  }
+
+  Widget _buildAvatarPlaceholder(bool isDark) {
+    return Container(
+      color: AppTheme.cardAlt(context),
+      child: Icon(
+        Icons.person,
+        size: 36,
+        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+      ),
+    );
+  }
+
+  // ============================================================
+  // REST OF THE WIDGETS (unchanged)
+  // ============================================================
 
   Widget _singleButton(
     String label,
@@ -946,7 +1588,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String subTitle, {
     required VoidCallback onTap,
   }) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1025,7 +1666,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _multipleButton(ThemeProvider themeProvider) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1042,7 +1682,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           Column(
             children: [
-              // Notification - With real toggle functionality
+              // Notification
               Container(
                 width: double.infinity,
                 height: 60,
@@ -1092,7 +1732,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         value: _isNotificationsEnabled,
                         onChanged: _isAuthenticated
                             ? (value) {
-                                // ✅ Check if widget is still mounted
                                 if (mounted && !_isDisposed) {
                                   _toggleNotifications(value);
                                 }
@@ -1271,7 +1910,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _signOutButton() {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
     if (!_isAuthenticated) return const SizedBox.shrink();
 
@@ -1297,7 +1935,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _badge(String data) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;

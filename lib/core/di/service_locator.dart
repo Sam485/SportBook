@@ -53,16 +53,18 @@ Future<void> setupServiceLocator() async {
     );
 
     dio.interceptors.add(AuthInterceptor());
-    dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
-        error: true,
-      ),
-    );
+
+    // ✅ REMOVED LogInterceptor - No more request/response logs
+    // dio.interceptors.add(
+    //   LogInterceptor(
+    //     request: true,
+    //     requestHeader: true,
+    //     requestBody: true,
+    //     responseHeader: true,
+    //     responseBody: true,
+    //     error: true,
+    //   ),
+    // );
 
     return dio;
   });

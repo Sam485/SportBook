@@ -108,6 +108,9 @@ class AppTranslations {
       'no_available_slots_today': 'No available slots for today',
       'no_available_end_times': 'No available end times',
       'no_results_for': 'No results found for "{query}"',
+      'change_location': 'Change Location',
+      'favorite_clubs': 'Favorite Clubs',
+      'no_clubs_nearby': 'No clubs nearby',
 
       // ---------------------- Booking ----------------------------
       'search': 'Search',
@@ -194,7 +197,7 @@ class AppTranslations {
       'book_court': 'Book Court',
 
       // ---------------------- Settings Screen ----------------------------
-      'settings_title': 'Settings',
+      'settings_title': 'Profile',
       'account': 'Account',
       'preferences': 'Preferences',
       'language': 'Language',
@@ -505,6 +508,11 @@ class AppTranslations {
       // ---------------------- Auth Required for Navigation ----------------------------
       'login_to_view_bookings': 'Please login to view your bookings',
       'login_to_view_settings': 'Please login to view settings',
+      'you_are_not_signed_in': 'You are not signed in',
+      'sign_in_to_access_bookings': 'Sign in to access your bookings',
+      'sign_in_to_access_settings': 'Sign in to access your settings',
+      'sign_in': 'Sign In',
+      'create_account': 'Create Account',
     },
 
     // ------------------------------------------------------------------------
@@ -580,7 +588,7 @@ class AppTranslations {
       'clubs_nearby': 'ក្លឹបក្បែរអ្នក',
       'upcoming_bookings': 'ការកក់នាពេលខាងមុខ',
       'no_bookings': 'គ្មានការកក់សម្រាប់កីឡានេះ',
-      'hello_message': 'សួស្តី, {name} 👋',
+      'hello_message': 'សួស្តី, {name}',
       'no_clubs_for_sport': 'គ្មានក្លឹបសម្រាប់កីឡានេះ',
       'favorites_empty': 'មិនទាន់មានក្លឹបដែលអ្នកចូលចិត្តនៅឡើយទេ',
       'favorites_hint': 'ចាប់ផ្តើមចូលចិត្តក្លឹបដែលអ្នកស្រលាញ់!',
@@ -605,6 +613,8 @@ class AppTranslations {
       'no_available_slots': 'គ្មានពេលវេលាដែលអាចរកបានសម្រាប់កាលបរិច្ឆេទនេះ',
       'no_available_slots_today': 'គ្មានពេលវេលាដែលអាចរកបានសម្រាប់ថ្ងៃនេះ',
       'no_results_for': 'រកមិនឃើញលទ្ធផលសម្រាប់ "{query}"',
+      'change_location': 'ផ្លាស់ប្តូរទីតាំង',
+      'favorite_clubs': 'ក្លឹបដែលអ្នកចូលចិត្ត',
 
       // ---------------------- Booking ----------------------------
       'search': 'ស្វែងរក',
@@ -695,7 +705,7 @@ class AppTranslations {
       'book_court': 'កក់ទីលាន',
 
       // ---------------------- Settings Screen ----------------------------
-      'settings_title': 'ការកំណត់',
+      'settings_title': 'ប្រវត្តិរូប',
       'account': 'គណនី',
       'preferences': 'ចំណូលចិត្ត',
       'language': 'ភាសា',
@@ -999,6 +1009,11 @@ class AppTranslations {
       // ---------------------- Auth Required for Navigation ----------------------------
       'login_to_view_bookings': 'សូមចូលប្រើប្រាស់ដើម្បីមើលការកក់របស់អ្នក',
       'login_to_view_settings': 'សូមចូលប្រើប្រាស់ដើម្បីមើលការកំណត់',
+      'you_are_not_signed_in': 'អ្នកមិនទាន់ចូលប្រើប្រាស់ទេ',
+      'sign_in_to_access_bookings': 'ចូលប្រើប្រាស់ដើម្បីមើលការកក់របស់អ្នក',
+      'sign_in_to_access_settings': 'ចូលប្រើប្រាស់ដើម្បីមើលការកំណត់របស់អ្នក',
+      'sign_in': 'ចូលប្រើប្រាស់',
+      'create_account': 'បង្កើតគណនី',
     },
   };
 

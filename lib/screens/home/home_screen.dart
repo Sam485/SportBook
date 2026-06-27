@@ -1,7 +1,9 @@
-// home_screen.dart - WITH FIXED DISTANCE (20km) - NO DISTANCE SELECTOR
+// home_screen.dart - WITH AVATAR UPDATE FIX
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Banner/model/banner_model.dart';
 import 'package:sportbook/feature/Banner/service/banner_service.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
@@ -16,12 +18,12 @@ import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
+import 'package:sportbook/screens/home/ViewAll/upcoming_booking_viewall.dart';
 import 'package:sportbook/translations/app_translations.dart';
+import 'package:sportbook/widgets/cards/booking_card.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
 import 'package:sportbook/widgets/common/map_picker_screen.dart';
-import '../../core/theme.dart';
 import '../../widgets/common/section_header.dart';
-import '../../widgets/cards/booked_card.dart';
 import '../../widgets/cards/club_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -32,7 +34,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isInitialized = false; // ✅ Prevent double initialization
+  bool _isInitialized = false;
+  bool _isSkeletonLoading = true;
+  bool _shouldRefreshOnReturn = true;
 
   String _selectedCat = 'all';
   String _locationLabel = 'Phnom Penh';
@@ -49,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _currentLat = _defaultLat;
   double? _currentLng = _defaultLng;
 
-  // ✅ FIXED DISTANCE - 20km (removed user selection)
+  // Fixed distance - 20km
   static const int _radius = 20;
 
   // SharedPreferences keys
@@ -58,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const String _prefLocationLabel = 'user_location_label';
   static const String _prefHasLocation = 'has_saved_location';
 
+  // Services
   final _userService = getIt<UserService>();
   final _bannerService = getIt<BannerService>();
   final _categoryService = getIt<CategoryService>();
@@ -101,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
   }
 
-  // ✅ Check if user is authenticated
+  // Check if user is authenticated
   Future<bool> _isAuthenticated() async {
     try {
       final tokenService = getIt<TokenService>();
@@ -111,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ✅ Show login required dialog
+  // Show login required dialog
   void _showLoginRequiredDialog(BuildContext context, {String? message}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -149,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.landing);
+              Navigator.pushNamed(context, AppRoutes.login);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -162,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ✅ Navigate to booking flow with auth check
+  // Navigate to booking flow with auth check
   Future<void> _navigateToBookingFlow(SportClubModel club) async {
     final isAuth = await _isAuthenticated();
 
@@ -172,6 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    _shouldRefreshOnReturn = false;
+
     final result = await Navigator.pushNamed(
       // ignore: use_build_context_synchronously
       context,
@@ -179,12 +186,14 @@ class _HomeScreenState extends State<HomeScreen> {
       arguments: club,
     );
 
-    if (result == true || mounted) {
+    _shouldRefreshOnReturn = true;
+
+    if (result == true && mounted) {
       await _onRefresh();
     }
   }
 
-  // ✅ Navigate to club detailed view
+  // Navigate to club detailed view
   void _navigateToClubDetailed(SportClubModel club) {
     Navigator.pushNamed(context, AppRoutes.clubDetailed, arguments: club);
   }
@@ -235,14 +244,18 @@ class _HomeScreenState extends State<HomeScreen> {
   // ============================================================
 
   Future<void> initialLoad() async {
+    setState(() {
+      _isSkeletonLoading = true;
+    });
+
     try {
-      // ✅ Load public data first (banners, categories)
+      // Load public data first (banners, categories)
       final publicResults = await Future.wait([
         _bannerService.getAllActiveBanner(),
         _categoryService.fetchCategories(limit: 100),
       ]);
 
-      // ✅ Try to load user profile (may fail if not authenticated)
+      // Try to load user profile (may fail if not authenticated)
       try {
         await _userService.getProfile();
         _user = _userService.currentUser;
@@ -270,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      // ✅ Try to load bookings (may fail if not authenticated)
+      // Try to load bookings (may fail if not authenticated)
       try {
         final bookingsData = await _bookingService.getAllBookings(
           page: 1,
@@ -283,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _hasBookingsError = true;
       }
 
-      // ✅ Load clubs with timeout and fallback
+      // Load clubs with timeout and fallback
       await _loadClubsWithFallback();
 
       if (!_isDisposed && mounted) {
@@ -293,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isBookingsLoading = false;
           _isCategoriesLoading = false;
           _isLoading = false;
+          _isSkeletonLoading = false;
           _refreshCounter++;
         });
       }
@@ -303,13 +317,14 @@ class _HomeScreenState extends State<HomeScreen> {
           _isCategoriesLoading = false;
           _isBookingsLoading = false;
           _hasBookingsError = true;
+          _isSkeletonLoading = false;
           _refreshCounter++;
         });
       }
     }
   }
 
-  // ✅ Load clubs with timeout and fallback
+  // Load clubs with timeout and fallback
   Future<void> _loadClubsWithFallback() async {
     try {
       if (_currentLat != null && _currentLng != null) {
@@ -317,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
             .fetchNearbyClubs(
               lat: _currentLat!,
               lng: _currentLng!,
-              radius: _radius, // ✅ Fixed distance
+              radius: _radius,
             )
             .timeout(
               const Duration(seconds: 15),
@@ -345,24 +360,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ✅ Refresh clubs with UI update
+  // Refresh clubs with UI update
   Future<void> _refreshNearbyClubsWithUIUpdate(double lat, double lng) async {
     try {
       setState(() {
         _isLoading = true;
+        _isSkeletonLoading = true;
       });
 
-      await _clubService.fetchNearbyClubs(
-        lat: lat,
-        lng: lng,
-        radius: _radius, // ✅ Fixed distance
-      );
+      await _clubService.fetchNearbyClubs(lat: lat, lng: lng, radius: _radius);
 
       await _saveLocationToPrefs(lat: lat, lng: lng, label: _locationLabel);
 
       if (!_isDisposed && mounted) {
         setState(() {
           _isLoading = false;
+          _isSkeletonLoading = false;
           _refreshCounter++;
         });
       }
@@ -376,6 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!_isDisposed && mounted) {
           setState(() {
             _isLoading = false;
+            _isSkeletonLoading = false;
             _refreshCounter++;
           });
         }
@@ -383,6 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!_isDisposed && mounted) {
           setState(() {
             _isLoading = false;
+            _isSkeletonLoading = false;
           });
         }
       }
@@ -393,7 +408,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    // ✅ Prevent double initialization
     if (!_isInitialized) {
       _isInitialized = true;
 
@@ -401,6 +415,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _bookingService = getIt<BookingService>();
 
       _clubService.addListener(_onServiceChanged);
+
+      // ✅ ADD LISTENER FOR USER SERVICE CHANGES
+      _userService.addListener(_onUserServiceChanged);
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         initialLoad();
@@ -412,10 +429,32 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _isDisposed = true;
     _clubService.removeListener(_onServiceChanged);
+    _userService.removeListener(_onUserServiceChanged); // ✅ REMOVE LISTENER
     super.dispose();
   }
 
+  // ✅ USER SERVICE CHANGE LISTENER - Updates avatar automatically
+  void _onUserServiceChanged() {
+    // Skip if disposed or we don't want to refresh
+    if (_isDisposed || !mounted) return;
+
+    // Skip refresh if we're returning from booking flow
+    if (!_shouldRefreshOnReturn) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _user = _userService.currentUser;
+          _refreshCounter++; // Force rebuild of widgets
+        });
+      }
+    });
+  }
+
+  // Service change listener for club service
   void _onServiceChanged() {
+    if (!_shouldRefreshOnReturn) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDisposed && mounted) {
         setState(() {
@@ -438,7 +477,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateBookings() {
-    Navigator.pushNamed(context, AppRoutes.allbookings, arguments: true);
+    final upcoming = _upcomingBookings;
+    if (upcoming.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('no_upcoming_bookings'.tr(context)),
+          backgroundColor: Colors.grey,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpcomingBookingViewAll(
+          title: 'upcoming_bookings'.tr(context),
+          bookings: upcoming,
+        ),
+      ),
+    );
   }
 
   void _navigateViewAll() {
@@ -498,6 +557,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       setState(() {
         _isLoading = true;
+        _isSkeletonLoading = true;
       });
 
       final updateDto = UpdateDto(
@@ -515,6 +575,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _currentLat = _user?.lat;
         _currentLng = _user?.lng;
         _isLoading = false;
+        _isSkeletonLoading = false;
       });
 
       if (_currentLat != null && _currentLng != null) {
@@ -537,6 +598,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
+        _isSkeletonLoading = false;
       });
 
       if (mounted) {
@@ -677,9 +739,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 2),
-            InkWell(
+            GestureDetector(
               onTap: _openLocationPicker,
-              borderRadius: BorderRadius.circular(8),
               child: Row(
                 children: [
                   const Icon(
@@ -893,7 +954,133 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ── Clubs List with Skeleton Loading ──────────────────────────────────────
   Widget _clubsList(bool isDark) {
+    if (_isSkeletonLoading) {
+      final skeletonBaseColor = isDark
+          ? const Color(0xFF1E3A5F)
+          : const Color(0xFFE0E0E0);
+      final skeletonHighlightColor = isDark
+          ? const Color(0xFF2A4A6F)
+          : const Color(0xFFF5F5F5);
+
+      return Skeletonizer(
+        enabled: true,
+        effect: ShimmerEffect(
+          baseColor: skeletonBaseColor,
+          highlightColor: skeletonHighlightColor,
+        ),
+        child: SizedBox(
+          height: 290,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: 3,
+            itemBuilder: (_, i) => Container(
+              width: 280,
+              margin: const EdgeInsets.only(right: 14),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image skeleton
+                  Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppTheme.kCardAlt
+                          : AppTheme.kLightCardAlt,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(22),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 14,
+                                    width: double.infinity,
+                                    color: isDark
+                                        ? AppTheme.kCardAlt
+                                        : AppTheme.kLightCardAlt,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    height: 10,
+                                    width: 100,
+                                    color: isDark
+                                        ? AppTheme.kCardAlt
+                                        : AppTheme.kLightCardAlt,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 1,
+                          color: isDark
+                              ? AppTheme.kBorder
+                              : AppTheme.kLightBorder,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              height: 12,
+                              width: 80,
+                              color: isDark
+                                  ? AppTheme.kCardAlt
+                                  : AppTheme.kLightCardAlt,
+                            ),
+                            const Spacer(),
+                            Container(
+                              height: 30,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: AppTheme.kAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isLoading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -1017,26 +1204,168 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Bookings List ──────────────────────────────────────────────────────────
   Widget _bookingsList(bool isDark) {
-    if (_isBookingsLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Container(
-          height: 120,
-          decoration: AppTheme.cardDecorationAdaptive(context),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  color: AppTheme.kAccent,
-                  strokeWidth: 2,
+    if (_isSkeletonLoading || _isBookingsLoading) {
+      final skeletonBaseColor = isDark
+          ? const Color(0xFF1E3A5F)
+          : const Color(0xFFE0E0E0);
+      final skeletonHighlightColor = isDark
+          ? const Color(0xFF2A4A6F)
+          : const Color(0xFFF5F5F5);
+
+      return Skeletonizer(
+        enabled: true,
+        effect: ShimmerEffect(
+          baseColor: skeletonBaseColor,
+          highlightColor: skeletonHighlightColor,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          child: Column(
+            children: List.generate(
+              3,
+              (index) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  ),
                 ),
-                SizedBox(height: 12),
-                Text(
-                  'Loading bookings...',
-                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 13),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image skeleton
+                    Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(22),
+                        ),
+                      ),
+                    ),
+                    // Content skeleton
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height: 16,
+                                      width: double.infinity,
+                                      color: isDark
+                                          ? AppTheme.kCardAlt
+                                          : AppTheme.kLightCardAlt,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      height: 12,
+                                      width: 120,
+                                      color: isDark
+                                          ? AppTheme.kCardAlt
+                                          : AppTheme.kLightCardAlt,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                width: 18,
+                                height: 18,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            height: 1,
+                            color: isDark
+                                ? AppTheme.kBorder
+                                : AppTheme.kLightBorder,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                width: 14,
+                                height: 14,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Container(
+                                height: 12,
+                                width: 150,
+                                color: isDark
+                                    ? AppTheme.kCardAlt
+                                    : AppTheme.kLightCardAlt,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                width: 13,
+                                height: 13,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Container(
+                                height: 24,
+                                width: 80,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppTheme.kCardAlt
+                                      : AppTheme.kLightCardAlt,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                height: 24,
+                                width: 80,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppTheme.kCardAlt
+                                      : AppTheme.kLightCardAlt,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -1106,10 +1435,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: displayBookings.map((booking) {
-        return BookedCard(
+        return BookingCard(
           key: ValueKey('booking_${booking.id}_$_refreshCounter'),
           booking: booking,
-          onBookingUpdated: _onRefresh,
         );
       }).toList(),
     );

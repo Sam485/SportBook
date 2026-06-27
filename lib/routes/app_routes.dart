@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/screens/auth/forget_password_screen.dart';
-import 'package:sportbook/screens/auth/landing_screen.dart';
 import 'package:sportbook/screens/auth/login_screeen.dart';
 import 'package:sportbook/screens/auth/reset_password_screen.dart';
 import 'package:sportbook/screens/auth/sign_in_with_otp_screen.dart';
@@ -14,7 +13,6 @@ import 'package:sportbook/screens/bookings/detail/booked_detailed.dart';
 import 'package:sportbook/screens/explore/explore_screen.dart';
 import 'package:sportbook/screens/home/Notification/notification_screen.dart';
 import 'package:sportbook/screens/home/ViewAll/view_all.dart';
-import 'package:sportbook/screens/loading/splash_screen.dart';
 import '../screens/main_screen.dart'; // ✅ Keep MainScreen import
 import '../screens/booking_flow/booking_flow_screen.dart';
 import '../screens/club_detailed/club_detailed.dart';
@@ -28,7 +26,6 @@ class AppRoutes {
   static const String notification = '/notification';
   static const String viewAll = '/view-all';
   static const String allbookings = '/all-bookings';
-  static const String splash = '/splash';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String otpLogin = '/otp-login';
@@ -36,12 +33,9 @@ class AppRoutes {
   static const String otpVerify = '/otp-verify';
   static const String resetPassword = '/reset-password';
   static const String explore = '/explore';
-  static const String landing = '/landing';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case landing:
-        return MaterialPageRoute(builder: (_) => const LandingScreen());
       case explore:
         return MaterialPageRoute(builder: (_) => const ExploreScreen());
 
@@ -63,9 +57,6 @@ class AppRoutes {
 
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
-
-      case splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
 
       case signup:
         return MaterialPageRoute(builder: (_) => const SignUpScreen());

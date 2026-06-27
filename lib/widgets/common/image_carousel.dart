@@ -5,12 +5,14 @@ class ImageCarousel extends StatefulWidget {
   final List<String> imageUrls;
   final double height;
   final BorderRadius? borderRadius;
+  final bool showFavorite; // ✅ New parameter to control favorite button
 
   const ImageCarousel({
     super.key,
     required this.imageUrls,
     this.height = 180,
     this.borderRadius,
+    this.showFavorite = true, // Default to true for ClubCard
   });
 
   @override
@@ -128,7 +130,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
               // Pages
               PageView.builder(
                 controller: _ctrl,
-                itemCount: urls.length, // ✅ Use actual count, not null
+                itemCount: urls.length,
                 physics: urls.length > 1
                     ? const NeverScrollableScrollPhysics()
                     : const NeverScrollableScrollPhysics(),
@@ -244,36 +246,37 @@ class _ImageCarouselState extends State<ImageCarousel> {
                   ),
                 ),
 
-              // Favourite button
-              Positioned(
-                top: 10,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => setState(() => _fav = !_fav),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _fav
-                          ? AppTheme.kAccent.withValues(alpha: 0.85)
-                          : Colors.black.withValues(alpha: 0.4),
-                      border: Border.all(
-                        color: _fav ? AppTheme.kAccent : Colors.white24,
+              // Favourite button - only show if enabled
+              if (widget.showFavorite)
+                Positioned(
+                  top: 10,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _fav = !_fav),
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _fav
+                            ? AppTheme.kAccent.withValues(alpha: 0.85)
+                            : Colors.black.withValues(alpha: 0.4),
+                        border: Border.all(
+                          color: _fav ? AppTheme.kAccent : Colors.white24,
+                        ),
                       ),
-                    ),
-                    child: Icon(
-                      _fav
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      color: Colors.white,
-                      size: 17,
+                      child: Icon(
+                        _fav
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: Colors.white,
+                        size: 17,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -358,7 +361,7 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                   opacity: (1 - (_dragY.abs() / 400)).clamp(0.0, 1.0),
                   child: PageView.builder(
                     controller: _ctrl,
-                    itemCount: total, // ✅ Use actual count
+                    itemCount: total,
                     onPageChanged: (i) => setState(() => _cur = i),
                     itemBuilder: (_, i) => InteractiveViewer(
                       minScale: 1.0,
@@ -408,7 +411,7 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                           ),
                         ),
                         const Spacer(),
-                        if (hasMultiple) // ✅ Only show count if multiple images
+                        if (hasMultiple)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,

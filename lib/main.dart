@@ -28,7 +28,7 @@ void main() async {
     getIt.registerSingleton<GlobalKey<NavigatorState>>(navigatorKey);
   }
 
-  SystemChrome.setSystemUIOverlayStyle(
+  SystemChrome.setSystemUIOverlayStyle( 
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
@@ -95,7 +95,7 @@ class _SportMateAppState extends State<SportMateApp>
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            initialRoute: AppRoutes.splash,
+            initialRoute: AppRoutes.home,
             onGenerateRoute: AppRoutes.onGenerateRoute,
           );
         },

@@ -164,19 +164,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.person_add_rounded,
-            color: AppTheme.kAccent,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
         Text(
           'Create Account',
           style: TextStyle(
@@ -184,14 +171,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Sign up to get started',
-          style: TextStyle(
-            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-            fontSize: 14,
           ),
         ),
       ],

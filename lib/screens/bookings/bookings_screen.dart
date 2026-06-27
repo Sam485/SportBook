@@ -1,4 +1,6 @@
+// bookings_screen.dart - WITH LOGIN REQUIRED STATE STYLED
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
@@ -32,7 +34,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   int _refreshCounter = 0;
   bool _isCheckingAuth = true;
   bool _isAuthenticated = false;
-  bool _isDisposed = false; // ✅ Added to track disposed state
+  bool _isDisposed = false;
 
   // Get the list of bookings from the response
   List<BookingModel> get _bookings => _bookingsData?.data ?? [];
@@ -66,7 +68,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // ✅ Check if mounted and not disposed before calling setState
     if (_isAuthenticated &&
         !_isLoading &&
         _bookingsData != null &&
@@ -78,14 +79,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   @override
   void dispose() {
-    _isDisposed = true; // ✅ Mark as disposed
+    _isDisposed = true;
     _searchController.dispose();
     super.dispose();
   }
 
   // ✅ Check if user is authenticated
   Future<void> _checkAuthentication() async {
-    // ✅ Check if widget is still mounted
     if (!mounted || _isDisposed) return;
 
     setState(() {
@@ -96,7 +96,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
       final hasValidToken = await _tokenService.hasValidTokenAsync();
 
       if (!hasValidToken) {
-        // Try to refresh token
         final refreshToken = await _tokenService.getRefreshToken();
         if (refreshToken != null && refreshToken.isNotEmpty) {
           final refreshed = await _tokenService.refreshAccessToken();
@@ -140,7 +139,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Future<void> _fetchBookings() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || !mounted || _isDisposed) return;
 
     setState(() {
@@ -156,7 +154,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
         status: _selectedStatus,
       );
 
-      // ✅ Check if widget is still mounted and not disposed
       if (mounted && !_isDisposed) {
         setState(() {
           _bookingsData = data;
@@ -166,7 +163,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
         });
       }
     } catch (e) {
-      // ✅ Check if widget is still mounted and not disposed
       if (mounted && !_isDisposed) {
         setState(() {
           _errorMessage = e.toString();
@@ -178,13 +174,11 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Future<void> _refreshBookings() async {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || !mounted || _isDisposed) return;
     await _fetchBookings();
   }
 
   void _changeStatus(String? status) {
-    // ✅ Check if widget is still mounted and not disposed
     if (!_isAuthenticated || !mounted || _isDisposed) return;
     setState(() {
       _selectedStatus = status ?? '';
@@ -197,14 +191,18 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
   // ✅ Navigate to login screen
   void _navigateToLogin() {
-    // ✅ Check if widget is still mounted and not disposed
     if (!mounted || _isDisposed) return;
-    Navigator.pushNamed(context, AppRoutes.landing);
+    Navigator.pushNamed(context, AppRoutes.login);
+  }
+
+  // ✅ Navigate to sign up screen
+  void _navigateToSignUp() {
+    if (!mounted || _isDisposed) return;
+    Navigator.pushNamed(context, AppRoutes.signup);
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -221,7 +219,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   color: isDark ? Colors.white : Colors.black,
                 ),
                 onPressed: () {
-                  // ✅ Check if widget is still mounted
                   if (mounted && !_isDisposed) {
                     Navigator.pop(context);
                   }
@@ -243,7 +240,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             : !_isAuthenticated
             ? _buildLoginRequiredState(isDark)
             : _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? _buildSkeletonLoading(isDark)
             : _hasError && _bookings.isEmpty
             ? _buildErrorState(isDark)
             : _bookings.isEmpty
@@ -276,44 +273,61 @@ class _BookingsScreenState extends State<BookingsScreen> {
     );
   }
 
-  // ✅ Login required state
+  // ✅ Login Required State - Styled like the image
   Widget _buildLoginRequiredState(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.lock_outline_rounded,
-              size: 80,
-              color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+            // User avatar / icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                border: Border.all(
+                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                size: 40,
+                color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+              ),
             ),
             const SizedBox(height: 24),
+
+            // "You are not signed in" text
             Text(
-              'login_required'.tr(context),
+              'you_are_not_signed_in'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white : AppTheme.kLightText,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
+
+            // "Sign in to access your bookings" text
             Text(
-              'login_to_view_bookings'.tr(context),
+              'sign_in_to_access_bookings'.tr(context),
               style: TextStyle(
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
+                fontWeight: FontWeight.w400,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
+
+            // Sign In Button
             SizedBox(
-              width: 200,
+              width: double.infinity,
               height: 50,
               child: ElevatedButton(
                 onPressed: _navigateToLogin,
@@ -323,20 +337,42 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.login_rounded, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'login'.tr(context),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'sign_in'.tr(context),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Create Account Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton(
+                onPressed: _navigateToSignUp,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white : AppTheme.kLightText,
+                  side: BorderSide(
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'create_account'.tr(context),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppTheme.kLightText,
+                  ),
                 ),
               ),
             ),
@@ -346,8 +382,110 @@ class _BookingsScreenState extends State<BookingsScreen> {
     );
   }
 
+  // ✅ Skeleton Loading Widget
+  Widget _buildSkeletonLoading(bool isDark) {
+    final skeletonBaseColor = isDark
+        ? const Color(0xFF1E3A5F)
+        : const Color(0xFFE0E0E0);
+    final skeletonHighlightColor = isDark
+        ? const Color(0xFF2A4A6F)
+        : const Color(0xFFF5F5F5);
+
+    return Skeletonizer(
+      enabled: true,
+      effect: ShimmerEffect(
+        baseColor: skeletonBaseColor,
+        highlightColor: skeletonHighlightColor,
+      ),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.kCard : AppTheme.kLightCard,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.sports,
+                    color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 16,
+                        width: double.infinity,
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        height: 12,
+                        width: 120,
+                        color: isDark
+                            ? AppTheme.kCardAlt
+                            : AppTheme.kLightCardAlt,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            height: 10,
+                            width: 60,
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            height: 10,
+                            width: 40,
+                            color: isDark
+                                ? AppTheme.kCardAlt
+                                : AppTheme.kLightCardAlt,
+                          ),
+                          const Spacer(),
+                          Container(
+                            height: 24,
+                            width: 60,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: AppTheme.kAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildStatusFilterButton(BuildContext context, bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return PopupMenuButton<String>(
@@ -367,7 +505,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildErrorState(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return Center(
@@ -415,7 +552,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildEmptyState(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
 
     return Center(
@@ -467,7 +603,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _searchBar(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
     if (!_isAuthenticated) return const SizedBox.shrink();
 
@@ -492,8 +627,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
                     ),
                   ),
               onChanged: (value) {
-                // ✅ Check if widget is still mounted
                 if (mounted && !_isDisposed) {
+                  setState(() {});
                   _fetchBookings();
                 }
               },
@@ -505,7 +640,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 
   Widget _buildPagination(bool isDark) {
-    // ✅ Check if widget is disposed
     if (_isDisposed) return const SizedBox.shrink();
     if (_bookingsData == null) return const SizedBox.shrink();
 
@@ -519,7 +653,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
           IconButton(
             onPressed: _currentPage > 1
                 ? () {
-                    // ✅ Check if widget is still mounted
                     if (mounted && !_isDisposed) {
                       setState(() {
                         _currentPage--;
@@ -544,7 +677,6 @@ class _BookingsScreenState extends State<BookingsScreen> {
           IconButton(
             onPressed: _currentPage < totalPages
                 ? () {
-                    // ✅ Check if widget is still mounted
                     if (mounted && !_isDisposed) {
                       setState(() {
                         _currentPage++;

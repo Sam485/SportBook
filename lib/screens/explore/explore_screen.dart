@@ -7,6 +7,7 @@ import 'package:sportbook/feature/Category/model/category_model.dart';
 import 'package:sportbook/feature/Category/service/category_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart';
+import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
 import 'package:sportbook/widgets/common/section_header.dart';
@@ -132,7 +133,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         });
       }
     } catch (e) {
-      // ✅ Set error flag but don't show the full exception
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -186,7 +186,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         }
       }
     } catch (e) {
-      // ✅ Don't show full exception, just set error flag
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -226,6 +225,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
         _loadAllClubs(reset: true);
       }
     });
+  }
+
+  // ✅ Navigate to booking flow
+  void _navigateToBookingFlow(SportClubModel club) {
+    Navigator.pushNamed(context, AppRoutes.bookingFlow, arguments: club);
+  }
+
+  // ✅ Navigate to club detailed
+  void _navigateToClubDetailed(SportClubModel club) {
+    Navigator.pushNamed(context, AppRoutes.clubDetailed, arguments: club);
   }
 
   @override
@@ -281,7 +290,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
       );
     }
 
-    // ✅ Show friendly error message instead of full exception
     if (_hasError && _allClubs.isEmpty) {
       return SliverFillRemaining(
         child: Center(
@@ -428,6 +436,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: ClubCard(
             key: ValueKey('club_${clubs[index].id}_${clubs[index].updatedAt}'),
             club: clubs[index],
+            // ✅ Add navigation callbacks - NO LOADING
+            onBookPressed: (club) {
+              _navigateToBookingFlow(club);
+            },
+            onDetailPressed: (club) {
+              _navigateToClubDetailed(club);
+            },
           ),
         );
       }, childCount: clubs.length + 1),

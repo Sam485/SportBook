@@ -153,15 +153,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.sports, color: AppTheme.kAccent, size: 32),
-        ),
-        const SizedBox(height: 16),
         Text(
           'Welcome Back',
           style: TextStyle(
@@ -169,14 +160,6 @@ class _LoginScreenState extends State<LoginScreen> {
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Please sign in to continue',
-          style: TextStyle(
-            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-            fontSize: 14,
           ),
         ),
       ],

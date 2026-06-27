@@ -108,7 +108,7 @@ class _ViewAllState extends State<ViewAll> {
                 delegate: SliverChildBuilderDelegate(
                   (_, i) => Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: BookingCard(booking: filtered[i] as SportBooking),
+                    child: BookingCard(booking: filtered[i]),
                   ),
                   childCount: filtered.length,
                 ),
