@@ -57,10 +57,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
     _clubService = getIt<SportClubService>();
     _tokenService = getIt<TokenService>();
 
-    // Check if this club is already favorited
     _isFavorited = _clubService.isClubFavorited(widget.target.id);
-
-    // Listen to service changes
     _clubService.addListener(_onServiceChanged);
   }
 
@@ -84,7 +81,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
     });
   }
 
-  // ✅ Check if user is authenticated
   Future<bool> _isAuthenticated() async {
     try {
       return await _tokenService.hasValidTokenAsync();
@@ -93,7 +89,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
     }
   }
 
-  // ✅ Show login required dialog
   void _showLoginRequiredDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -131,7 +126,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.landing);
+              Navigator.pushNamed(context, AppRoutes.login);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
@@ -144,11 +139,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
     );
   }
 
-  // ✅ Toggle favorite with auth check
   Future<void> _toggleFavorite() async {
     if (_isFavoriting) return;
 
-    // Check if user is authenticated
     final isAuth = await _isAuthenticated();
 
     if (!isAuth) {
@@ -174,7 +167,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
           _isFavoriting = false;
         });
 
-        // Show feedback
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -228,17 +220,9 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 SliverToBoxAdapter(child: _header(isDark)),
                 SliverToBoxAdapter(child: _infoSection(isDark)),
                 SliverToBoxAdapter(
-                  child: _divider('facilities'.tr(context), isDark),
-                ),
-                SliverToBoxAdapter(child: _facilities(isDark)),
-                SliverToBoxAdapter(
                   child: _divider('sports_available'.tr(context), isDark),
                 ),
                 SliverToBoxAdapter(child: _sportsGrid(isDark)),
-                SliverToBoxAdapter(
-                  child: _divider('pricing'.tr(context), isDark),
-                ),
-                SliverToBoxAdapter(child: _pricing(isDark)),
                 SliverToBoxAdapter(
                   child: _divider('location'.tr(context), isDark),
                 ),
@@ -334,7 +318,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
             ),
           ),
 
-        // Back button
         Positioned(
           left: 12,
           top: 10,
@@ -357,7 +340,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
         ),
 
-        // ✅ Favorite button (replacing chat)
         Positioned(
           right: 12,
           top: 10,
@@ -577,154 +559,109 @@ class _ClubDetailedState extends State<ClubDetailed> {
     ),
   );
 
-  Widget _facilities(bool isDark) {
-    final items = [
-      (Icons.local_parking_rounded, 'parking'.tr(context)),
-      (Icons.shower_rounded, 'showers'.tr(context)),
-      (Icons.emoji_food_beverage_rounded, 'cafe'.tr(context)),
-      (Icons.wifi_rounded, 'free_wifi'.tr(context)),
-      (Icons.ac_unit_rounded, 'air_con'.tr(context)),
-      (Icons.sports_rounded, 'equipment'.tr(context)),
-      (Icons.wc_rounded, 'restrooms'.tr(context)),
-      (Icons.medical_services_rounded, 'first_aid'.tr(context)),
-    ];
+  // ─── Sports Grid ──────────────────────────────────────────────────────────
+  Widget _sportsGrid(bool isDark) {
+    final categories = widget.target.categories;
+
+    if (categories.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              'No sports available',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
-        children: items.map((f) => _facilityChip(f.$1, f.$2, isDark)).toList(),
+        children: categories.map((cat) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.kAccent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.kAccent.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _getCategoryEmoji(cat.name),
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  cat.name,
+                  style: const TextStyle(
+                    color: AppTheme.kAccent,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 
-  Widget _facilityChip(IconData icon, String label, bool isDark) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(
-      color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-      ),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: AppTheme.kAccent, size: 14),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _sportsGrid(bool isDark) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: widget.target.categories
-          .map(
-            (cat) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.kAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppTheme.kAccent.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Text(
-                cat.toString(),
-                style: const TextStyle(
-                  color: AppTheme.kAccent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          )
-          .toList(),
-    ),
-  );
-
-  Widget _pricing(bool isDark) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-        ),
-      ),
-      child: Column(
-        children: [
-          _priceRow(
-            'peak_hours'.tr(context),
-            '\$${(widget.target.favoriteCount + 15).toString()}/hr',
-            const Color(0xFFF59E0B),
-            isDark,
-          ),
-          Divider(
-            color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
-            height: 20,
-          ),
-          _priceRow(
-            'off_peak_hours'.tr(context),
-            '\$${(widget.target.favoriteCount + 10).toString()}/hr',
-            const Color(0xFF4CAF50),
-            isDark,
-          ),
-          Divider(
-            color: isDark ? const Color(0xFF2A2A3A) : Colors.grey[300]!,
-            height: 20,
-          ),
-          _priceRow(
-            'weekend_surcharge'.tr(context),
-            '+\$${(widget.target.favoriteCount ~/ 5 + 5).toString()}/hr',
-            Colors.redAccent,
-            isDark,
-          ),
-        ],
-      ),
-    ),
-  );
-
-  Widget _priceRow(String label, String value, Color color, bool isDark) => Row(
-    children: [
-      Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-            fontSize: 12.5,
-          ),
-        ),
-      ),
-      Text(
-        value,
-        style: TextStyle(
-          color: color,
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    ],
-  );
+  // ─── Category Emoji Helper ──────────────────────────────────────────────
+  String _getCategoryEmoji(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'football':
+        return '⚽';
+      case 'basketball':
+        return '🏀';
+      case 'tennis':
+        return '🎾';
+      case 'badminton':
+        return '🏸';
+      case 'gym':
+        return '🏋️';
+      case 'volleyball':
+        return '🏐';
+      case 'swimming':
+        return '🏊';
+      case 'yoga':
+        return '🧘';
+      case 'boxing':
+        return '🥊';
+      case 'running':
+        return '🏃';
+      case 'table tennis':
+        return '🏓';
+      case 'squash':
+        return '🏸';
+      case 'dance':
+        return '💃';
+      case 'cycling':
+        return '🚴';
+      default:
+        return '🏅';
+    }
+  }
 
   Widget _location(bool isDark) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -886,7 +823,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
       ),
       child: Row(
         children: [
-          // ✅ Favorite button (replacing chat)
           _navIconBtn(
             icon: _isFavorited
                 ? Icons.favorite_rounded
@@ -898,7 +834,6 @@ class _ClubDetailedState extends State<ClubDetailed> {
           ),
           const SizedBox(width: 10),
 
-          // ✅ Share button (replacing the second favorite)
           _navIconBtn(
             icon: Icons.share_rounded,
             label: 'share'.tr(context),

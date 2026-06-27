@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
@@ -99,7 +98,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (!_isDisposed && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, AppRoutes.landing);
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
         }
       });
     }

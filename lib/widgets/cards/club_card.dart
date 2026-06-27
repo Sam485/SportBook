@@ -165,7 +165,7 @@ class _ClubCardState extends State<ClubCard>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.landing);
+              Navigator.pushNamed(context, AppRoutes.login);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,

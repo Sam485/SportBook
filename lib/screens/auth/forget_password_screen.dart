@@ -140,19 +140,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.lock_reset_rounded,
-            color: AppTheme.kAccent,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
         Text(
           'Reset Password',
           style: TextStyle(
@@ -160,14 +147,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "We'll send a verification code to reset your password",
-          style: TextStyle(
-            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-            fontSize: 14,
           ),
         ),
       ],
@@ -178,15 +157,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 12),
         Expanded(
           child: Text(
             'Enter your phone number to receive OTP',
@@ -195,14 +165,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               fontSize: 13,
             ),
             textAlign: TextAlign.center,
-          ),
-        ),
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent,
-            borderRadius: BorderRadius.circular(2),
           ),
         ),
       ],

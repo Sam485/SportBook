@@ -139,19 +139,6 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.sms_rounded,
-            color: AppTheme.kAccent,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
         Text(
           'Phone Sign In',
           style: TextStyle(
@@ -159,14 +146,6 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "We'll send a verification code to your number",
-          style: TextStyle(
-            color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
-            fontSize: 14,
           ),
         ),
       ],
@@ -177,15 +156,6 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 12),
         Expanded(
           child: Text(
             'Enter your phone number to receive OTP',
@@ -194,14 +164,6 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
               fontSize: 13,
             ),
             textAlign: TextAlign.center,
-          ),
-        ),
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent,
-            borderRadius: BorderRadius.circular(2),
           ),
         ),
       ],
@@ -375,7 +337,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pop(context),
+          onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
           child: Text(
             'Sign In',
             style: TextStyle(

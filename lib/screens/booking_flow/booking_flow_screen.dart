@@ -285,7 +285,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               // ✅ Navigate to login with return route
               Navigator.pushNamed(
                 context,
-                AppRoutes.landing,
+                AppRoutes.login,
                 arguments: {
                   'returnTo': AppRoutes.bookingFlow,
                   'club': widget.target,
@@ -385,7 +385,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.of(context).pop();
+      Navigator.pop(context, false);
     }
   }
 
