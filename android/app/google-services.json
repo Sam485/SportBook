@@ -1,26 +1,43 @@
 {
   "project_info": {
-    "project_number": "235348445295",
-    "project_id": "sportbook-4af31",
-    "storage_bucket": "sportbook-4af31.firebasestorage.app"
+    "project_number": "1036193402414",
+    "project_id": "sportbook-7ad49",
+    "storage_bucket": "sportbook-7ad49.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:235348445295:android:4216d16e5896f6fd83659a",
+        "mobilesdk_app_id": "1:1036193402414:android:81f9c282f620d79dca59bf",
         "android_client_info": {
-          "package_name": "com.example.sportbook"
+          "package_name": "com.kongchansila.sportbook"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1036193402414-b8hdpqp7gih4dnptv5ebd52v91mhsq9d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCap67F0Iw1uHj92kFZ682odjosz7CbAi0"
+          "current_key": "AIzaSyDo8MiPJSy3nnsHEE297638d2QYKU1WbDo"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1036193402414-b8hdpqp7gih4dnptv5ebd52v91mhsq9d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1036193402414-1f50mm82d6fl7c0t8d53cakoatj4i57t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kongchansila.sportbook"
+              }
+            }
+          ]
         }
       }
     }

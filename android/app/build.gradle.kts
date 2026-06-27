@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.sportbook"
+    namespace = "com.kongchansila.sportbook"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.sportbook"
+        applicationId = "com.kongchansila.sportbook"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
