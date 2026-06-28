@@ -1,4 +1,3 @@
-// lib/feature/Auth/service/firebase_otp_service.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sportbook/core/config/firebase_config.dart';
@@ -11,6 +10,7 @@ class FirebaseOtpService {
 
   String? _verificationId;
   int? _resendToken;
+  String? _phoneNumber;
 
   Future<void> sendOtp({
     required String phoneNumber,
@@ -19,13 +19,13 @@ class FirebaseOtpService {
     bool isResend = false,
   }) async {
     try {
-      // Ensure Firebase is initialized
       await FirebaseConfig.initialize();
 
-      // Platform-specific timeout for iOS (sometimes needs longer)
       final timeout = defaultTargetPlatform == TargetPlatform.iOS
           ? const Duration(seconds: 90)
           : const Duration(seconds: 60);
+
+      _phoneNumber = phoneNumber;
 
       await _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
@@ -57,15 +57,23 @@ class FirebaseOtpService {
     }
   }
 
-  Future<User?> verifyOtp({
+  Future<User> verifyOtp({
     required String smsCode,
     String? verificationIdOverride,
   }) async {
     final verificationId = verificationIdOverride ?? _verificationId;
+
     if (verificationId == null) {
       throw FirebaseAuthException(
         code: 'missing-verification-id',
         message: 'No OTP was requested yet. Please request a code first.',
+      );
+    }
+
+    if (smsCode.isEmpty || smsCode.length != 6) {
+      throw FirebaseAuthException(
+        code: 'invalid-verification-code',
+        message: 'Please enter a valid 6-digit OTP code.',
       );
     }
 
@@ -75,35 +83,68 @@ class FirebaseOtpService {
     );
 
     try {
-      await _firebaseAuth.signInWithCredential(credential);
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
 
-      final user = _firebaseAuth.currentUser;
-      if (user != null) {
-        return user;
-      } else {
-        return null;
+      final user = userCredential.user;
+
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'user-not-found',
+          message: 'No user found for this verification.',
+        );
       }
-    } catch (e) {
-      final currentUser = _firebaseAuth.currentUser;
-      if (currentUser != null) {
-        return currentUser;
+
+      if (_phoneNumber != null && user.phoneNumber != _phoneNumber) {
+        throw FirebaseAuthException(
+          code: 'phone-mismatch',
+          message: 'Phone number mismatch. Please try again.',
+        );
       }
+
+      return user;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-verification-code' ||
+          e.code == 'session-expired') {
+        _verificationId = null;
+      }
+
       rethrow;
+    } catch (e) {
+      // ✅ FIX: Handle the platform channel error
+      // When this error occurs, the user might still be signed in
+      if (e.toString().contains('PigeonUserDetails')) {
+        // Wait a moment for Firebase to complete the sign-in process
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Check if user is now signed in
+        final currentUser = _firebaseAuth.currentUser;
+
+        if (currentUser != null) {
+          // Verify this is the correct user
+          if (currentUser.phoneNumber == _phoneNumber) {
+            return currentUser;
+          } else {
+            throw FirebaseAuthException(
+              code: 'phone-mismatch',
+              message: 'Phone number mismatch. Please try again.',
+            );
+          }
+        } else {
+          throw FirebaseAuthException(
+            code: 'verification-failed',
+            message: 'Verification failed. Please try again.',
+          );
+        }
+      }
+
+      throw FirebaseAuthException(
+        code: 'verification-failed',
+        message: 'Verification failed: ${e.toString()}',
+      );
     }
   }
 
-  Future<void> signOut() {
-    return _firebaseAuth.signOut();
-  }
-
-  User? get currentUser {
-    final user = _firebaseAuth.currentUser;
-    if (user != null) {
-    } else {}
-    return user;
-  }
-
-  Stream<User?> get authStateChanges {
-    return _firebaseAuth.authStateChanges();
-  }
+  // ... rest of the code
 }
