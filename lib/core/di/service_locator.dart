@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:sportbook/core/config/app_config.dart';
+import 'package:sportbook/core/config/firebase_config.dart';
 import 'package:sportbook/core/interceptors/auth_interceptor.dart';
 import 'package:sportbook/feature/Auth/service/auth_service.dart';
 import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
@@ -30,6 +31,7 @@ import 'package:sportbook/feature/User/repositories/user_api_repository.dart';
 final getIt = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
+  await FirebaseConfig.initialize();
   // Register FlutterSecureStorage
   getIt.registerLazySingleton<FlutterSecureStorage>(
     () => const FlutterSecureStorage(),
@@ -53,18 +55,6 @@ Future<void> setupServiceLocator() async {
     );
 
     dio.interceptors.add(AuthInterceptor());
-
-    // ✅ REMOVED LogInterceptor - No more request/response logs
-    // dio.interceptors.add(
-    //   LogInterceptor(
-    //     request: true,
-    //     requestHeader: true,
-    //     requestBody: true,
-    //     responseHeader: true,
-    //     responseBody: true,
-    //     error: true,
-    //   ),
-    // );
 
     return dio;
   });
