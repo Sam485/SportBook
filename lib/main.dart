@@ -1,4 +1,5 @@
 // main.dart
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sportbook/core/config/firebase_config.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/Auth/service/auth_service.dart';
+import 'package:sportbook/firebase_options.dart';
 import 'core/theme.dart';
 import 'providers/booking_provider.dart';
 import 'providers/theme_provider.dart';
@@ -17,7 +19,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase with proper error handling
-  await _initializeFirebase();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    // Already initialized — safe to ignore
+  }
 
   // Initialize SharedPreferences
   await SharedPreferences.getInstance();
@@ -43,19 +51,19 @@ void main() async {
 }
 
 /// Initialize Firebase with proper error handling
-Future<void> _initializeFirebase() async {
-  try {
-    // Initialize Firebase
-    final initialized = await FirebaseConfig.initialize();
+// Future<void> _initializeFirebase() async {
+//   try {
+//     // Initialize Firebase
+//     final initialized = await FirebaseConfig.initialize();
 
-    if (initialized) {
-      // Request notification permission only on supported platforms
-      await FirebaseConfig.requestNotificationPermission();
-    }
-  } catch (e) {
-    // App will continue without Firebase features
-  }
-}
+//     if (initialized) {
+//       // Request notification permission only on supported platforms
+//       await FirebaseConfig.requestNotificationPermission();
+//     }
+//   } catch (e) {
+//     // App will continue without Firebase features
+//   }
+// }
 
 class SportMateApp extends StatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey;

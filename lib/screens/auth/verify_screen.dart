@@ -10,7 +10,7 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'reset_password_screen.dart'; // ✅ Import for direct navigation
+import 'reset_password_screen.dart';
 
 enum VerifyFlow { otpLogin, signup, forgetPassword }
 
@@ -41,6 +41,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
   // Flow state variables
   VerifyFlow _flow = VerifyFlow.otpLogin;
   String _phoneNumber = '';
+  String? _verificationId; // ✅ Store the verification ID
   RegisterRequestDto? _userData;
 
   final _userService = getIt<UserService>();
@@ -59,11 +60,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
       if (args is Map<String, dynamic>) {
         final flowString = args['flow'] as String? ?? '';
         final phone = args['phoneNumber'] as String? ?? '';
+        final verificationId = args['verificationId'] as String?;
         final userData = args['userData'];
 
         setState(() {
           _flow = _parseFlow(flowString);
           _phoneNumber = phone;
+          _verificationId = verificationId; // ✅ Store the verification ID
           _userData = userData is RegisterRequestDto ? userData : null;
         });
       } else if (args is RegisterRequestDto) {
@@ -177,6 +180,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
           if (!mounted) return;
           setState(() {
             _isLoading = false;
+            _verificationId = verificationId; // ✅ Update the verification ID
           });
           _startTimer();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -209,16 +213,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Verify OTP with Firebase
-      User? user = await _firebaseOtpService.verifyOtp(smsCode: _otp);
+      // ✅ This will now handle the platform error
+      User user = await _firebaseOtpService.verifyOtp(
+        smsCode: _otp,
+        verificationIdOverride: _verificationId,
+      );
 
-      user ??= FirebaseAuth.instance.currentUser;
-
-      if (user == null) {
-        throw Exception('No user found after verification');
-      }
-
-      // 2. Get Firebase ID token
+      // ✅ Get the token
       final firebaseToken = await user.getIdToken(true);
       if (firebaseToken == null) {
         throw Exception('Failed to get Firebase token');
@@ -226,16 +227,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
       if (!mounted) return;
 
-      // Handle different flows
+      // Handle flows
       switch (_flow) {
         case VerifyFlow.signup:
           await _handleSignupFlow(firebaseToken);
           break;
-
         case VerifyFlow.forgetPassword:
           await _handleForgetPasswordFlow(firebaseToken);
           break;
-
         case VerifyFlow.otpLogin:
           await _handleOtpLoginFlow(firebaseToken);
           break;
@@ -243,15 +242,21 @@ class _VerifyScreenState extends State<VerifyScreen> {
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         String errorMessage = e.message ?? 'Verification failed';
+
         if (e.code == 'invalid-verification-code') {
           errorMessage = 'Invalid OTP code. Please try again.';
+          _clearFields();
         } else if (e.code == 'session-expired') {
           errorMessage = 'OTP session expired. Please request a new code.';
+          _clearFields();
         } else if (e.code == 'too-many-requests') {
           errorMessage = 'Too many attempts. Please try again later.';
+        } else if (e.code == 'missing-verification-id') {
+          errorMessage = 'Session expired. Please request a new OTP.';
+          _clearFields();
         }
+
         _showError(errorMessage);
-        _clearFields();
         setState(() => _isLoading = false);
       }
     } catch (e) {
@@ -295,13 +300,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
     }
   }
 
-  // ✅ FIXED: Use pushReplacement with MaterialPageRoute
   Future<void> _handleForgetPasswordFlow(String firebaseToken) async {
     if (mounted) {
       _clearFields();
       setState(() => _isLoading = false);
 
-      // ✅ Use pushReplacement with MaterialPageRoute to pass arguments
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
