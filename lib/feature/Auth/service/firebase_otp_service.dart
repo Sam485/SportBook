@@ -1,5 +1,7 @@
 // lib/feature/Auth/service/firebase_otp_service.dart
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sportbook/core/config/firebase_config.dart';
 
 class FirebaseOtpService {
   FirebaseOtpService._internal();
@@ -17,14 +19,21 @@ class FirebaseOtpService {
     bool isResend = false,
   }) async {
     try {
+      // Ensure Firebase is initialized
+      await FirebaseConfig.initialize();
+
+      // Platform-specific timeout for iOS (sometimes needs longer)
+      final timeout = defaultTargetPlatform == TargetPlatform.iOS
+          ? const Duration(seconds: 90)
+          : const Duration(seconds: 60);
+
       await _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         forceResendingToken: isResend ? _resendToken : null,
-        timeout: const Duration(seconds: 60),
+        timeout: timeout,
         verificationCompleted: (PhoneAuthCredential credential) async {
           try {
             await _firebaseAuth.signInWithCredential(credential);
-            // Don't call onAutoVerified - let the screen check currentUser
           } on FirebaseAuthException catch (e) {
             onFailed(e);
           }

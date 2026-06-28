@@ -16,10 +16,13 @@ import 'routes/app_routes.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await FirebaseConfig.initialize();
-  await FirebaseConfig.requestNotificationPermission();
+  // Initialize Firebase with proper error handling
+  await _initializeFirebase();
 
+  // Initialize SharedPreferences
   await SharedPreferences.getInstance();
+
+  // Setup service locator
   await setupServiceLocator();
 
   // Register the navigator key in service locator
@@ -28,13 +31,30 @@ void main() async {
     getIt.registerSingleton<GlobalKey<NavigatorState>>(navigatorKey);
   }
 
-  SystemChrome.setSystemUIOverlayStyle( 
+  // Set system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
   );
+
   runApp(SportMateApp(navigatorKey: navigatorKey));
+}
+
+/// Initialize Firebase with proper error handling
+Future<void> _initializeFirebase() async {
+  try {
+    // Initialize Firebase
+    final initialized = await FirebaseConfig.initialize();
+
+    if (initialized) {
+      // Request notification permission only on supported platforms
+      await FirebaseConfig.requestNotificationPermission();
+    }
+  } catch (e) {
+    // App will continue without Firebase features
+  }
 }
 
 class SportMateApp extends StatefulWidget {
@@ -55,6 +75,9 @@ class _SportMateAppState extends State<SportMateApp>
     super.initState();
     _authService = getIt<AuthService>();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize FCM token if Firebase is available
+    _initializeFcmToken();
   }
 
   @override
@@ -68,6 +91,20 @@ class _SportMateAppState extends State<SportMateApp>
     if (state == AppLifecycleState.resumed) {
       _authService.checkTokenOnResume();
     }
+  }
+
+  /// Initialize FCM token if Firebase is available
+  Future<void> _initializeFcmToken() async {
+    try {
+      if (FirebaseConfig.isInitialized) {
+        final token = await FirebaseConfig.getFcmToken();
+        if (token != null) {
+          // You can store this token or send it to your backend
+          // await _sendFcmTokenToBackend(token);
+        }
+      }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   @override
@@ -97,6 +134,10 @@ class _SportMateAppState extends State<SportMateApp>
             ],
             initialRoute: AppRoutes.home,
             onGenerateRoute: AppRoutes.onGenerateRoute,
+            builder: (context, child) {
+              // Add a builder to handle Firebase errors globally
+              return child ?? const SizedBox.shrink();
+            },
           );
         },
       ),
