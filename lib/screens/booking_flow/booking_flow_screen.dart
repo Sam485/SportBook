@@ -1150,43 +1150,4 @@ class _BottomBar extends StatelessWidget {
       ),
     );
   }
-
-  Widget _dot() => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 5),
-    child: Container(
-      width: 3,
-      height: 3,
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-        shape: BoxShape.circle,
-      ),
-    ),
-  );
-
-  String _formatDate(DateTime d, BuildContext context) {
-    final now = DateTime.now();
-    final tomorrow = now.add(const Duration(days: 1));
-
-    if (DateUtils.isSameDay(d, now)) {
-      return 'today'.tr(context);
-    } else if (DateUtils.isSameDay(d, tomorrow)) {
-      return 'tomorrow'.tr(context);
-    } else {
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${months[d.month - 1]} ${d.day}';
-    }
-  }
 }

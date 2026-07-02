@@ -296,7 +296,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
       );
       setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+      );
     }
   }
 
