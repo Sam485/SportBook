@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1036193402414-7efl3q68ma37mct2t8ng1hd1g1808rt6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kongchansila.sportbook",
+            "certificate_hash": "eeb5b7007bdcae40751d5bb0cbaa33b860c41490"
+          }
+        },
+        {
           "client_id": "1036193402414-b8hdpqp7gih4dnptv5ebd52v91mhsq9d.apps.googleusercontent.com",
           "client_type": 3
         }

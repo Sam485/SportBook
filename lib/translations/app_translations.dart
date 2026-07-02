@@ -135,6 +135,7 @@ class AppTranslations {
       'reschedule': 'Reschedule',
       'reschedule_coming_soon': 'Reschedule feature coming soon',
       'processing_booking': 'Processing booking...',
+      'select_payment_section': 'Select Payment Method',
 
       // ---------------------- Booking Flow ----------------------------
       'court': 'Court',
@@ -639,6 +640,7 @@ class AppTranslations {
       'reschedule': 'កំណត់ពេលវេលាឡើងវិញ',
       'reschedule_coming_soon': 'លក្ខណៈពិសេសកំណត់ពេលវេលាឡើងវិញនឹងមកដល់ឆាប់ៗ',
       'processing_booking': 'កំពុងដំណើរការការកក់...',
+      'select_payment_section': 'ជ្រើសរើសវិធីសាស្ត្រទូទាត់',
 
       // ---------------------- Booking Flow ----------------------------
       'court': 'ទីលាន',

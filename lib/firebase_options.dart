@@ -57,24 +57,26 @@ class DefaultFirebaseOptions {
     projectId: 'sportbook-7ad49',
     storageBucket: 'sportbook-7ad49.firebasestorage.app',
   );
+
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBOkSi7tVMa4TKTuxnppGdQVvCpu6MaKLY',
     appId: '1:1036193402414:ios:23f9218cd0033e9eca59bf',
     messagingSenderId: '1036193402414',
     projectId: 'sportbook-7ad49',
     storageBucket: 'sportbook-7ad49.firebasestorage.app',
-    iosClientId:
-        '1036193402414-1f50mm82d6fl7c0t8d53cakoatj4i57t.apps.googleusercontent.com',
+    androidClientId: '1036193402414-7efl3q68ma37mct2t8ng1hd1g1808rt6.apps.googleusercontent.com',
+    iosClientId: '1036193402414-1f50mm82d6fl7c0t8d53cakoatj4i57t.apps.googleusercontent.com',
     iosBundleId: 'com.kongchansila.sportbook',
   );
+
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyBOkSi7tVMa4TKTuxnppGdQVvCpu6MaKLY',
     appId: '1:1036193402414:ios:23f9218cd0033e9eca59bf',
     messagingSenderId: '1036193402414',
     projectId: 'sportbook-7ad49',
     storageBucket: 'sportbook-7ad49.firebasestorage.app',
-    iosClientId:
-        '1036193402414-1f50mm82d6fl7c0t8d53cakoatj4i57t.apps.googleusercontent.com',
+    androidClientId: '1036193402414-7efl3q68ma37mct2t8ng1hd1g1808rt6.apps.googleusercontent.com',
+    iosClientId: '1036193402414-1f50mm82d6fl7c0t8d53cakoatj4i57t.apps.googleusercontent.com',
     iosBundleId: 'com.kongchansila.sportbook',
   );
 

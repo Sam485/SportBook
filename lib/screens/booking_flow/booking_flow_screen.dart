@@ -1,4 +1,4 @@
-// booking_flow_screen.dart - WITH AUTHENTICATION VALIDATION
+// booking_flow_screen.dart - WITH AUTHENTICATION VALIDATION & FIXES
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
@@ -29,7 +29,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   late final SportClubService _clubService;
 
-  // ✅ Authentication state
+  // Authentication state
   bool _isAuthenticated = false;
   bool _isAuthLoading = true;
 
@@ -47,8 +47,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   TimeOfDay? _selectedEndTime;
   String? _selectedPaymentMethod;
 
+  // Navigation debounce flag
+  bool _isNavigating = false;
+
   bool get _skipCategory => (_clubWithSlots?.categories ?? []).length <= 1;
   int get _totalSteps => _skipCategory ? 3 : 4;
+
   List<String> get _stepLabels => _skipCategory
       ? ['court'.tr(context), 'date_time'.tr(context), 'payment'.tr(context)]
       : [
@@ -58,12 +62,19 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           'payment'.tr(context),
         ];
 
+  // Get the actual step index considering skipCategory
+  int get _actualStepIndex {
+    return _skipCategory ? _step + 1 : _step;
+  }
+
   // Check if we can proceed to next step
   bool get _canProceed {
-    final stepIndex = _skipCategory ? _step + 1 : _step;
+    final stepIndex = _actualStepIndex;
+
     switch (stepIndex) {
       case 0:
-        return _selectedCategory != null;
+        // Category step - if skipped, automatically true
+        return _skipCategory ? true : _selectedCategory != null;
       case 1:
         return _selectedCourtId != null;
       case 2:
@@ -77,8 +88,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     }
   }
 
+  // Can confirm booking
   bool get _canConfirm {
-    return _selectedCategory != null &&
+    final hasCategory = _skipCategory ? true : _selectedCategory != null;
+
+    return hasCategory &&
         _selectedCourtId != null &&
         _selectedSlot != null &&
         _selectedDate != null &&
@@ -150,7 +164,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     _page = PageController();
     _clubService = getIt<SportClubService>();
 
-    // ✅ Check authentication status on init
+    // Check authentication status on init
     _checkAuthentication();
 
     // Check if we already have slots from the passed data
@@ -171,10 +185,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   @override
   void dispose() {
     _page.dispose();
+    _isNavigating = false;
     super.dispose();
   }
 
-  // ✅ Enhanced authentication check (like home screen)
+  // Enhanced authentication check
   Future<void> _checkAuthentication() async {
     setState(() {
       _isAuthLoading = true;
@@ -192,8 +207,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         if (refreshToken != null && refreshToken.isNotEmpty) {
           final refreshed = await tokenService.refreshAccessToken();
           _isAuthenticated = refreshed;
-          if (refreshed) {
-          } else {}
         } else {
           _isAuthenticated = false;
         }
@@ -207,7 +220,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     });
   }
 
-  // ✅ Show login required dialog (like home screen)
+  // Show login required dialog
   void _showLoginRequiredDialog(BuildContext context, {String? message}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -282,7 +295,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // ✅ Navigate to login with return route
+              // Navigate to login with return route
               Navigator.pushNamed(
                 context,
                 AppRoutes.login,
@@ -303,7 +316,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     );
   }
 
-  // ✅ Handle booking confirmation with auth check (like home screen)
+  // Handle booking confirmation with auth check
   void _handleConfirm() async {
     // If not authenticated, show login dialog
     if (!_isAuthenticated) {
@@ -335,6 +348,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           _clubWithSlots = widget.target;
           _isLoading = false;
 
+          // Auto-select the first category if there's only one
           if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
             _selectedCategory = _clubWithSlots!.categories.first.name;
           }
@@ -346,6 +360,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         _clubWithSlots = clubData;
         _isLoading = false;
 
+        // Auto-select the first category if there's only one
         if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
           _selectedCategory = _clubWithSlots!.categories.first.name;
         }
@@ -358,6 +373,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         _isLoading = false;
         _errorMessage = null;
 
+        // Auto-select the first category if there's only one
         if (_skipCategory && (_clubWithSlots?.categories ?? []).isNotEmpty) {
           _selectedCategory = _clubWithSlots!.categories.first.name;
         }
@@ -365,34 +381,63 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     }
   }
 
-  void _next() {
-    if (_step < _totalSteps - 1 && _canProceed) {
-      setState(() => _step++);
-      _page.animateToPage(
-        _step,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
-      );
+  // FIXED: Back button with debounce
+  void _back() {
+    // Prevent multiple rapid calls
+    if (_isNavigating) return;
+
+    if (_step > 0) {
+      _isNavigating = true;
+      setState(() => _step--);
+      _page
+          .animateToPage(
+            _step,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+          )
+          .then((_) {
+            if (mounted) {
+              _isNavigating = false;
+            }
+          });
+    } else {
+      _isNavigating = true;
+      Navigator.of(context).pop(false);
+      // Since pop() is synchronous, use a short delay to prevent rapid taps
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _isNavigating = false;
+        }
+      });
     }
   }
 
-  void _back() {
-    if (_step > 0) {
-      setState(() => _step--);
-      _page.animateToPage(
-        _step,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      Navigator.pop(context, false);
+  // FIXED: Next button with debounce
+  void _next() {
+    // Prevent multiple rapid calls
+    if (_isNavigating) return;
+
+    if (_step < _totalSteps - 1 && _canProceed) {
+      _isNavigating = true;
+      setState(() => _step++);
+      _page
+          .animateToPage(
+            _step,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+          )
+          .then((_) {
+            if (mounted) {
+              _isNavigating = false;
+            }
+          });
     }
   }
 
   void _onPaymentConfirmed() {
     if (!mounted) return;
 
-    // ✅ Double check authentication before proceeding
+    // Double check authentication before proceeding
     if (!_isAuthenticated) {
       _showLoginRequiredDialog(context);
       return;
@@ -457,12 +502,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       'pricePerHour': _pricePerHour,
     };
 
-    // ✅ Navigate to success page with auth status
+    // Navigate to success page with auth status
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => PaymentSuccessPage(
           bookingData: bookingData,
-          isAuthenticated: _isAuthenticated, // ✅ Pass auth status
+          isAuthenticated: _isAuthenticated,
           onGoHome: () {
             Navigator.of(context).popUntil((route) {
               return route.settings.name == AppRoutes.home;
@@ -476,7 +521,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             );
           },
           onLoginRequired: () {
-            // ✅ Return to booking flow if login needed
+            // Return to booking flow if login needed
             _showLoginRequiredDialog(context);
           },
         ),
@@ -487,9 +532,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   // Callbacks from steps
   void _onCategorySelected(String category) {
     if (!mounted) return;
-    setState(() {
-      _selectedCategory = category;
-    });
+
+    // Only set state if category is not skipped
+    // If skipped, the category is already auto-selected
+    if (!_skipCategory) {
+      setState(() {
+        _selectedCategory = category;
+      });
+    }
   }
 
   void _onCourtSelected(int courtId) {
@@ -750,7 +800,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           canProceed: _canProceed,
           onBack: _back,
           onNext: _next,
-          onConfirm: _handleConfirm, // ✅ Use auth-checked handler
+          onConfirm: _handleConfirm,
           selectedCategory: _selectedCategory,
           selectedCourt: _selectedCourtId,
           selectedDate: _selectedDate,
@@ -759,7 +809,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           isDark: isDark,
           canConfirm: _canConfirm,
           courtName: _courtName,
-          isAuthenticated: _isAuthenticated, // ✅ Pass auth status
+          isAuthenticated: _isAuthenticated,
         ),
       ],
     );
@@ -940,7 +990,7 @@ class _BottomBar extends StatelessWidget {
   final bool isDark;
   final bool canConfirm;
   final String? courtName;
-  final bool isAuthenticated; // ✅ Added
+  final bool isAuthenticated;
 
   const _BottomBar({
     required this.step,
@@ -957,7 +1007,7 @@ class _BottomBar extends StatelessWidget {
     required this.isDark,
     required this.canConfirm,
     this.courtName,
-    this.isAuthenticated = false, // ✅ Default to false
+    this.isAuthenticated = false,
   });
 
   bool get isLastStep => step == totalSteps - 1;
@@ -984,131 +1034,31 @@ class _BottomBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isLastStep && canConfirm) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      if (selectedCategory != null) ...[
-                        Text(
-                          selectedCategory!,
-                          style: const TextStyle(
-                            color: AppTheme.kAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        _dot(),
-                      ],
-                      if (courtName != null && courtName!.isNotEmpty) ...[
-                        Text(
-                          courtName!,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : AppTheme.kLightText,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        _dot(),
-                      ] else if (selectedCourt != null) ...[
-                        Text(
-                          'Court $selectedCourt',
-                          style: TextStyle(
-                            color: isDark ? Colors.white : AppTheme.kLightText,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        _dot(),
-                      ],
-                      if (selectedDate != null) ...[
-                        Text(
-                          _formatDate(selectedDate!, context),
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white70
-                                : AppTheme.kLightTextSub,
-                            fontSize: 12,
-                          ),
-                        ),
-                        _dot(),
-                      ],
-                      Expanded(
-                        child: Text(
-                          timeRangeLabel,
-                          style: const TextStyle(
-                            color: AppTheme.kAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        '\$${totalPrice.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          color: isDark ? Colors.white : AppTheme.kLightText,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (selectedDate != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${totalPrice.toStringAsFixed(2)} ${"usd".tr(context)}',
-                            style: TextStyle(
-                              color: isDark
-                                  ? Colors.white54
-                                  : AppTheme.kLightTextSub,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
           Row(
             children: [
+              // Back button
               GestureDetector(
                 onTap: onBack,
                 child: Container(
-                  height: 52,
                   width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-                    borderRadius: BorderRadius.circular(26),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
                     ),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
-                    size: 18,
+                    Icons.arrow_back_rounded,
+                    color: isDark ? Colors.white70 : AppTheme.kLightText,
+                    size: 22,
                   ),
                 ),
               ),
               const SizedBox(width: 12),
+              // Next/Confirm button
               Expanded(
                 child: GestureDetector(
                   onTap: isLastStep ? onConfirm : (canProceed ? onNext : null),
@@ -1119,7 +1069,7 @@ class _BottomBar extends StatelessWidget {
                       color: (isLastStep ? canConfirm : canProceed)
                           ? AppTheme.kAccent
                           : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: (isLastStep ? canConfirm : canProceed)
                           ? [
                               BoxShadow(
@@ -1165,7 +1115,7 @@ class _BottomBar extends StatelessWidget {
               ),
             ],
           ),
-          // ✅ Show authentication status info
+          // Show authentication status info
           if (isLastStep && !isAuthenticated) ...[
             const SizedBox(height: 8),
             Container(
