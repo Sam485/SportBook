@@ -568,7 +568,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
           child: Text(
             'Sign In',
             style: TextStyle(

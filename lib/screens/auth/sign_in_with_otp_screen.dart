@@ -4,7 +4,6 @@ import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'package:sportbook/screens/auth/verify_screen.dart';
 
 class SignInWithOtpScreen extends StatefulWidget {
   const SignInWithOtpScreen({super.key});
@@ -66,19 +65,14 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
           setState(() => _isLoading = false);
 
           // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => const VerifyScreen(),
-              settings: RouteSettings(
-                name: AppRoutes.otpVerify,
-                arguments: {
-                  'flow': 'otpLogin',
-                  'phoneNumber': fullPhoneNumber,
-                  'verificationId': verificationId,
-                },
-              ),
-            ),
+            AppRoutes.otpVerify,
+            arguments: {
+              'flow': 'otpLogin',
+              'phoneNumber': fullPhoneNumber,
+              'verificationId': verificationId,
+            },
           );
         },
         onFailed: (FirebaseAuthException e) {
@@ -110,6 +104,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+      appBar: AppBar(),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

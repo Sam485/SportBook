@@ -34,7 +34,11 @@ class AppRoutes {
   static const String resetPassword = '/reset-password';
   static const String explore = '/explore';
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    final appRoute = settings.name;
+    if (appRoute!.startsWith('/link?') || appRoute.startsWith('/link')) {
+      return null;
+    }
     switch (settings.name) {
       case explore:
         return MaterialPageRoute(builder: (_) => const ExploreScreen());

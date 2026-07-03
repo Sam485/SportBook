@@ -51,9 +51,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               _firebaseToken = routeArgs['firebaseToken'] ?? '';
             });
           }
-        // ignore: empty_catches
-        } catch (e) {
-        }
+          // ignore: empty_catches
+        } catch (e) {}
       }
     });
   }
@@ -89,7 +88,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _showError('Authentication error. Please try again.');
       return;
     }
-
 
     setState(() => _isLoading = true);
 

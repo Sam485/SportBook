@@ -382,10 +382,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacementNamed(
-                    context,
-                    AppRoutes.forgetPass,
-                  ),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.forgetPass),
                   child: Text(
                     'Forgot Password?',
                     style: TextStyle(
@@ -483,7 +481,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () =>
-                    Navigator.pushReplacementNamed(context, AppRoutes.otpLogin),
+                    Navigator.pushNamed(context, AppRoutes.otpLogin),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
                     color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
@@ -533,8 +531,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () =>
-              Navigator.pushReplacementNamed(context, AppRoutes.signup),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
           child: Text(
             'Sign Up',
             style: TextStyle(

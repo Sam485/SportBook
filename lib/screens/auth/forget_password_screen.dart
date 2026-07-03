@@ -4,7 +4,6 @@ import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Auth/service/firebase_otp_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'verify_screen.dart'; // ✅ Add this import
 
 class ForgetPasswordScreen extends StatefulWidget {
   const ForgetPasswordScreen({super.key});
@@ -65,20 +64,15 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
           if (!mounted) return;
           setState(() => _isLoading = false);
 
-          // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
-          Navigator.push(
+          // ✅ Use pushNamed with arguments
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => const VerifyScreen(),
-              settings: RouteSettings(
-                name: AppRoutes.otpVerify,
-                arguments: {
-                  'flow': 'forgetPassword',
-                  'phoneNumber': fullPhoneNumber,
-                  'verificationId': verificationId,
-                },
-              ),
-            ),
+            AppRoutes.otpVerify,
+            arguments: {
+              'flow': 'forgetPassword',
+              'phoneNumber': fullPhoneNumber,
+              'verificationId': verificationId,
+            },
           );
         },
         onFailed: (FirebaseAuthException e) {
@@ -109,7 +103,19 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        // No title - just an empty AppBar with back button
+        title: const SizedBox.shrink(),
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Center(
@@ -338,7 +344,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
           child: Text(
             'Sign In',
             style: TextStyle(

@@ -10,7 +10,6 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'reset_password_screen.dart';
 
 enum VerifyFlow { otpLogin, signup, forgetPassword }
 
@@ -309,18 +308,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
       _clearFields();
       setState(() => _isLoading = false);
 
-      Navigator.pushReplacement(
+      Navigator.pushNamedAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => const ResetPasswordScreen(),
-          settings: RouteSettings(
-            name: AppRoutes.resetPassword,
-            arguments: {
-              'phoneNumber': _phoneNumber,
-              'firebaseToken': firebaseToken,
-            },
-          ),
-        ),
+        AppRoutes.resetPassword,
+        arguments: {
+          'phoneNumber': _phoneNumber,
+          'firebaseToken': firebaseToken,
+        },
+        (route) => false,
       );
     }
   }
@@ -348,7 +343,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
       );
       setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+      );
     }
   }
 
@@ -393,6 +392,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+      appBar: AppBar(),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
