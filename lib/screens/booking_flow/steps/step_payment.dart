@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/theme.dart';
-import '../../../translations/app_translations.dart';
+import 'package:sportbook/core/di/service_locator.dart';
+import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/User/service/user_service.dart';
+import 'package:sportbook/translations/app_translations.dart';
+import 'package:sportbook/widgets/aba_payway_sheet.dart';
+import 'package:sportbook/widgets/khqr_payment_sheet.dart';
 
 enum PaymentMethod { khqr, aba, bakong }
 
@@ -35,6 +39,8 @@ class StepPaymentState extends State<StepPayment>
     with TickerProviderStateMixin {
   PaymentMethod? _selected;
   PaymentMethod? _selectedSubMethod;
+  bool _isPaymentCompleted = false;
+  bool _isLoadingUserData = true;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -42,6 +48,8 @@ class StepPaymentState extends State<StepPayment>
 
   late AnimationController _khqrAnim;
   late AnimationController _detailAnim;
+
+  final _authService = getIt<UserService>();
 
   @override
   void initState() {
@@ -64,6 +72,9 @@ class StepPaymentState extends State<StepPayment>
       _khqrAnim.forward();
       _detailAnim.forward(from: 0);
     }
+
+    // Load user data when widget initializes
+    _loadUserData();
   }
 
   @override
@@ -73,6 +84,40 @@ class StepPaymentState extends State<StepPayment>
     _khqrAnim.dispose();
     _detailAnim.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoadingUserData = true;
+    });
+
+    try {
+      final user = _authService.currentUser;
+
+      if (user != null && mounted) {
+        // Fill name field
+        if (user.fullName.isNotEmpty) {
+          _nameController.text = user.fullName;
+        } else if (user.fullName.isNotEmpty) {
+          _nameController.text = user.fullName;
+        }
+
+        // Fill phone field
+        if (user.phone.isNotEmpty) {
+          _phoneController.text = user.phone;
+        } else if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
+          _phoneController.text = user.phoneNumber!;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingUserData = false;
+        });
+      }
+    }
   }
 
   PaymentMethod _getPaymentMethodFromString(String method) {
@@ -115,14 +160,63 @@ class StepPaymentState extends State<StepPayment>
         onSelected: (method) {
           setState(() {
             _selectedSubMethod = method;
+            _isPaymentCompleted = false;
             widget.onPaymentMethodSelected(_getPaymentMethodString(method));
           });
           _khqrAnim.forward();
           _detailAnim.forward(from: 0);
           Navigator.pop(context);
+
+          // Show the appropriate payment sheet after selection
+          _showPaymentSheet(method);
         },
       ),
     );
+  }
+
+  void _showPaymentSheet(PaymentMethod method) {
+    final amount = widget.totalPrice.toDouble();
+
+    switch (method) {
+      case PaymentMethod.aba:
+        showAbaPaywaySheet(
+          context: context,
+          amount: amount,
+          onSuccess: () {
+            setState(() {
+              _isPaymentCompleted = true;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment successful!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+        );
+        break;
+
+      case PaymentMethod.bakong:
+      case PaymentMethod.khqr:
+        showKhqrPaymentSheet(
+          context: context,
+          amount: amount,
+          onSuccess: () {
+            setState(() {
+              _isPaymentCompleted = true;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment successful!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+        );
+        break;
+    }
   }
 
   void handleConfirm() {
@@ -137,8 +231,26 @@ class StepPaymentState extends State<StepPayment>
       );
       return;
     }
+
+    if (!_isPaymentCompleted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('please_complete_payment_first'.tr(context)),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       widget.onConfirm();
+    }
+  }
+
+  // Allow retry payment if needed
+  void _retryPayment() {
+    if (_selectedSubMethod != null) {
+      _showPaymentSheet(_selectedSubMethod!);
     }
   }
 
@@ -171,6 +283,7 @@ class StepPaymentState extends State<StepPayment>
           nameController: _nameController,
           phoneController: _phoneController,
           isDark: isDark,
+          isLoading: _isLoadingUserData,
         ),
         const SizedBox(height: 24),
         _BookingSummaryCard(
@@ -194,20 +307,111 @@ class StepPaymentState extends State<StepPayment>
         const SizedBox(height: 12),
         _PaymentCard(
           selected: _selectedSubMethod != null,
+          isPaymentCompleted: _isPaymentCompleted,
           animController: _khqrAnim,
           onTap: _selectMethod,
-          icon: const Icon(
-            Icons.qr_code_rounded,
-            color: Color(0xFF0072CE),
-            size: 28,
-          ),
-          title: 'QR / KHQR',
-          subtitle: 'Bakong • ABA Payway • Any QR Bank',
-          badge: 'instant',
-          badgeColor: const Color(0xFF4CAF50),
-          accentColor: const Color(0xFF0072CE),
+          onRetry: _retryPayment,
+          icon: _isPaymentCompleted
+              ? const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF4CAF50),
+                  size: 28,
+                )
+              : const Icon(
+                  Icons.qr_code_rounded,
+                  color: Color(0xFF0072CE),
+                  size: 28,
+                ),
+          title: _isPaymentCompleted ? 'Payment Completed' : 'QR / KHQR',
+          subtitle: _isPaymentCompleted
+              ? 'Payment successful via ${_selectedSubMethod == PaymentMethod.aba ? "ABA Payway" : "Bakong/KHQR"}'
+              : 'Bakong • ABA Payway • Any QR Bank',
+          badge: _isPaymentCompleted ? 'paid' : 'instant',
+          badgeColor: _isPaymentCompleted
+              ? const Color(0xFF4CAF50)
+              : const Color(0xFF4CAF50),
+          accentColor: _isPaymentCompleted
+              ? const Color(0xFF4CAF50)
+              : const Color(0xFF0072CE),
           isDark: isDark,
         ),
+        const SizedBox(height: 16),
+
+        // Payment status indicator
+        if (_selectedSubMethod != null && !_isPaymentCompleted)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'tap_payment_card_to_pay'.tr(context),
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _retryPayment,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Retry',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        if (_isPaymentCompleted)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.green,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'payment_completed_successfully'.tr(context),
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -387,8 +591,10 @@ class _PaymentOptionTile extends StatelessWidget {
 // ── Payment Card (Single Option) ─────────────────────────────────────────────
 class _PaymentCard extends StatelessWidget {
   final bool selected;
+  final bool isPaymentCompleted;
   final AnimationController animController;
   final VoidCallback onTap;
+  final VoidCallback onRetry;
   final Widget icon;
   final String title;
   final String subtitle;
@@ -399,8 +605,10 @@ class _PaymentCard extends StatelessWidget {
 
   const _PaymentCard({
     required this.selected,
+    required this.isPaymentCompleted,
     required this.animController,
     required this.onTap,
+    required this.onRetry,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -413,7 +621,7 @@ class _PaymentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isPaymentCompleted ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.all(16),
@@ -506,24 +714,35 @@ class _PaymentCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected ? accentColor : Colors.transparent,
-                border: Border.all(
-                  color: selected
-                      ? accentColor
-                      : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
-                  width: 2,
+            if (isPaymentCompleted)
+              Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green,
                 ),
+                child: const Icon(Icons.check, color: Colors.white, size: 13),
+              )
+            else
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? accentColor : Colors.transparent,
+                  border: Border.all(
+                    color: selected
+                        ? accentColor
+                        : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
+                    width: 2,
+                  ),
+                ),
+                child: selected
+                    ? const Icon(Icons.check, color: Colors.white, size: 13)
+                    : null,
               ),
-              child: selected
-                  ? const Icon(Icons.check, color: Colors.white, size: 13)
-                  : null,
-            ),
           ],
         ),
       ),
@@ -537,12 +756,14 @@ class _UserInfoForm extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController phoneController;
   final bool isDark;
+  final bool isLoading;
 
   const _UserInfoForm({
     required this.formKey,
     required this.nameController,
     required this.phoneController,
     required this.isDark,
+    this.isLoading = false,
   });
 
   @override
@@ -556,151 +777,196 @@ class _UserInfoForm extends StatelessWidget {
           color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
         ),
       ),
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'contact_info_section'.tr(context),
-              style: TextStyle(
-                color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.4,
+      child: isLoading
+          ? Column(
+              children: [
+                Row(
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.kAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'loading_user_data'.tr(context),
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'contact_info_section'.tr(context),
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: nameController,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'full_name_label'.tr(context),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                      ),
+                      hintText: 'full_name_hint'.tr(context),
+                      hintStyle: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.person_outline_rounded,
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        size: 20,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AppTheme.kBorder
+                              : AppTheme.kLightBorder,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppTheme.kAccent,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.redAccent),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.redAccent,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0xFF0D0D1A)
+                          : AppTheme.kLightCard,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'full_name_required'.tr(context);
+                      }
+                      if (value.trim().length < 2) {
+                        return 'name_min_length'.tr(context);
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: phoneController,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.kLightText,
+                    ),
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'phone_label'.tr(context),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                      ),
+                      hintText: 'phone_hint'.tr(context),
+                      hintStyle: TextStyle(
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.phone_android_rounded,
+                        color: isDark
+                            ? AppTheme.kTextSub
+                            : AppTheme.kLightTextSub,
+                        size: 20,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AppTheme.kBorder
+                              : AppTheme.kLightBorder,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppTheme.kAccent,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.redAccent),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.redAccent,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0xFF0D0D1A)
+                          : AppTheme.kLightCard,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'phone_required'.tr(context);
+                      }
+                      final phoneRegex = RegExp(r'^[0-9+\-\s]{8,15}$');
+                      if (!phoneRegex.hasMatch(value.trim())) {
+                        return 'phone_invalid'.tr(context);
+                      }
+                      return null;
+                    },
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: nameController,
-              style: TextStyle(
-                color: isDark ? Colors.white : AppTheme.kLightText,
-              ),
-              decoration: InputDecoration(
-                labelText: 'full_name_label'.tr(context),
-                labelStyle: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                ),
-                hintText: 'full_name_hint'.tr(context),
-                hintStyle: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                ),
-                prefixIcon: Icon(
-                  Icons.person_outline_rounded,
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  size: 20,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppTheme.kAccent,
-                    width: 2,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.redAccent),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Colors.redAccent,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: isDark
-                    ? const Color(0xFF0D0D1A)
-                    : AppTheme.kLightCard,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'full_name_required'.tr(context);
-                }
-                if (value.trim().length < 2) {
-                  return 'name_min_length'.tr(context);
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: phoneController,
-              style: TextStyle(
-                color: isDark ? Colors.white : AppTheme.kLightText,
-              ),
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'phone_label'.tr(context),
-                labelStyle: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                ),
-                hintText: 'phone_hint'.tr(context),
-                hintStyle: TextStyle(
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                ),
-                prefixIcon: Icon(
-                  Icons.phone_android_rounded,
-                  color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-                  size: 20,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppTheme.kAccent,
-                    width: 2,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.redAccent),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Colors.redAccent,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: isDark
-                    ? const Color(0xFF0D0D1A)
-                    : AppTheme.kLightCard,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'phone_required'.tr(context);
-                }
-                final phoneRegex = RegExp(r'^[0-9+\-\s]{8,15}$');
-                if (!phoneRegex.hasMatch(value.trim())) {
-                  return 'phone_invalid'.tr(context);
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

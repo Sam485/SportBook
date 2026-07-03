@@ -514,6 +514,15 @@ class AppTranslations {
       'sign_in_to_access_settings': 'Sign in to access your settings',
       'sign_in': 'Sign In',
       'create_account': 'Create Account',
+      // ---------------------- Payment ----------------------------
+      'loading_user_data': 'Loading user data...',
+      'tap_payment_card_to_pay':
+          'Tap the payment card above to complete payment',
+      'please_complete_payment_first':
+          'Please complete the payment first before confirming',
+      'payment_completed_successfully': 'Payment completed successfully!',
+      'choose_payment_provider': 'Choose Payment Provider',
+      'select_one_below': 'Select one of the payment methods below',
     },
 
     // ------------------------------------------------------------------------
@@ -1016,6 +1025,15 @@ class AppTranslations {
       'sign_in_to_access_settings': 'ចូលប្រើប្រាស់ដើម្បីមើលការកំណត់របស់អ្នក',
       'sign_in': 'ចូលប្រើប្រាស់',
       'create_account': 'បង្កើតគណនី',
+
+      // ---------------------- Payment Methods ----------------------------
+      'loading_user_data': 'កំពុងផ្ទុកទិន្នន័យអ្នកប្រើប្រាស់...',
+      'tap_payment_card_to_pay': 'ចុចលើកាតទូទាត់ខាងលើដើម្បីបញ្ចប់ការទូទាត់',
+      'please_complete_payment_first':
+          'សូមបញ្ចប់ការទូទាត់ជាមុនសិនមុនពេលបញ្ជាក់',
+      'payment_completed_successfully': 'ការទូទាត់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!',
+      'choose_payment_provider': 'ជ្រើសរើសអ្នកផ្តល់សេវាទូទាត់',
+      'select_one_below': 'ជ្រើសរើសវិធីសាស្ត្រទូទាត់មួយខាងក្រោម',
     },
   };
 
