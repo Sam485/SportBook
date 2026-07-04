@@ -62,18 +62,27 @@ class _ImagePickerSheet extends StatelessWidget {
         backgroundColor: AppTheme.card(context),
         title: Text(
           '$source Access Denied',
-          style: TextStyle(color: AppTheme.textPrimary(context)),
+          style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            color: AppTheme.textPrimary(context),
+          ),
         ),
         content: Text(
           '$source permission was permanently denied. Please enable it in Settings to continue.',
-          style: TextStyle(color: AppTheme.textSub(context)),
+          style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            color: AppTheme.textSub(context),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: AppTheme.textSub(context)),
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: AppTheme.textSub(context),
+              ),
             ),
           ),
           ElevatedButton(
@@ -81,7 +90,11 @@ class _ImagePickerSheet extends StatelessWidget {
               Navigator.pop(context);
               openAppSettings();
             },
-            style: AppTheme.elevatedButtonStyle(),
+            style: AppTheme.elevatedButtonStyle().copyWith(
+              textStyle: const MaterialStatePropertyAll(
+                TextStyle(fontFamily: AppTheme.fontFamily),
+              ),
+            ),
             child: const Text('Open Settings'),
           ),
         ],
@@ -143,10 +156,14 @@ class _ImagePickerSheet extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: AppTheme.textSub(context)),
+                style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: AppTheme.textSub(context),
+                ),
               ),
             ),
           ),
@@ -192,9 +209,11 @@ class _ImagePickerSheet extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: AppTheme.tsLabelAdaptive(
-                      context,
-                    ).copyWith(fontSize: 15, fontWeight: FontWeight.w600),
+                    style: AppTheme.tsLabelAdaptive(context).copyWith(
+                      fontFamily: AppTheme.fontFamily,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(sublabel, style: AppTheme.tsSubAdaptive(context)),
                 ],

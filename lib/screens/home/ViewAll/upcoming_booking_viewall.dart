@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/Booking/model/booking_model.dart';
 import 'package:sportbook/feature/static/services/data_service.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 
 class UpcomingBookingViewAll extends StatefulWidget {
@@ -85,6 +86,7 @@ class _UpcomingBookingViewAllState extends State<UpcomingBookingViewAll> {
         title: Text(
           widget.title,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -177,11 +179,18 @@ class _UpcomingBookingViewAllState extends State<UpcomingBookingViewAll> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (!isAll)
-                      Text(emoji, style: const TextStyle(fontSize: 15)),
+                      Text(
+                        emoji,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
+                          fontSize: 15,
+                        ),
+                      ),
                     if (!isAll) const SizedBox(width: 6),
                     Text(
                       isAll ? 'All' : filter,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isSelected
                             ? const Color(0xFF0A1828)
                             : (isDark
@@ -222,8 +231,9 @@ class _UpcomingBookingViewAllState extends State<UpcomingBookingViewAll> {
         ),
         const SizedBox(height: 16),
         Text(
-          'No upcoming bookings',
+          'no_bookings'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -235,6 +245,7 @@ class _UpcomingBookingViewAllState extends State<UpcomingBookingViewAll> {
               ? 'No $_selectedFilter bookings found'
               : 'You don\'t have any upcoming bookings yet',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -253,6 +264,7 @@ class _UpcomingBookingViewAllState extends State<UpcomingBookingViewAll> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: const Text('Clear Filters'),
           ),

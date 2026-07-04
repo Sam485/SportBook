@@ -16,8 +16,8 @@ class BookingCard extends StatelessWidget {
 
     // Get image URLs from sportClub or use default
     final List<String> imageUrls = [
-            'https://imgs.search.brave.com/KYNGI-vHgjDPTt1UOVl3OM2Cf4h0qZXzvBZOccwSXqs/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9ib29r/aXBoeS5jb20vd2Vi/LWFzc2V0cy1uZXcv/aW1nL2luZHVzdHJp/ZXMvbXVsdGlfc3Bv/cnRzL211bHRpX3Nw/b3J0cy0xLmpwZw',
-          ];
+      'https://imgs.search.brave.com/KYNGI-vHgjDPTt1UOVl3OM2Cf4h0qZXzvBZOccwSXqs/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9ib29r/aXBoeS5jb20vd2Vi/LWFzc2V0cy1uZXcv/aW1nL2luZHVzdHJp/ZXMvbXVsdGlfc3Bv/cnRzL211bHRpX3Nw/b3J0cy0xLmpwZw',
+    ];
 
     // Get unique sports from slot or sportClub
     final List<String> sports = _getSports();
@@ -68,6 +68,7 @@ class BookingCard extends StatelessWidget {
                               Text(
                                 booking.slot.name, // Using slot name
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? Colors.white
                                       : AppTheme.kLightText,
@@ -117,6 +118,7 @@ class BookingCard extends StatelessWidget {
                                 .sportClub
                                 .location, // Using location from sportClub
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white70
                                   : AppTheme.kLightTextSub,
@@ -253,6 +255,7 @@ class BookingCard extends StatelessWidget {
       child: Text(
         initials,
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? Colors.white : AppTheme.kLightText,
           fontSize: 12,
           fontWeight: FontWeight.w800,
@@ -268,6 +271,7 @@ class BookingCard extends StatelessWidget {
       Text(
         startTime,
         style: const TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: AppTheme.kAccent,
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
@@ -288,6 +292,7 @@ class BookingCard extends StatelessWidget {
       Text(
         endTime,
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           fontSize: 11.5,
         ),
@@ -306,6 +311,7 @@ class BookingCard extends StatelessWidget {
         child: Text(
           '${DataService.emojiFor(sport)} $sport',
           style: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: AppTheme.kAccent,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -347,6 +353,7 @@ class BookingCard extends StatelessWidget {
           child: Text(
             statusText,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: statusColor,
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -365,6 +372,7 @@ class BookingCard extends StatelessWidget {
             child: Text(
               '💰 \$${booking.payment!.amount.toStringAsFixed(2)}',
               style: const TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: Colors.blue,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

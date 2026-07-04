@@ -6,6 +6,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import '../../core/theme.dart';
 
 class MapPickerScreen extends StatefulWidget {
@@ -231,8 +232,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       if (!status.isGranted) {
         if (mounted && !_isDisposed) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permission denied'),
+            SnackBar(
+              content: const Text(
+                'Location permission denied',
+                style: TextStyle(fontFamily: AppTheme.fontFamily),
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -244,8 +248,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       if (!serviceEnabled) {
         if (mounted && !_isDisposed) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location services are off'),
+            SnackBar(
+              content: const Text(
+                'Location services are off',
+                style: TextStyle(fontFamily: AppTheme.fontFamily),
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -276,8 +283,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     } catch (_) {
       if (mounted && !_isDisposed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not get location'),
+          SnackBar(
+            content: const Text(
+              'Could not get location',
+              style: TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -430,6 +440,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                       textInputAction: TextInputAction.search,
                                       onSubmitted: (v) => _onSearchChanged(v),
                                       style: TextStyle(
+                                        fontFamily: AppTheme.fontFamily,
                                         color: isDark
                                             ? Colors.white
                                             : AppTheme.kLightText,
@@ -439,6 +450,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                                       decoration: InputDecoration(
                                         hintText: 'Search location...',
                                         hintStyle: TextStyle(
+                                          fontFamily: AppTheme.fontFamily,
                                           color: isDark
                                               ? AppTheme.kTextSub
                                               : AppTheme.kLightTextSub,
@@ -573,6 +585,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                               Text(
                                 'Searching...',
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? AppTheme.kTextSub
                                       : AppTheme.kLightTextSub,
@@ -639,6 +652,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             Text(
                               _isResolving ? 'Loading...' : _resolvedLabel,
                               style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: isDark
                                     ? AppTheme.kTextSub
                                     : AppTheme.kLightTextSub,
@@ -662,6 +676,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             textStyle: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
@@ -672,7 +687,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             children: [
                               const Icon(Icons.check_circle_rounded, size: 18),
                               const SizedBox(width: 8),
-                              Text('Confirm Location'),
+                              Text('confirm_location'.tr(context)),
                             ],
                           ),
                         ),
@@ -738,6 +753,7 @@ class _ResultTile extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,

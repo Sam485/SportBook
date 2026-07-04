@@ -39,6 +39,7 @@ class AppearanceSelector extends StatelessWidget {
                 Text(
                   'appearance'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -130,6 +131,7 @@ class AppearanceSelector extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isSelected
                       ? AppTheme.kAccent
                       : (isDark ? Colors.white : AppTheme.kLightText),

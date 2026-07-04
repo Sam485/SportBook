@@ -73,7 +73,6 @@ class StepPaymentState extends State<StepPayment>
       _detailAnim.forward(from: 0);
     }
 
-    // Load user data when widget initializes
     _loadUserData();
   }
 
@@ -95,14 +94,12 @@ class StepPaymentState extends State<StepPayment>
       final user = _authService.currentUser;
 
       if (user != null && mounted) {
-        // Fill name field
         if (user.fullName.isNotEmpty) {
           _nameController.text = user.fullName;
         } else if (user.fullName.isNotEmpty) {
           _nameController.text = user.fullName;
         }
 
-        // Fill phone field
         if (user.phone.isNotEmpty) {
           _phoneController.text = user.phone;
         } else if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
@@ -167,7 +164,6 @@ class StepPaymentState extends State<StepPayment>
           _detailAnim.forward(from: 0);
           Navigator.pop(context);
 
-          // Show the appropriate payment sheet after selection
           _showPaymentSheet(method);
         },
       ),
@@ -187,10 +183,13 @@ class StepPaymentState extends State<StepPayment>
               _isPaymentCompleted = true;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payment successful!'),
+              SnackBar(
+                content: Text(
+                  'Payment successful!',
+                  style: const TextStyle(fontFamily: AppTheme.fontFamily),
+                ),
                 backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
+                duration: const Duration(seconds: 2),
               ),
             );
           },
@@ -207,10 +206,13 @@ class StepPaymentState extends State<StepPayment>
               _isPaymentCompleted = true;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payment successful!'),
+              SnackBar(
+                content: Text(
+                  'Payment successful!',
+                  style: const TextStyle(fontFamily: AppTheme.fontFamily),
+                ),
                 backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
+                duration: const Duration(seconds: 2),
               ),
             );
           },
@@ -225,7 +227,10 @@ class StepPaymentState extends State<StepPayment>
     if (_selectedSubMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('select_payment_method'.tr(context)),
+          content: Text(
+            'select_payment_method'.tr(context),
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -235,7 +240,10 @@ class StepPaymentState extends State<StepPayment>
     if (!_isPaymentCompleted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('please_complete_payment_first'.tr(context)),
+          content: Text(
+            'please_complete_payment_first'.tr(context),
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -247,7 +255,6 @@ class StepPaymentState extends State<StepPayment>
     }
   }
 
-  // Allow retry payment if needed
   void _retryPayment() {
     if (_selectedSubMethod != null) {
       _showPaymentSheet(_selectedSubMethod!);
@@ -264,6 +271,7 @@ class StepPaymentState extends State<StepPayment>
         Text(
           'payment_method'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -273,6 +281,7 @@ class StepPaymentState extends State<StepPayment>
         Text(
           'choose_payment_desc'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
           ),
@@ -298,6 +307,7 @@ class StepPaymentState extends State<StepPayment>
         Text(
           'select_payment_section'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -337,7 +347,6 @@ class StepPaymentState extends State<StepPayment>
         ),
         const SizedBox(height: 16),
 
-        // Payment status indicator
         if (_selectedSubMethod != null && !_isPaymentCompleted)
           Container(
             padding: const EdgeInsets.all(12),
@@ -358,6 +367,7 @@ class StepPaymentState extends State<StepPayment>
                   child: Text(
                     'tap_payment_card_to_pay'.tr(context),
                     style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: Colors.orange,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -370,10 +380,12 @@ class StepPaymentState extends State<StepPayment>
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
                   ),
                   child: const Text(
                     'Retry',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: Colors.orange,
                       fontWeight: FontWeight.w700,
                     ),
@@ -403,6 +415,7 @@ class StepPaymentState extends State<StepPayment>
                   child: Text(
                     'payment_completed_successfully'.tr(context),
                     style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: Colors.green,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -452,6 +465,7 @@ class _PaymentSelectionBottomSheet extends StatelessWidget {
           Text(
             'choose_payment_provider'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -461,6 +475,7 @@ class _PaymentSelectionBottomSheet extends StatelessWidget {
           Text(
             'select_one_below'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 13,
             ),
@@ -496,10 +511,12 @@ class _PaymentSelectionBottomSheet extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               child: Text(
                 'cancel'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white70 : AppTheme.kLightText,
                 ),
               ),
@@ -560,6 +577,7 @@ class _PaymentOptionTile extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -568,6 +586,7 @@ class _PaymentOptionTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,
@@ -668,6 +687,7 @@ class _PaymentCard extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: selected
                               ? accentColor
                               : (isDark ? Colors.white70 : AppTheme.kLightText),
@@ -691,6 +711,7 @@ class _PaymentCard extends StatelessWidget {
                         child: Text(
                           badge,
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: badgeColor,
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
@@ -704,6 +725,7 @@ class _PaymentCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,
@@ -794,6 +816,7 @@ class _UserInfoForm extends StatelessWidget {
                     Text(
                       'loading_user_data'.tr(context),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
@@ -812,6 +835,7 @@ class _UserInfoForm extends StatelessWidget {
                   Text(
                     'contact_info_section'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,
@@ -824,17 +848,20 @@ class _UserInfoForm extends StatelessWidget {
                   TextFormField(
                     controller: nameController,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.white : AppTheme.kLightText,
                     ),
                     decoration: InputDecoration(
                       labelText: 'full_name_label'.tr(context),
                       labelStyle: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
                       ),
                       hintText: 'full_name_hint'.tr(context),
                       hintStyle: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
@@ -872,6 +899,11 @@ class _UserInfoForm extends StatelessWidget {
                           width: 2,
                         ),
                       ),
+                      errorStyle: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
+                        color: Colors.redAccent,
+                        fontSize: 12,
+                      ),
                       filled: true,
                       fillColor: isDark
                           ? const Color(0xFF0D0D1A)
@@ -895,18 +927,21 @@ class _UserInfoForm extends StatelessWidget {
                   TextFormField(
                     controller: phoneController,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.white : AppTheme.kLightText,
                     ),
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
                       labelText: 'phone_label'.tr(context),
                       labelStyle: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
                       ),
                       hintText: 'phone_hint'.tr(context),
                       hintStyle: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
@@ -943,6 +978,11 @@ class _UserInfoForm extends StatelessWidget {
                           color: Colors.redAccent,
                           width: 2,
                         ),
+                      ),
+                      errorStyle: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
+                        color: Colors.redAccent,
+                        fontSize: 12,
                       ),
                       filled: true,
                       fillColor: isDark
@@ -1042,6 +1082,7 @@ class _BookingSummaryCard extends StatelessWidget {
               Text(
                 'total_amount'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -1050,6 +1091,7 @@ class _BookingSummaryCard extends StatelessWidget {
               Text(
                 '\$${totalPrice.toStringAsFixed(2)}',
                 style: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: AppTheme.kAccent,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
@@ -1089,6 +1131,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
           ),
@@ -1097,6 +1140,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 13,
             fontWeight: FontWeight.w600,

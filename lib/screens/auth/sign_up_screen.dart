@@ -58,8 +58,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to the terms and conditions'),
+        SnackBar(
+          content: Text(
+            'Please agree to the terms and conditions',
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -115,14 +118,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  // ✅ Navigate to Privacy Policy
   void _navigateToPrivacyPolicy() {
     Navigator.push(
       context,
@@ -135,7 +140,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Center(
@@ -167,6 +182,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Text(
           'Create Account',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -206,6 +222,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             TextFormField(
               controller: _fullNameController,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
@@ -230,6 +247,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
@@ -258,6 +276,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               controller: _passwordController,
               obscureText: !_isPasswordVisible,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
@@ -273,6 +292,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               decoration: InputDecoration(
                 hintText: 'Min 6 characters',
                 hintStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -316,6 +336,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                 ),
+                errorStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -331,6 +356,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               controller: _confirmPasswordController,
               obscureText: !_isConfirmPasswordVisible,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
@@ -346,6 +372,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               decoration: InputDecoration(
                 hintText: 'Re-enter your password',
                 hintStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -391,6 +418,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                 ),
+                errorStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -399,7 +431,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ✅ Terms and Conditions with clickable links
+            // Terms and Conditions with clickable links
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -423,6 +455,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: RichText(
                     text: TextSpan(
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                         fontSize: 12,
                         height: 1.5,
@@ -435,6 +468,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             child: Text(
                               'Privacy Policy',
                               style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: AppTheme.kAccent,
                                 fontWeight: FontWeight.w700,
                                 decoration: TextDecoration.underline,
@@ -466,6 +500,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   disabledBackgroundColor: isDark
                       ? Colors.grey[800]
                       : Colors.grey[300],
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -482,6 +520,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Text(
                             'Create Account',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.black : Colors.white,
@@ -507,6 +546,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Text(
       text,
       style: TextStyle(
+        fontFamily: AppTheme.fontFamily,
         color: isDark ? Colors.white : AppTheme.kLightText,
         fontSize: 14,
         fontWeight: FontWeight.w600,
@@ -522,12 +562,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
+        fontFamily: AppTheme.fontFamily,
         color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         fontSize: 14,
       ),
       prefixIcon: Icon(
         icon,
         color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+      ),
+      errorStyle: TextStyle(
+        fontFamily: AppTheme.fontFamily,
+        color: Colors.red.shade300,
+        fontSize: 12,
       ),
       filled: true,
       fillColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -562,6 +608,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Text(
           "Already have an account?",
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -572,6 +619,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Text(
             'Sign In',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: AppTheme.kAccent,
               fontSize: 14,
               fontWeight: FontWeight.w700,

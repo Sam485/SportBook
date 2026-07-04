@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:khqr_sdk/khqr_sdk.dart';
-import 'package:sportbook/core/theme.dart'; // ✅ Import AppTheme
+import 'package:sportbook/core/theme.dart'; // Import AppTheme
 
 // ── Config ────────────────────────────────────────────────────────
 class KhqrConfig {
@@ -34,7 +34,10 @@ Future<void> showKhqrPaymentSheet({
   if (data == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Failed to generate QR. Try again.'),
+        content: const Text(
+          'Failed to generate QR. Try again.',
+          style: TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
       ),
     );
@@ -371,6 +374,7 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text(
               'Done',
@@ -425,6 +429,7 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text(
               'Generate New QR',
@@ -479,6 +484,7 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text(
               'Close',

@@ -46,6 +46,7 @@ class HistoryBookingsScreen extends StatelessWidget {
                   Text(
                     'no_booking_history'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.white : AppTheme.kLightText,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -55,6 +56,7 @@ class HistoryBookingsScreen extends StatelessWidget {
                   Text(
                     'past_bookings_appear_here'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,

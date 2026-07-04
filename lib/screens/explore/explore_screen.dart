@@ -73,7 +73,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return result;
   }
 
-  // ✅ Get user-friendly error message
+  // Get user-friendly error message
   String get _userFriendlyErrorMessage {
     if (_errorMessage.contains('timeout') ||
         _errorMessage.contains('Timeout')) {
@@ -227,12 +227,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
   }
 
-  // ✅ Navigate to booking flow
+  // Navigate to booking flow
   void _navigateToBookingFlow(SportClubModel club) {
     Navigator.pushNamed(context, AppRoutes.bookingFlow, arguments: club);
   }
 
-  // ✅ Navigate to club detailed
+  // Navigate to club detailed
   void _navigateToClubDetailed(SportClubModel club) {
     Navigator.pushNamed(context, AppRoutes.clubDetailed, arguments: club);
   }
@@ -280,6 +280,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               Text(
                 'loading_clubs'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -307,6 +308,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 Text(
                   _userFriendlyErrorMessage,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -326,6 +328,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
+                    textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
                   ),
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text('retry'.tr(context)),
@@ -356,6 +359,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ? 'no_results_for'.tr(context).replaceAll('{query}', _query)
                     : 'no_clubs_available'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -366,6 +370,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 Text(
                   'try_adjusting_search'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark
                         ? AppTheme.kTextSub.withValues(alpha: 0.7)
                         : AppTheme.kLightTextSub.withValues(alpha: 0.7),
@@ -398,6 +403,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     Text(
                       'loading_more'.tr(context),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
@@ -421,6 +427,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Text(
                   'end_of_list'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 12,
                   ),
@@ -436,7 +443,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: ClubCard(
             key: ValueKey('club_${clubs[index].id}_${clubs[index].updatedAt}'),
             club: clubs[index],
-            // ✅ Add navigation callbacks - NO LOADING
             onBookPressed: (club) {
               _navigateToBookingFlow(club);
             },
@@ -458,12 +464,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
       child: TextField(
         controller: _searchController,
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? Colors.white : AppTheme.kLightText,
           fontSize: 16,
         ),
         decoration: InputDecoration(
           hintText: 'search_clubs'.tr(context),
           hintStyle: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
           prefixIcon: Icon(
@@ -602,13 +610,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     if (!isAll) ...[
                       Text(
                         _getCategoryEmoji(cat.name),
-                        style: const TextStyle(fontSize: 15),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(width: 6),
                     ],
                     Text(
                       isAll ? 'all'.tr(context) : cat.name,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: sel
                             ? const Color(0xFF0A1828)
                             : (isDark

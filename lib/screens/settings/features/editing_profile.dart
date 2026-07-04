@@ -104,6 +104,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           SnackBar(
             content: Text(
               '${'avatar_update_failed'.tr(context)}: $errorMessage',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
@@ -118,7 +119,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // ✅ FIXED: This method now properly handles image picking
+  // FIXED: This method now properly handles image picking
   Future<void> _pickImage() async {
     if (_isAvatarLoading) return;
 
@@ -138,7 +139,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to pick image: $e'),
+            content: Text(
+              'Failed to pick image: $e',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -147,7 +151,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // ✅ FIXED: This method now properly handles taking a photo
+  // FIXED: This method now properly handles taking a photo
   Future<void> _takePhoto() async {
     if (_isAvatarLoading) return;
 
@@ -167,7 +171,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to take photo: $e'),
+            content: Text(
+              'Failed to take photo: $e',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -176,7 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // ✅ FIXED: This method now properly shows the image picker options
+  // FIXED: This method now properly shows the image picker options
   Future<void> _showImagePickerDialog() async {
     if (_isAvatarLoading) return;
 
@@ -208,6 +215,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Text(
                 'choose_photo'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -231,6 +239,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 title: Text(
                   'choose_from_library'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                   ),
                 ),
@@ -255,6 +264,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 title: Text(
                   'take_a_photo'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                   ),
                 ),
@@ -276,7 +286,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   title: Text(
                     'remove_photo'.tr(context),
-                    style: const TextStyle(color: Colors.red),
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      color: Colors.red,
+                    ),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -291,13 +304,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // ✅ FIXED: Method to remove avatar (placeholder)
+  // FIXED: Method to remove avatar (placeholder)
   Future<void> _removeAvatar() async {
     // You would need an API endpoint to remove avatar
     // For now, just show a message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Remove avatar feature coming soon'),
+        content: Text(
+          'Remove avatar feature coming soon',
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.grey,
         duration: const Duration(seconds: 2),
       ),
@@ -337,7 +353,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_nameController.text.isEmpty || _locationController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('fill_all_fields'.tr(context)),
+          content: Text(
+            'fill_all_fields'.tr(context),
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -370,7 +389,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${'update_failed'.tr(context)}: $errorMessage'),
+            content: Text(
+              '${'update_failed'.tr(context)}: $errorMessage',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -413,6 +435,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         title: Text(
           'edit_profile'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -435,6 +458,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 : Text(
                     'save'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: AppTheme.kAccent,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -600,6 +624,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: TextField(
           controller: _locationController,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 16,
           ),
@@ -608,6 +633,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           decoration: InputDecoration(
             labelText: 'location'.tr(context),
             labelStyle: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             ),
             prefixIcon: Icon(
@@ -616,6 +642,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             suffixIcon: Icon(Icons.edit_location, color: AppTheme.kAccent),
             hintText: 'tap_to_select_location'.tr(context),
+            hintStyle: TextStyle(
+              fontFamily: AppTheme.fontFamily,
+              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
@@ -625,6 +655,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            errorStyle: TextStyle(
+              fontFamily: AppTheme.fontFamily,
+              color: Colors.red.shade300,
+              fontSize: 12,
             ),
             filled: true,
             fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
@@ -644,6 +687,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return TextField(
       controller: controller,
       style: TextStyle(
+        fontFamily: AppTheme.fontFamily,
         color: isDark ? Colors.white : AppTheme.kLightText,
         fontSize: 16,
       ),
@@ -652,6 +696,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
+          color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
+        ),
+        hintStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         ),
         prefixIcon: Icon(
@@ -667,6 +716,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        errorStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
+          color: Colors.red.shade300,
+          fontSize: 12,
         ),
         filled: true,
         fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
@@ -689,6 +751,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             elevation: 2,
+            textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
           ),
           child: _isLoading
               ? const SizedBox(
@@ -702,6 +765,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               : Text(
                   'save_changes'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.black : Colors.white,

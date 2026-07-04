@@ -233,6 +233,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         title: Text(
           'login_required'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -245,6 +246,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             Text(
               message ?? 'login_to_complete_booking'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -271,6 +273,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                     child: Text(
                       'you_need_account_to_book'.tr(context),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark ? Colors.white70 : AppTheme.kLightText,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -288,6 +291,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             child: Text(
               'cancel'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
             ),
@@ -308,6 +312,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
               foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text('login'.tr(context)),
           ),
@@ -445,8 +450,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
     if (_selectedSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a valid court'),
+        SnackBar(
+          content: Text(
+            'Please select a valid court',
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -602,6 +610,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                 ? 'checking_account'.tr(context)
                 : 'loading_courts'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
               fontSize: 14,
             ),
@@ -627,6 +636,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             Text(
               'failed_to_load_courts'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -637,6 +647,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             Text(
               _errorMessage ?? 'unknown_error'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -655,11 +666,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                textStyle: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              child: Text(
-                'retry'.tr(context),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
+              child: Text('retry'.tr(context)),
             ),
             const SizedBox(height: 12),
             TextButton(
@@ -667,6 +679,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               child: Text(
                 'go_back'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 ),
               ),
@@ -697,6 +710,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               Text(
                 'no_courts_available'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -707,6 +721,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               Text(
                 'please_check_back_later'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -832,6 +847,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         Text(
           widget.target.name,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 16,
             fontWeight: FontWeight.w800,
@@ -841,6 +857,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         Text(
           widget.target.location,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 11.5,
           ),
@@ -871,6 +888,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               child: Text(
                 widget.target.initials,
                 style: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: Colors.white,
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
@@ -948,6 +966,7 @@ class _StepIndicator extends StatelessWidget {
                     : Text(
                         '${si + 1}',
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: active
                               ? AppTheme.kAccent
                               : (isDark
@@ -962,6 +981,7 @@ class _StepIndicator extends StatelessWidget {
               Text(
                 steps[si],
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: done || active
                       ? (isDark ? Colors.white70 : AppTheme.kLightText)
                       : (isDark ? Colors.white38 : AppTheme.kLightTextSub),
@@ -1089,6 +1109,7 @@ class _BottomBar extends StatelessWidget {
                               ? 'confirm_booking'.tr(context)
                               : 'next'.tr(context),
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: (isLastStep ? canConfirm : canProceed)
                                 ? const Color(0xFF0A1828)
                                 : (isDark
@@ -1137,6 +1158,7 @@ class _BottomBar extends StatelessWidget {
                   Text(
                     'login_to_complete_booking'.tr(context),
                     style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: Colors.orange,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

@@ -101,6 +101,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         title: Text(
           'login_required'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -109,6 +110,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         content: Text(
           'login_to_favorite'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -119,6 +121,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             child: Text(
               'cancel'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
             ),
@@ -131,6 +134,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
               foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text('login'.tr(context)),
           ),
@@ -173,6 +177,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
               isNowFavorited
                   ? 'added_to_favorites'.tr(context)
                   : 'removed_from_favorites'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             duration: const Duration(seconds: 1),
             backgroundColor: isNowFavorited ? Colors.green : Colors.grey,
@@ -188,7 +193,10 @@ class _ClubDetailedState extends State<ClubDetailed> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('failed_to_update_favorite'.tr(context)),
+            content: Text(
+              'failed_to_update_favorite'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -429,6 +437,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
               child: Text(
                 widget.target.name,
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -453,6 +462,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             Text(
               widget.target.openTime,
               style: const TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: AppTheme.kAccent,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -463,6 +473,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
               child: Text(
                 '–',
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: (isDark ? Colors.white : AppTheme.kLightText)
                       .withValues(alpha: 0.4),
                 ),
@@ -473,6 +484,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             Text(
               widget.target.closeTime,
               style: const TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: AppTheme.kTextSub,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -518,6 +530,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         Text(
           label,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: color,
             fontSize: 11.5,
             fontWeight: FontWeight.w700,
@@ -543,6 +556,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         Text(
           title,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -579,6 +593,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             child: Text(
               'No sports available',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -608,12 +623,16 @@ class _ClubDetailedState extends State<ClubDetailed> {
               children: [
                 Text(
                   _getCategoryEmoji(cat.name),
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   cat.name,
                   style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: AppTheme.kAccent,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -689,6 +708,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                 child: Text(
                   widget.target.location,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -738,6 +758,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
                         Text(
                           'view_on_map'.tr(context),
                           style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: Colors.black,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -771,6 +792,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
             ? widget.target.description
             : '${widget.target.name} ${'about_description'.tr(context)}',
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
           fontSize: 13,
           height: 1.65,
@@ -795,6 +817,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
           child: Text(
             'more_clubs_coming_soon'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
               fontSize: 14,
             ),
@@ -840,7 +863,10 @@ class _ClubDetailedState extends State<ClubDetailed> {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('share_feature_coming_soon'.tr(context)),
+                  content: Text(
+                    'share_feature_coming_soon'.tr(context),
+                    style: const TextStyle(fontFamily: AppTheme.fontFamily),
+                  ),
                   duration: const Duration(seconds: 1),
                 ),
               );
@@ -860,10 +886,15 @@ class _ClubDetailedState extends State<ClubDetailed> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 elevation: 0,
+                textStyle: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               child: Text(
                 'book_now'.tr(context),
                 style: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
@@ -895,6 +926,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         Text(
           label,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: color ?? (isDark ? Colors.white54 : AppTheme.kLightTextSub),
             fontSize: 10,
             fontWeight: FontWeight.w600,
@@ -930,6 +962,7 @@ class _ClubDetailedState extends State<ClubDetailed> {
         Text(
           _isOpen ? 'open_now'.tr(context) : 'closed'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: _isOpen ? Colors.greenAccent : Colors.redAccent,
             fontSize: 10,
             fontWeight: FontWeight.w700,

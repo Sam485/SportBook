@@ -5,19 +5,19 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:sportbook/core/theme.dart'; // ✅ Import AppTheme
+import 'package:sportbook/core/theme.dart'; // Import AppTheme
 
 // ─────────────────────────────────────────────────────────────
 // ABA PAYWAY CONFIG
 // ─────────────────────────────────────────────────────────────
 
 class AbaPaywayConfig {
-  /// ⚠️ Get these from your sandbox registration email:
+  /// Get these from your sandbox registration email:
   /// https://sandbox.payway.com.kh/register-sandbox/
   static const merchantId =
-      'ec475457'; // ← verify this matches your sandbox email
+      'ec475457'; // verify this matches your sandbox email
   static const apiKey =
-      'cf929e030249169f5ff5da3630abba7649df6938'; // ← verify this too
+      'cf929e030249169f5ff5da3630abba7649df6938'; // verify this too
 
   static const baseUrl = 'https://checkout-sandbox.payway.com.kh';
 
@@ -63,8 +63,6 @@ String _buildCheckTransactionHash({
 // ─────────────────────────────────────────────────────────────
 
 void debugAbaCredentials() {
-  // Prints your API key bytes — look for unexpected values
-  // (hidden spaces, BOM characters, etc.)
   debugPrint('=== ABA CREDENTIAL DEBUG ===');
   debugPrint('MERCHANT ID   => ${AbaPaywayConfig.merchantId}');
   debugPrint('API KEY       => ${AbaPaywayConfig.apiKey}');
@@ -81,9 +79,6 @@ Future<void> showAbaPaywaySheet({
   required double amount,
   required VoidCallback onSuccess,
 }) async {
-  // Uncomment to debug credentials during development:
-  // debugAbaCredentials();
-
   final result = await _generateQr(amount);
 
   if (!context.mounted) return;
@@ -91,7 +86,10 @@ Future<void> showAbaPaywaySheet({
   if (result == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Failed to generate ABA QR payment.'),
+        content: const Text(
+          'Failed to generate ABA QR payment.',
+          style: TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
       ),
     );
@@ -147,24 +145,20 @@ Future<Map<String, String?>?> _generateQr(double amount) async {
     const returnParams = '';
     const payout = '';
 
-    // ✅ CORRECT hash order per ABA docs:
-    // req_time, merchant_id, tran_id, amount, items, first_name, last_name,
-    // email, phone, purchase_type, payment_option, callback_url,
-    // return_deeplink, currency, custom_fields, return_params, payout,
-    // lifetime, qr_image_template
+    // CORRECT hash order per ABA docs:
     final rawHash =
         reqTime +
         AbaPaywayConfig.merchantId +
         tranId +
         amountStr +
-        items + // ✅ items included in hash
+        items +
         firstName +
         lastName +
         email +
         phone +
         purchaseType +
         paymentOption +
-        callbackUrl + // ✅ empty string (not null) for missing optional fields
+        callbackUrl +
         returnDeeplink +
         currency +
         customFields +
@@ -238,8 +232,8 @@ Future<Map<String, String?>?> _generateQr(double amount) async {
 class AbaPaywaySheet extends StatefulWidget {
   final double amount;
   final String tranId;
-  final String? qrString; // KHQR string for local QR rendering
-  final String? qrImage; // base64 PNG fallback
+  final String? qrString;
+  final String? qrImage;
   final VoidCallback onSuccess;
 
   const AbaPaywaySheet({
@@ -521,6 +515,7 @@ class _AbaPaywaySheetState extends State<AbaPaywaySheet> {
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text(
               'Done',
@@ -580,6 +575,7 @@ class _AbaPaywaySheetState extends State<AbaPaywaySheet> {
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text(
               'Generate New QR',

@@ -41,7 +41,7 @@ class _ClubCardState extends State<ClubCard>
   @override
   void initState() {
     super.initState();
-    // ✅ Only use infinite scrolling if there are multiple images
+    // Only use infinite scrolling if there are multiple images
     final urls = widget.club.imageUrls;
     if (urls.length > 1) {
       _ctrl = PageController(initialPage: 10000);
@@ -118,7 +118,7 @@ class _ClubCardState extends State<ClubCard>
     }
   }
 
-  // ✅ Check if user is authenticated
+  // Check if user is authenticated
   Future<bool> _isAuthenticated() async {
     try {
       return await _tokenService.hasValidTokenAsync();
@@ -127,7 +127,7 @@ class _ClubCardState extends State<ClubCard>
     }
   }
 
-  // ✅ Show login required dialog
+  // Show login required dialog
   void _showLoginRequiredDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -140,6 +140,7 @@ class _ClubCardState extends State<ClubCard>
         title: Text(
           'login_required'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -148,6 +149,7 @@ class _ClubCardState extends State<ClubCard>
         content: Text(
           'login_to_favorite'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -158,6 +160,7 @@ class _ClubCardState extends State<ClubCard>
             child: Text(
               'cancel'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
             ),
@@ -170,6 +173,7 @@ class _ClubCardState extends State<ClubCard>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
               foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text('login'.tr(context)),
           ),
@@ -181,7 +185,7 @@ class _ClubCardState extends State<ClubCard>
   Future<void> _toggleFavorite() async {
     if (_isFavoriting) return;
 
-    // ✅ Check if user is authenticated
+    // Check if user is authenticated
     final isAuth = await _isAuthenticated();
 
     if (!isAuth) {
@@ -217,7 +221,7 @@ class _ClubCardState extends State<ClubCard>
     }
   }
 
-  // ✅ Use callbacks for navigation
+  // Use callbacks for navigation
   void _handleBookPressed() {
     if (widget.onBookPressed != null) {
       widget.onBookPressed!(widget.club);
@@ -236,7 +240,7 @@ class _ClubCardState extends State<ClubCard>
     }
   }
 
-  // ✅ Fallback navigation methods (kept for backward compatibility)
+  // Fallback navigation methods (kept for backward compatibility)
   Future<void> _navigateToBookingFlow() async {
     if (_isNavigating) return;
 
@@ -328,7 +332,7 @@ class _ClubCardState extends State<ClubCard>
         decoration: AppTheme.cardDecorationAdaptive(context, radius: 22),
         child: Stack(
           children: [
-            // ✅ InkWell with custom border for ripple effect
+            // InkWell with custom border for ripple effect
             InkWell(
               onTap: _handleBookPressed,
               borderRadius: BorderRadius.circular(22),
@@ -409,6 +413,7 @@ class _ClubCardState extends State<ClubCard>
                                     Text(
                                       'no_images'.tr(context),
                                       style: TextStyle(
+                                        fontFamily: AppTheme.fontFamily,
                                         color: isDark
                                             ? Colors.white38
                                             : AppTheme.kLightTextSub,
@@ -501,6 +506,7 @@ class _ClubCardState extends State<ClubCard>
                                   child: Text(
                                     '${_page + 1}/${urls.length}',
                                     style: const TextStyle(
+                                      fontFamily: AppTheme.fontFamily,
                                       color: Colors.white70,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
@@ -571,6 +577,7 @@ class _ClubCardState extends State<ClubCard>
                               child: Text(
                                 c.initials,
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? Colors.white
                                       : AppTheme.kLightText,
@@ -590,6 +597,7 @@ class _ClubCardState extends State<ClubCard>
                                     Text(
                                       c.name,
                                       style: TextStyle(
+                                        fontFamily: AppTheme.fontFamily,
                                         color: isDark
                                             ? Colors.white
                                             : AppTheme.kLightText,
@@ -610,6 +618,7 @@ class _ClubCardState extends State<ClubCard>
                                         Text(
                                           c.openTime,
                                           style: const TextStyle(
+                                            fontFamily: AppTheme.fontFamily,
                                             color: AppTheme.kAccent,
                                             fontSize: 10,
                                             fontWeight: FontWeight.w600,
@@ -636,6 +645,7 @@ class _ClubCardState extends State<ClubCard>
                                         Text(
                                           c.closeTime,
                                           style: TextStyle(
+                                            fontFamily: AppTheme.fontFamily,
                                             color: isDark
                                                 ? AppTheme.kTextSub
                                                 : AppTheme.kLightTextSub,
@@ -673,6 +683,7 @@ class _ClubCardState extends State<ClubCard>
                               child: Text(
                                 c.location,
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? Colors.white70
                                       : AppTheme.kLightTextSub,
@@ -697,6 +708,7 @@ class _ClubCardState extends State<ClubCard>
                             Text(
                               '${c.distanceKm.toStringAsFixed(1)} ${'km_away'.tr(context)}',
                               style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: isDark
                                     ? AppTheme.kTextSub
                                     : AppTheme.kLightTextSub,
@@ -718,6 +730,7 @@ class _ClubCardState extends State<ClubCard>
                                 Text(
                                   '${c.favoriteCount}',
                                   style: TextStyle(
+                                    fontFamily: AppTheme.fontFamily,
                                     color: isDark
                                         ? AppTheme.kTextSub
                                         : AppTheme.kLightTextSub,
@@ -751,6 +764,7 @@ class _ClubCardState extends State<ClubCard>
                                 child: Text(
                                   'book'.tr(context),
                                   style: const TextStyle(
+                                    fontFamily: AppTheme.fontFamily,
                                     color: Color(0xFF0A1828),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
@@ -812,6 +826,7 @@ class _ClubCardState extends State<ClubCard>
           Text(
             isOpen ? 'open'.tr(context) : 'closed'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isOpen ? Colors.greenAccent : Colors.redAccent,
               fontSize: 9,
               fontWeight: FontWeight.w700,

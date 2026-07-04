@@ -18,7 +18,7 @@ class BookedDetailed extends StatefulWidget {
 class _BookedDetailedState extends State<BookedDetailed> {
   final BookingService _bookingService = getIt<BookingService>();
   bool _isCancelling = false;
-  BookingModel? _currentBooking; // ✅ Track current booking state
+  BookingModel? _currentBooking;
 
   // Computed properties - use _currentBooking if available, otherwise widget.booking
   BookingModel get b => _currentBooking ?? widget.booking;
@@ -106,7 +106,6 @@ class _BookedDetailedState extends State<BookedDetailed> {
     return '$month $day, $year at $hour:$minute';
   }
 
-  // ✅ Method to refresh booking data from API
   Future<void> _refreshBooking() async {
     try {
       final updatedBooking = await _bookingService.getBookingById(b.id);
@@ -196,8 +195,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           top: 16,
           left: 16,
           child: InkWell(
-            onTap: () =>
-                Navigator.pop(context, true), // ✅ Return true to refresh
+            onTap: () => Navigator.pop(context, true),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),
@@ -267,6 +265,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       child: Text(
                         _status.toUpperCase(),
                         style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -285,6 +284,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       child: Text(
                         b.slot.name.toUpperCase(),
                         style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -305,6 +305,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       child: Text(
                         _paymentStatus.toUpperCase(),
                         style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -319,6 +320,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 Text(
                   b.slot.name,
                   style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -328,6 +330,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 Text(
                   b.sportClub.name,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -348,6 +351,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       child: Text(
                         b.sportClub.location,
                         style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: Colors.white70,
                           fontSize: 14,
                         ),
@@ -370,6 +374,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                     Text(
                       _formattedDate,
                       style: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: Colors.white70,
                         fontSize: 13,
                       ),
@@ -384,6 +389,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                     Text(
                       _timeRange,
                       style: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: Colors.white70,
                         fontSize: 13,
                       ),
@@ -400,6 +406,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                     Text(
                       _bookingId,
                       style: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: Colors.white70,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -428,6 +435,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           Text(
             'payment_summary'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -481,6 +489,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           Text(
             'booking_details'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -573,6 +582,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
       child: Text(
         text.toUpperCase(),
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: color,
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -592,6 +602,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           Text(
             'cancellation_policy'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -647,6 +658,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           Text(
             'entry_pass'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -683,6 +695,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       Text(
                         'scan_at_gate'.tr(context),
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: isDark ? Colors.white : AppTheme.kLightText,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -693,6 +706,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                       Text(
                         'qr_instruction_detailed'.tr(context),
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: isDark
                               ? Colors.white70
                               : AppTheme.kLightTextSub,
@@ -736,6 +750,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
           Text(
             text,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               fontSize: 11,
               color: color,
               fontWeight: FontWeight.w600,
@@ -778,6 +793,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 Text(
                   title,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -788,6 +804,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 Text(
                   description,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                     fontSize: 13,
                   ),
@@ -817,11 +834,13 @@ class _BookedDetailedState extends State<BookedDetailed> {
             label,
             style: isTotal
                 ? TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   )
                 : TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                     fontSize: 14,
                   ),
@@ -833,11 +852,13 @@ class _BookedDetailedState extends State<BookedDetailed> {
                   value.toString(),
                   style: isTotal
                       ? const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: AppTheme.kAccent,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         )
                       : TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: isDark
                               ? Colors.white70
                               : AppTheme.kLightTextSub,
@@ -866,6 +887,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               child: _isCancelling
                   ? const SizedBox(
@@ -884,7 +906,12 @@ class _BookedDetailedState extends State<BookedDetailed> {
             child: ElevatedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('reschedule_coming_soon'.tr(context))),
+                  SnackBar(
+                    content: Text(
+                      'reschedule_coming_soon'.tr(context),
+                      style: const TextStyle(fontFamily: AppTheme.fontFamily),
+                    ),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -894,6 +921,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               child: Text('reschedule'.tr(context)),
             ),
@@ -912,13 +940,17 @@ class _BookedDetailedState extends State<BookedDetailed> {
         backgroundColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
         title: Text(
           'cancel_booking'.tr(context),
-          style: TextStyle(color: isDark ? Colors.white : AppTheme.kLightText),
+          style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
         ),
         content: Text(
           'cancel_booking_confirmation'
               .tr(context)
               .replaceAll('{title}', b.slot.name),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
           ),
         ),
@@ -928,6 +960,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
             child: Text(
               'no_keep_it'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
             ),
@@ -937,6 +970,7 @@ class _BookedDetailedState extends State<BookedDetailed> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text('yes_cancel'.tr(context)),
           ),
@@ -946,7 +980,6 @@ class _BookedDetailedState extends State<BookedDetailed> {
   }
 
   Future<void> _cancelBooking(BuildContext context) async {
-    // ✅ Prevent multiple cancellation attempts
     if (_isCancelling) return;
 
     setState(() {
@@ -954,49 +987,48 @@ class _BookedDetailedState extends State<BookedDetailed> {
     });
 
     try {
-      // ✅ Call the API to cancel booking
       await _bookingService.cancelBooking(b.id);
 
       if (mounted) {
-        // ✅ Close the dialog
         // ignore: use_build_context_synchronously
         Navigator.pop(context);
 
-        // ✅ Show success message
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking cancelled successfully'),
+          SnackBar(
+            content: Text(
+              'Booking cancelled successfully',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
 
-        // ✅ Refresh the booking data to show updated status
         await _refreshBooking();
 
-        // ✅ Go back to the previous screen after a short delay
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             // ignore: use_build_context_synchronously
-            Navigator.pop(context, true); // Return true to indicate refresh
+            Navigator.pop(context, true);
           }
         });
       }
     } catch (e) {
       if (mounted) {
-        // ✅ Close the dialog if it's still open
         // ignore: use_build_context_synchronously
         if (Navigator.canPop(context)) {
           // ignore: use_build_context_synchronously
           Navigator.pop(context);
         }
 
-        // ✅ Show error message
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to cancel booking: ${e.toString()}'),
+            content: Text(
+              'Failed to cancel booking: ${e.toString()}',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -1010,8 +1042,13 @@ class _BookedDetailedState extends State<BookedDetailed> {
   }
 
   void _shareBooking(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('share_coming_soon'.tr(context))));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'share_coming_soon'.tr(context),
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
+      ),
+    );
   }
 }

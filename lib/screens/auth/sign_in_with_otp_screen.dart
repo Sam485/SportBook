@@ -64,7 +64,6 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
           if (!mounted) return;
           setState(() => _isLoading = false);
 
-          // ✅ THE FIX: Use Navigator.push with MaterialPageRoute
           Navigator.pushNamed(
             context,
             AppRoutes.otpVerify,
@@ -91,7 +90,10 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 3),
       ),
@@ -104,7 +106,17 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -137,6 +149,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
         Text(
           'Phone Sign In',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -155,6 +168,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
           child: Text(
             'Enter your phone number to receive OTP',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
               fontSize: 13,
             ),
@@ -191,6 +205,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
             Text(
               'Phone Number',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -201,6 +216,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
@@ -208,6 +224,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
               decoration: InputDecoration(
                 hintText: '012 345 678',
                 hintStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -240,6 +257,11 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                 ),
+                errorStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -259,6 +281,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
                   child: Text(
                     'A 6-digit verification code will be sent to this number',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.grey[500] : Colors.grey[400],
                       fontSize: 12,
                     ),
@@ -282,6 +305,10 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
                   disabledBackgroundColor: isDark
                       ? Colors.grey[800]
                       : Colors.grey[300],
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -298,6 +325,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
                           Text(
                             'Send Code',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.black : Colors.white,
@@ -326,6 +354,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
         Text(
           'Back to',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -336,6 +365,7 @@ class _SignInWithOtpScreenState extends State<SignInWithOtpScreen> {
           child: Text(
             'Sign In',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: AppTheme.kAccent,
               fontSize: 14,
               fontWeight: FontWeight.w700,

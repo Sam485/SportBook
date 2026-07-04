@@ -6,6 +6,7 @@ import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
 import 'package:sportbook/screens/settings/features/editing_profile.dart';
+import 'package:sportbook/translations/app_translations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -75,8 +76,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
           elevation: 0,
           title: Text(
-            'Edit Profile',
+            'edit_profile'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -104,8 +106,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
         elevation: 0,
         title: Text(
-          'Edit Profile',
+          'edit_profile'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -128,8 +131,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // ── PROFILE INFO SECTION HEADER ──
             Text(
-              'PROFILE INFO',
+              'profile_info'.tr(context).toUpperCase(),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -177,8 +181,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Name',
+                            'full_name'.tr(context),
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub,
@@ -190,6 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             _user?.fullName ?? 'SILAEND',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white
                                   : AppTheme.kLightText,
@@ -247,8 +253,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Email',
+                            'email_address'.tr(context),
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub,
@@ -260,6 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             _user?.email ?? 'phone_855968877203@phone.local',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white
                                   : AppTheme.kLightText,
@@ -319,8 +327,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Phone',
+                            'phone'.tr(context),
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub,
@@ -332,6 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             _user?.phone ?? '+855968877203',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white
                                   : AppTheme.kLightText,
@@ -357,8 +367,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // ── SECURITY SECTION HEADER ──
             Text(
-              'SECURITY',
+              'security'.tr(context).toUpperCase(),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -370,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // ── CHANGE PASSWORD CARD ──
             InkWell(
               onTap: () {
-                Navigator.pushNamed(context, AppRoutes.resetPassword);
+                Navigator.pushNamed(context, AppRoutes.changePassword);
               },
               borderRadius: BorderRadius.circular(14),
               child: Container(
@@ -403,8 +414,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Change Password',
+                            'change_password'.tr(context),
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white
                                   : AppTheme.kLightText,

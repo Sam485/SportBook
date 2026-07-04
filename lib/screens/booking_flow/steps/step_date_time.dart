@@ -335,7 +335,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     if (_isDateInPast(date)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('cannot_select_past_date'.tr(context)),
+          content: Text(
+            'cannot_select_past_date'.tr(context),
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 2),
         ),
@@ -366,7 +369,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       if (hour <= currentHour) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('cannot_select_past_time'.tr(context)),
+            content: Text(
+              'cannot_select_past_time'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 2),
           ),
@@ -394,10 +400,13 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
 
       if (isBooked) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This time slot is already booked'),
+          SnackBar(
+            content: Text(
+              'This time slot is already booked',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
         return;
@@ -423,7 +432,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
     if (_startHour != null && hour <= _startHour!) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('end_time_must_be_after_start'.tr(context)),
+          content: Text(
+            'end_time_must_be_after_start'.tr(context),
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 2),
         ),
@@ -437,7 +449,10 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
       if (hour <= currentHour) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('cannot_select_past_time'.tr(context)),
+            content: Text(
+              'cannot_select_past_time'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 2),
           ),
@@ -452,10 +467,13 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         _startHour != null) {
       if (_isTimeSlotBooked(_selectedDate!, _startHour!, hour)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This time slot is already booked'),
+          SnackBar(
+            content: Text(
+              'This time slot is already booked',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
         return;
@@ -537,6 +555,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                 Text(
                   'select_date'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
@@ -546,6 +565,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                 Text(
                   'choose_date_desc'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 13,
                   ),
@@ -625,6 +645,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                       '${_months[weekDates.first.month - 1]} ${weekDates.first.day}, ${weekDates.first.year}',
                     ),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -639,6 +660,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                 child: Text(
                   'current_week'.tr(context),
                   style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: AppTheme.kAccent,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -707,6 +729,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     Text(
                       _getTranslatedDay(_days[d.weekday - 1], context),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: sel
                             ? const Color(0xFF0A1828)
                             : isWeekend && !isPast && hasAvailableSlots
@@ -724,6 +747,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                     Text(
                       '${d.day}',
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: sel
                             ? const Color(0xFF0A1828)
                             : isToday
@@ -741,6 +765,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                         context,
                       ).substring(0, 3),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: sel
                             ? const Color(0xFF0A1828).withValues(alpha: 0.7)
                             : isPast || !hasAvailableSlots
@@ -822,6 +847,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             Text(
                               'select_time'.tr(context),
                               style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: isDark
                                     ? Colors.white
                                     : AppTheme.kLightText,
@@ -870,6 +896,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                           '${_getTranslatedDay(_days[_selectedDate!.weekday - 1], context)}, '
                           '${_getTranslatedMonth(_months[_selectedDate!.month - 1], context)} ${_selectedDate!.day} ${_selectedDate!.year}',
                           style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: AppTheme.kAccent,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -892,6 +919,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             child: Text(
                               'today'.tr(context),
                               style: const TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: Colors.orange,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -929,6 +957,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                             child: Text(
                               'Loading your bookings...',
                               style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: isDark
                                     ? Colors.white70
                                     : AppTheme.kLightTextSub,
@@ -963,6 +992,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                   ? 'no_available_slots_today'.tr(context)
                                   : 'no_available_slots'.tr(context),
                               style: const TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: Colors.orange,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -1037,6 +1067,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                 Text(
                                   _timeRangeLabel,
                                   style: const TextStyle(
+                                    fontFamily: AppTheme.fontFamily,
                                     color: AppTheme.kAccent,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
@@ -1045,6 +1076,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                                 Text(
                                   '$_durationHours ${'hours'.tr(context)}',
                                   style: TextStyle(
+                                    fontFamily: AppTheme.fontFamily,
                                     color: isDark
                                         ? AppTheme.kTextSub
                                         : AppTheme.kLightTextSub,
@@ -1060,6 +1092,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                               Text(
                                 '\$${_totalPrice.toStringAsFixed(0)}',
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? Colors.white
                                       : AppTheme.kLightText,
@@ -1070,6 +1103,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
                               Text(
                                 '\$${_selectedCourtPrice.toStringAsFixed(0)}/hr',
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? AppTheme.kTextSub
                                       : AppTheme.kLightTextSub,
@@ -1171,6 +1205,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         Text(
           label,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: color,
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -1194,6 +1229,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
         child: Text(
           emptyMessage,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 12.5,
           ),
@@ -1231,6 +1267,7 @@ class _StepDateAndTimeState extends State<StepDateAndTime>
               child: Text(
                 label,
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: sel
                       ? Colors.white
                       : (isDark ? Colors.white60 : AppTheme.kLightTextSub),

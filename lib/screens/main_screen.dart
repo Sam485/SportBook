@@ -16,13 +16,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _index = 0;
 
-  // ✅ Use late initialization with proper keys
+  // Use late initialization with proper keys
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
-    // ✅ Initialize screens once with proper keys
+    // Initialize screens once with proper keys
     _screens = [
       const HomeScreen(key: ValueKey('home_screen')),
       const ExploreScreen(key: ValueKey('explore_screen')),

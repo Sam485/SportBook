@@ -129,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(
           'login_required'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -137,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text(
           message ?? 'login_to_book'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -147,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               'cancel'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
             ),
@@ -159,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
               foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text('login'.tr(context)),
           ),
@@ -416,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       _clubService.addListener(_onServiceChanged);
 
-      // ✅ ADD LISTENER FOR USER SERVICE CHANGES
+      // ADD LISTENER FOR USER SERVICE CHANGES
       _userService.addListener(_onUserServiceChanged);
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -429,11 +433,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _isDisposed = true;
     _clubService.removeListener(_onServiceChanged);
-    _userService.removeListener(_onUserServiceChanged); // ✅ REMOVE LISTENER
+    _userService.removeListener(_onUserServiceChanged);
     super.dispose();
   }
 
-  // ✅ USER SERVICE CHANGE LISTENER - Updates avatar automatically
+  // USER SERVICE CHANGE LISTENER - Updates avatar automatically
   void _onUserServiceChanged() {
     // Skip if disposed or we don't want to refresh
     if (_isDisposed || !mounted) return;
@@ -481,7 +485,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (upcoming.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('no_upcoming_bookings'.tr(context)),
+          content: Text(
+            'no_upcoming_bookings'.tr(context),
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.grey,
           duration: const Duration(seconds: 2),
         ),
@@ -589,7 +596,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Location updated successfully'),
+            content: Text(
+              'Location updated successfully',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -604,7 +614,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update location'),
+            content: Text(
+              'Failed to update location',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -732,6 +745,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   .tr(context)
                   .replaceAll('{name}', _user?.fullName ?? 'Guest'),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -756,6 +770,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: AppTheme.kAccent,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -901,13 +916,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (!isAll) ...[
                       Text(
                         _getCategoryEmoji(cat.name),
-                        style: const TextStyle(fontSize: 15),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(width: 6),
                     ],
                     Text(
                       isAll ? 'all'.tr(context) : cat.name,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: sel
                             ? const Color(0xFF0A1828)
                             : (isDark
@@ -1095,7 +1114,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 16),
                 Text(
                   'Loading clubs...',
-                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    color: AppTheme.kTextSub,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
@@ -1118,7 +1141,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 16),
                 Text(
                   'Loading nearby clubs...',
-                  style: TextStyle(color: AppTheme.kTextSub, fontSize: 14),
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    color: AppTheme.kTextSub,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
@@ -1146,6 +1173,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'no_clubs_nearby'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -1153,9 +1181,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try changing your location to find clubs nearby',
+                'suggest_change_location'.tr(context),
                 textAlign: TextAlign.center,
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -1173,11 +1202,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                child: Text(
-                  'change_location'.tr(context),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: Text('change_location'.tr(context)),
               ),
             ],
           ),
@@ -1391,6 +1421,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'no_upcoming_bookings'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1400,6 +1431,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'book_a_club_to_get_started'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 13,
                 ),
@@ -1417,11 +1449,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                child: Text(
-                  'browse_clubs'.tr(context),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: Text('browse_clubs'.tr(context)),
               ),
             ],
           ),

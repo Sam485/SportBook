@@ -64,7 +64,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
           if (!mounted) return;
           setState(() => _isLoading = false);
 
-          // ✅ Use pushNamed with arguments
           Navigator.pushNamed(
             context,
             AppRoutes.otpVerify,
@@ -91,7 +90,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 3),
       ),
@@ -104,7 +106,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // No title - just an empty AppBar with back button
         title: const SizedBox.shrink(),
         backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
         elevation: 0,
@@ -149,6 +150,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         Text(
           'Reset Password',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -167,6 +169,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
           child: Text(
             'Enter your phone number to receive OTP',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
               fontSize: 13,
             ),
@@ -203,6 +206,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
             Text(
               'Phone Number',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -213,6 +217,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
@@ -220,6 +225,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               decoration: InputDecoration(
                 hintText: '012 345 678',
                 hintStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -252,6 +258,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                 ),
+                errorStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -271,6 +282,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                   child: Text(
                     'A 6-digit verification code will be sent to this number',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.grey[500] : Colors.grey[400],
                       fontSize: 12,
                     ),
@@ -294,6 +306,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                   disabledBackgroundColor: isDark
                       ? Colors.grey[800]
                       : Colors.grey[300],
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -310,6 +326,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                           Text(
                             'Send Code',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.black : Colors.white,
@@ -338,6 +355,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         Text(
           'Back to',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -348,6 +366,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
           child: Text(
             'Sign In',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: AppTheme.kAccent,
               fontSize: 14,
               fontWeight: FontWeight.w700,

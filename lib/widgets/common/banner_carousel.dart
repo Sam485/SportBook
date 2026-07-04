@@ -41,7 +41,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
               SizedBox(height: 8),
               Text(
                 'Loading banners...',
-                style: TextStyle(color: AppTheme.kTextSub, fontSize: 12),
+                style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: AppTheme.kTextSub,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -69,6 +73,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
               Text(
                 'no_banners'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -182,7 +187,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
             SizedBox(height: 8),
             Text(
               'Loading...',
-              style: TextStyle(color: AppTheme.kTextSub, fontSize: 12),
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: AppTheme.kTextSub,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -206,6 +215,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
             Text(
               'image_not_available'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 12,
               ),

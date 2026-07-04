@@ -130,6 +130,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
         title: Text(
           'favorites'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -179,6 +180,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
             Text(
               'loading'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -206,6 +208,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
             Text(
               'Failed to load favorites',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -216,6 +219,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
               displayError,
               textAlign: TextAlign.center,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -233,6 +237,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: Text('retry'.tr(context)),
@@ -257,6 +262,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
             Text(
               'favorites_empty'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -266,6 +272,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
             Text(
               'favorites_hint'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -283,6 +290,7 @@ class _FavoriteClubState extends State<FavoriteClub> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               icon: const Icon(Icons.explore_rounded, size: 18),
               label: Text('explore_clubs'.tr(context)),
@@ -301,8 +309,9 @@ class _FavoriteClubState extends State<FavoriteClub> {
           SliverFillRemaining(
             child: Center(
               child: Text(
-                'No clubs for this sport',
+                'no_clubs_for_this_sport'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -364,11 +373,18 @@ class _FavoriteClubState extends State<FavoriteClub> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(cat.emoji, style: const TextStyle(fontSize: 15)),
+                  Text(
+                    cat.emoji,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     cat.name,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: sel
                           ? const Color(0xFF0A1828)
                           : (isDark ? Colors.white60 : AppTheme.kLightTextSub),
