@@ -30,6 +30,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -43,6 +44,7 @@ class SectionHeader extends StatelessWidget {
                 actionLabel ??
                     'view_all'.tr(context), // ✅ Use translation with fallback
                 style: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: AppTheme.kAccent,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -110,11 +112,18 @@ class CategoryChips extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(cat.emoji, style: const TextStyle(fontSize: 15)),
+                  Text(
+                    cat.emoji,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     cat.name,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: sel
                           ? const Color(0xFF0A1828)
                           : (isDark ? Colors.white60 : AppTheme.kLightTextSub),

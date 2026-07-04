@@ -10,7 +10,6 @@ import 'package:sportbook/feature/Token/service/token_service.dart';
 import 'package:sportbook/feature/User/model/register_request_dto.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'reset_password_screen.dart';
 
 enum VerifyFlow { otpLogin, signup, forgetPassword }
 
@@ -41,7 +40,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
   // Flow state variables
   VerifyFlow _flow = VerifyFlow.otpLogin;
   String _phoneNumber = '';
-  String? _verificationId; // ✅ Store the verification ID
+  String? _verificationId;
   RegisterRequestDto? _userData;
 
   final _userService = getIt<UserService>();
@@ -66,7 +65,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         setState(() {
           _flow = _parseFlow(flowString);
           _phoneNumber = phone;
-          _verificationId = verificationId; // ✅ Store the verification ID
+          _verificationId = verificationId;
           _userData = userData is RegisterRequestDto ? userData : null;
         });
       } else if (args is RegisterRequestDto) {
@@ -180,12 +179,15 @@ class _VerifyScreenState extends State<VerifyScreen> {
           if (!mounted) return;
           setState(() {
             _isLoading = false;
-            _verificationId = verificationId; // ✅ Update the verification ID
+            _verificationId = verificationId;
           });
           _startTimer();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('OTP resent successfully'),
+            SnackBar(
+              content: Text(
+                'OTP resent successfully',
+                style: const TextStyle(fontFamily: AppTheme.fontFamily),
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -213,13 +215,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // ✅ This will now handle the platform error
       User user = await _firebaseOtpService.verifyOtp(
         smsCode: _otp,
         verificationIdOverride: _verificationId,
       );
 
-      // ✅ Get the token
       final firebaseToken = await user.getIdToken(true);
       if (firebaseToken == null) {
         throw Exception('Failed to get Firebase token');
@@ -227,7 +227,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
       if (!mounted) return;
 
-      // Handle flows
       switch (_flow) {
         case VerifyFlow.signup:
           await _handleSignupFlow(firebaseToken);
@@ -290,8 +289,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
+        SnackBar(
+          content: Text(
+            'Account created successfully!',
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -309,18 +311,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
       _clearFields();
       setState(() => _isLoading = false);
 
-      Navigator.pushReplacement(
+      Navigator.pushNamedAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => const ResetPasswordScreen(),
-          settings: RouteSettings(
-            name: AppRoutes.resetPassword,
-            arguments: {
-              'phoneNumber': _phoneNumber,
-              'firebaseToken': firebaseToken,
-            },
-          ),
-        ),
+        AppRoutes.resetPassword,
+        arguments: {
+          'phoneNumber': _phoneNumber,
+          'firebaseToken': firebaseToken,
+        },
+        (route) => false,
       );
     }
   }
@@ -342,20 +340,30 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
+        SnackBar(
+          content: Text(
+            'Login successful!',
+            style: const TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
           backgroundColor: Colors.green,
         ),
       );
       setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+      );
     }
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 3),
       ),
@@ -393,6 +401,17 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+      appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -444,6 +463,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
               ? 'Create Account'
               : 'Enter OTP',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -455,6 +475,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
           _getHeaderSubtitle(),
           textAlign: TextAlign.center,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -470,6 +491,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
           child: Text(
             phoneNumber,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: AppTheme.kAccent,
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -520,6 +542,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 disabledBackgroundColor: isDark
                     ? Colors.grey[800]
                     : Colors.grey[300],
+                textStyle: const TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -536,6 +562,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                         Text(
                           _getButtonText(),
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: isDark ? Colors.black : Colors.white,
@@ -575,6 +602,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
               maxLength: 1,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -628,6 +656,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         Text(
           'Didn\'t receive the code?',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -648,6 +677,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                   child: Text(
                     _isLoading ? 'Sending...' : 'Resend',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.black : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -658,6 +688,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
             : Text(
                 '${_secondsLeft}s',
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -674,6 +705,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         Text(
           'Back to',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
@@ -684,6 +716,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
           child: Text(
             'Sign In',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: AppTheme.kAccent,
               fontSize: 14,
               fontWeight: FontWeight.w700,

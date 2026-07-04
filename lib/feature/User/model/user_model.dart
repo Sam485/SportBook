@@ -46,6 +46,9 @@ class UserModel {
     );
   }
 
+  // ignore: strict_top_level_inference
+  get phoneNumber => null;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

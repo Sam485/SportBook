@@ -43,16 +43,20 @@ class AppBottomNavBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: GNav(
               gap: 8,
-              activeColor: isDark
-                  ? const Color(0xFF0A1828)
-                  : AppTheme.kLightText,
-              color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
+              activeColor: Colors.black, // ✅ Always black when active
+              color: Colors.grey, // ✅ Grey when inactive
               iconSize: 22,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               duration: const Duration(milliseconds: 350),
-              tabBackgroundColor: AppTheme.kAccent, // Keep accent color same
+              tabBackgroundColor: AppTheme.kAccent,
               selectedIndex: selectedIndex,
               onTabChange: onTabChange,
+              textStyle: const TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black, // ✅ Always black text
+              ),
               tabs: [
                 GButton(icon: Icons.home_rounded, text: 'home'.tr(context)),
                 GButton(

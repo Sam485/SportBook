@@ -14,8 +14,8 @@ class PaymentSuccessPage extends StatefulWidget {
   final VoidCallback onGoHome;
   final VoidCallback onViewBooking;
   final Map<String, dynamic>? bookingData;
-  final bool isAuthenticated; // ✅ Added
-  final VoidCallback? onLoginRequired; // ✅ Added
+  final bool isAuthenticated;
+  final VoidCallback? onLoginRequired;
 
   const PaymentSuccessPage({
     super.key,
@@ -76,7 +76,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   void initState() {
     super.initState();
 
-    // ✅ Check authentication before proceeding
+    // Check authentication before proceeding
     if (!widget.isAuthenticated) {
       HapticFeedback.lightImpact();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -239,7 +239,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     });
   }
 
-  // ✅ Show authentication required dialog
+  // Show authentication required dialog
   void _showAuthRequiredDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -252,6 +252,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         title: Text(
           'authentication_required'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -264,6 +265,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             Text(
               'please_login_to_complete_booking'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -290,6 +292,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                     child: Text(
                       'booking_requires_login'.tr(context),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark ? Colors.white70 : AppTheme.kLightText,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -305,7 +308,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // ✅ Go back to booking flow
               if (mounted) {
                 Navigator.of(context).pop();
               }
@@ -313,6 +315,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             child: Text(
               'go_back'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               ),
             ),
@@ -320,7 +323,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // ✅ Navigate to login
               if (widget.onLoginRequired != null) {
                 widget.onLoginRequired!();
               } else {
@@ -330,6 +332,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.kAccent,
               foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             child: Text('login_now'.tr(context)),
           ),
@@ -365,7 +368,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     return '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(7)}';
   }
 
-  // ✅ Enhanced booking creation with authentication check
+  // Enhanced booking creation with authentication check
   Future<void> _createBooking() async {
     // Double check authentication
     if (!widget.isAuthenticated) {
@@ -433,10 +436,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking created successfully!'),
+          SnackBar(
+            content: Text(
+              'Booking created successfully!',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -449,7 +455,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Booking creation failed: ${e.toString()}'),
+            content: Text(
+              'Booking creation failed: ${e.toString()}',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.orange,
           ),
         );
@@ -599,7 +608,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // ✅ Show auth required UI if not authenticated
+    // Show auth required UI if not authenticated
     if (!widget.isAuthenticated) {
       return Scaffold(
         backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -618,6 +627,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 Text(
                   'authentication_required'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -627,6 +637,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                 Text(
                   'please_login_to_complete_booking'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                     fontSize: 16,
                   ),
@@ -651,6 +662,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
+                    textStyle: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   child: Text(
                     'login_to_continue'.tr(context),
@@ -668,6 +683,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   child: Text(
                     'go_back'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                     ),
                   ),
@@ -679,7 +695,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       );
     }
 
-    // ✅ Show normal success UI if authenticated
+    // Show normal success UI if authenticated
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
@@ -712,6 +728,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                       Text(
                         'payment_success_title'.tr(context),
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: isDark ? Colors.white : AppTheme.kLightText,
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
@@ -725,6 +742,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             ? 'booking_created_with_issues'.tr(context)
                             : 'payment_success_desc'.tr(context),
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: (isDark ? Colors.white : AppTheme.kLightText)
                               .withValues(alpha: 0.5),
                           fontSize: 14,
@@ -737,6 +755,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         Text(
                           _errorMessage!,
                           style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: Colors.orange,
                             fontSize: 12,
                           ),
@@ -785,6 +804,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 0,
+                            textStyle: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           child: _isCreatingBooking
                               ? const SizedBox(
@@ -806,6 +829,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                                     Text(
                                       'view_my_booking'.tr(context),
                                       style: const TextStyle(
+                                        fontFamily: AppTheme.fontFamily,
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
                                         letterSpacing: 0.2,
@@ -838,6 +862,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
+                            textStyle: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -853,6 +881,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                               Text(
                                 'return_to_home'.tr(context),
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.2,
@@ -1075,6 +1104,7 @@ class _BookingPillCard extends StatelessWidget {
                       ? 'processing_booking'.tr(context)
                       : '${'booking'.tr(context)} #$bookingId',
                   style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: AppTheme.kAccent,
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -1162,6 +1192,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color:
                     valueColor ?? (isDark ? Colors.white : AppTheme.kLightText),
                 fontSize: 14,
@@ -1172,6 +1203,7 @@ class _DetailRow extends StatelessWidget {
           Text(
             sub,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 11,
               fontWeight: FontWeight.w500,

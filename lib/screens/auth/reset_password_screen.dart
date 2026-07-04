@@ -42,7 +42,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           _firebaseToken = token;
         });
       } else {
-        // Try to get from route settings directly
         try {
           final routeArgs = ModalRoute.of(context)?.settings.arguments;
           if (routeArgs is Map<String, dynamic>) {
@@ -51,9 +50,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               _firebaseToken = routeArgs['firebaseToken'] ?? '';
             });
           }
-        // ignore: empty_catches
-        } catch (e) {
-        }
+          // ignore: empty_catches
+        } catch (e) {}
       }
     });
   }
@@ -69,7 +67,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final newPassword = _newPasswordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    // Validate
     if (newPassword.isEmpty) {
       _showError('Please enter a new password');
       return;
@@ -90,7 +87,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-
     setState(() => _isLoading = true);
 
     try {
@@ -104,14 +100,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         setState(() => _isLoading = false);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset successfully!'),
+          SnackBar(
+            content: Text(
+              'Password reset successfully!',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
 
-        // Navigate to login screen
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRoutes.login,
@@ -137,7 +135,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 3),
       ),
@@ -163,6 +164,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         title: Text(
           'Reset Password',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -198,6 +200,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           Text(
                             'Phone: $_phoneNumber',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white
                                   : AppTheme.kLightText,
@@ -208,6 +211,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           Text(
                             'Enter your new password below',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub,
@@ -217,7 +221,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ],
                       ),
                     ),
-                    // ✅ Show token status
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -237,7 +240,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       child: Text(
                         _firebaseToken.isNotEmpty ? '✅' : '❌',
-                        style: const TextStyle(fontSize: 12),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -298,6 +304,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       child: Text(
                         'Password must be at least 6 characters long',
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: isDark
                               ? AppTheme.kTextSub
                               : AppTheme.kLightTextSub,
@@ -327,6 +334,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     disabledBackgroundColor: isDark
                         ? Colors.grey[800]
                         : Colors.grey[300],
+                    textStyle: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -340,6 +351,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       : Text(
                           'Reset Password',
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: isDark ? Colors.black : Colors.white,
@@ -368,6 +380,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       controller: controller,
       obscureText: obscure,
       style: TextStyle(
+        fontFamily: AppTheme.fontFamily,
         color: isDark ? Colors.white : AppTheme.kLightText,
         fontSize: 16,
       ),
@@ -375,9 +388,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         labelText: label,
         hintText: hint,
         labelStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         ),
         hintStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         ),
         prefixIcon: Icon(
@@ -408,6 +423,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        errorStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
+          color: Colors.red.shade300,
+          fontSize: 12,
         ),
         filled: true,
         fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,

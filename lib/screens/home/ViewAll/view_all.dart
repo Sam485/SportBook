@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
 import 'package:sportbook/feature/static/services/data_service.dart';
+import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 import 'package:sportbook/widgets/cards/club_card.dart';
 import '../../../feature/static/models/models.dart';
@@ -63,6 +64,7 @@ class _ViewAllState extends State<ViewAll> {
         title: Text(
           widget.title,
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -80,9 +82,10 @@ class _ViewAllState extends State<ViewAll> {
                 child: Center(
                   child: Text(
                     _isClubs
-                        ? 'No clubs for this sport'
-                        : 'No bookings for this sport',
+                        ? 'no_clubs_nearby'.tr(context)
+                        : 'no_bookings'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,
@@ -159,11 +162,18 @@ class _ViewAllState extends State<ViewAll> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(cat.emoji, style: const TextStyle(fontSize: 15)),
+                  Text(
+                    cat.emoji,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     cat.name,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: sel
                           ? const Color(0xFF0A1828)
                           : (isDark ? Colors.white60 : AppTheme.kLightTextSub),

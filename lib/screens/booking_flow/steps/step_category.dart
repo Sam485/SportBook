@@ -7,7 +7,7 @@ class StepCategory extends StatelessWidget {
   final VoidCallback onNext;
   final Function(String) onCategorySelected;
   final String? selectedCategory;
-  final List<CategoryModel> categories; // ✅ Changed to List<CategoryModel>
+  final List<CategoryModel> categories;
 
   const StepCategory({
     super.key,
@@ -27,6 +27,7 @@ class StepCategory extends StatelessWidget {
         Text(
           'select_sport'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -36,6 +37,7 @@ class StepCategory extends StatelessWidget {
         Text(
           'choose_sport_desc'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
           ),
@@ -43,7 +45,6 @@ class StepCategory extends StatelessWidget {
         const SizedBox(height: 24),
 
         ...categories.map((category) {
-          // ✅ Use category.name instead of toString()
           final categoryStr = category.name;
           final sel = selectedCategory == categoryStr;
 
@@ -100,7 +101,10 @@ class StepCategory extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text(
                       _getEmojiForCategory(category.name),
-                      style: const TextStyle(fontSize: 26),
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
+                        fontSize: 26,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -111,6 +115,7 @@ class StepCategory extends StatelessWidget {
                         Text(
                           _getTranslatedCategoryName(category.name, context),
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: sel
                                 ? AppTheme.kAccent
                                 : (isDark ? Colors.white : AppTheme.kLightText),
@@ -122,6 +127,7 @@ class StepCategory extends StatelessWidget {
                         Text(
                           _subtitle(category.name, context),
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: isDark
                                 ? AppTheme.kTextSub
                                 : AppTheme.kLightTextSub,

@@ -111,6 +111,10 @@ class AppTranslations {
       'change_location': 'Change Location',
       'favorite_clubs': 'Favorite Clubs',
       'no_clubs_nearby': 'No clubs nearby',
+      'suggest_change_location':
+          'Try changing your location to find clubs nearby',
+      'no_club_nearby': 'No clubs nearby',
+      'confirm_location': 'Confirm Location',
 
       // ---------------------- Booking ----------------------------
       'search': 'Search',
@@ -240,6 +244,8 @@ class AppTranslations {
       'no_bookings_status_desc': 'No bookings found with this status',
       'clear_filters': 'Clear Filters',
       'failed_to_load_bookings': 'Failed to load bookings',
+      'no_clubs_for_this_sport': 'No clubs for this sport',
+      'profile_info': 'Profile Info',
 
       // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'Choose a sport to book at {name}',
@@ -514,6 +520,15 @@ class AppTranslations {
       'sign_in_to_access_settings': 'Sign in to access your settings',
       'sign_in': 'Sign In',
       'create_account': 'Create Account',
+      // ---------------------- Payment ----------------------------
+      'loading_user_data': 'Loading user data...',
+      'tap_payment_card_to_pay':
+          'Tap the payment card above to complete payment',
+      'please_complete_payment_first':
+          'Please complete the payment first before confirming',
+      'payment_completed_successfully': 'Payment completed successfully!',
+      'choose_payment_provider': 'Choose Payment Provider',
+      'select_one_below': 'Select one of the payment methods below',
     },
 
     // ------------------------------------------------------------------------
@@ -616,6 +631,10 @@ class AppTranslations {
       'no_results_for': 'រកមិនឃើញលទ្ធផលសម្រាប់ "{query}"',
       'change_location': 'ផ្លាស់ប្តូរទីតាំង',
       'favorite_clubs': 'ក្លឹបដែលអ្នកចូលចិត្ត',
+      'suggest_change_location':
+          'សូមសាកល្បងផ្លាស់ប្ដូរទីតាំងរបស់អ្នក ដើម្បីស្វែងរកក្លឹបនៅក្បែរអ្នក។',
+      'no_clubs_nearby': 'គ្មានក្លឹបនៅក្បែរអ្នកទេ',
+      'confirm_location': 'បញ្ជាក់ទីតាំង',
 
       // ---------------------- Booking ----------------------------
       'search': 'ស្វែងរក',
@@ -749,6 +768,8 @@ class AppTranslations {
       'no_bookings_status_desc': 'រកមិនឃើញការកក់ជាមួយស្ថានភាពនេះ',
       'clear_filters': 'លុបតម្រង',
       'failed_to_load_bookings': 'មិនអាចផ្ទុកការកក់បាន',
+      'no_clubs_for_this_sport': 'គ្មានក្លឹបសម្រាប់កីឡានេះ',
+      'profile_info': 'ព័ត៌មានប្រវត្តិរូប',
 
       // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'ជ្រើសរើសកីឡាដើម្បីកក់នៅ {name}',
@@ -1016,6 +1037,15 @@ class AppTranslations {
       'sign_in_to_access_settings': 'ចូលប្រើប្រាស់ដើម្បីមើលការកំណត់របស់អ្នក',
       'sign_in': 'ចូលប្រើប្រាស់',
       'create_account': 'បង្កើតគណនី',
+
+      // ---------------------- Payment Methods ----------------------------
+      'loading_user_data': 'កំពុងផ្ទុកទិន្នន័យអ្នកប្រើប្រាស់...',
+      'tap_payment_card_to_pay': 'ចុចលើកាតទូទាត់ខាងលើដើម្បីបញ្ចប់ការទូទាត់',
+      'please_complete_payment_first':
+          'សូមបញ្ចប់ការទូទាត់ជាមុនសិនមុនពេលបញ្ជាក់',
+      'payment_completed_successfully': 'ការទូទាត់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!',
+      'choose_payment_provider': 'ជ្រើសរើសអ្នកផ្តល់សេវាទូទាត់',
+      'select_one_below': 'ជ្រើសរើសវិធីសាស្ត្រទូទាត់មួយខាងក្រោម',
     },
   };
 

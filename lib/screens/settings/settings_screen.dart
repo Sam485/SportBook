@@ -238,7 +238,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _isNotificationsEnabled = enabled;
         });
       }
-    // ignore: empty_catches
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -246,7 +246,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_notificationsKey, enabled);
-    // ignore: empty_catches
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -321,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _favoriteCount = _clubService.favoriteCount;
         });
       }
-    // ignore: empty_catches
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -394,6 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 'choose_photo'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -461,6 +462,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(
         label,
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: textColor ?? (isDark ? Colors.white : AppTheme.kLightText),
         ),
       ),
@@ -487,7 +489,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to pick image: $e'),
+            content: Text(
+              'Failed to pick image: $e',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -515,7 +520,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to take photo: $e'),
+            content: Text(
+              'Failed to take photo: $e',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -544,7 +552,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('avatar_updated'.tr(context)),
+            content: Text(
+              'avatar_updated'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -566,6 +577,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SnackBar(
             content: Text(
               '${'avatar_update_failed'.tr(context)}: $errorMessage',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
@@ -593,10 +605,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Remove avatar feature coming soon'),
+          SnackBar(
+            content: Text(
+              'Remove avatar feature coming soon',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.grey,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -607,7 +622,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to remove avatar: $e'),
+            content: Text(
+              'Failed to remove avatar: $e',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -648,6 +666,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     });
   }
+
   void _showLanguageSelector() async {
     if (!_isAuthenticated || _isDisposed || !mounted) return;
 
@@ -696,24 +715,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: AppTheme.card(context),
         title: Text(
           'sign_out'.tr(context),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            color: Colors.white,
+          ),
         ),
         content: Text(
           'Are you sure you want to sign out?',
-          style: const TextStyle(color: AppTheme.kTextSub),
+          style: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            color: AppTheme.kTextSub,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               'cancel'.tr(context),
-              style: const TextStyle(color: AppTheme.kTextSub),
+              style: const TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: AppTheme.kTextSub,
+              ),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: AppTheme.elevatedButtonStyle(backgroundColor: Colors.red),
-            child: Text('sign_out'.tr(context)),
+            child: Text(
+              'sign_out'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
           ),
         ],
       ),
@@ -739,7 +770,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
-      // ignore: empty_catches
+        // ignore: empty_catches
       } catch (e) {}
 
       if (mounted && !_isDisposed) {
@@ -1235,6 +1266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               'you_are_not_signed_in'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -1244,6 +1276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               'sign_in_to_access_settings'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -1262,10 +1295,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 0,
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 child: Text(
                   'sign_in'.tr(context),
                   style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1287,10 +1325,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 child: Text(
                   'create_account'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : AppTheme.kLightText,
@@ -1357,9 +1400,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 8),
-            Text('Failed to load profile', style: TextStyle(color: Colors.red)),
+            Text(
+              'Failed to load profile',
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: Colors.red,
+              ),
+            ),
             const SizedBox(height: 8),
-            ElevatedButton(onPressed: _loadUserProfile, child: Text('Retry')),
+            ElevatedButton(
+              onPressed: _loadUserProfile,
+              child: Text(
+                'Retry',
+                style: const TextStyle(fontFamily: AppTheme.fontFamily),
+              ),
+            ),
           ],
         ),
       );
@@ -1629,6 +1684,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Text(
                             title,
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? Colors.white
                                   : AppTheme.kLightText,
@@ -1639,6 +1695,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Text(
                             subTitle,
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: isDark
                                   ? AppTheme.kTextSub
                                   : AppTheme.kLightTextSub,
@@ -1715,15 +1772,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text(
                               'notifications'.tr(context),
-                              style: AppTheme.tsLabelAdaptive(
-                                context,
-                              ).copyWith(fontSize: 14.5),
+                              style: AppTheme.tsLabelAdaptive(context).copyWith(
+                                fontFamily: AppTheme.fontFamily,
+                                fontSize: 14.5,
+                              ),
                             ),
                             Text(
                               'booking_reminders'.tr(context),
-                              style: AppTheme.tsSubAdaptive(
-                                context,
-                              ).copyWith(fontSize: 12),
+                              style: AppTheme.tsSubAdaptive(context).copyWith(
+                                fontFamily: AppTheme.fontFamily,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -1776,6 +1835,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Text(
                                 'language'.tr(context),
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? Colors.white
                                       : AppTheme.kLightText,
@@ -1788,6 +1848,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ? 'english'.tr(context)
                                     : 'khmer'.tr(context),
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? AppTheme.kTextSub
                                       : AppTheme.kLightTextSub,
@@ -1853,6 +1914,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Text(
                                 'appearance'.tr(context),
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? Colors.white
                                       : AppTheme.kLightText,
@@ -1867,6 +1929,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ? 'light_mode'.tr(context)
                                           : 'system_default'.tr(context)),
                                 style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
                                   color: isDark
                                       ? AppTheme.kTextSub
                                       : AppTheme.kLightTextSub,

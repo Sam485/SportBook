@@ -39,7 +39,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   // Get the list of bookings from the response
   List<BookingModel> get _bookings => _bookingsData?.data ?? [];
 
-  // ✅ Get user-friendly error message
+  // Get user-friendly error message
   String get _userFriendlyErrorMessage {
     if (_errorMessage == null) return 'something_went_wrong'.tr(context);
 
@@ -84,7 +84,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
     super.dispose();
   }
 
-  // ✅ Check if user is authenticated
+  // Check if user is authenticated
   Future<void> _checkAuthentication() async {
     if (!mounted || _isDisposed) return;
 
@@ -189,13 +189,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
     _fetchBookings();
   }
 
-  // ✅ Navigate to login screen
+  // Navigate to login screen
   void _navigateToLogin() {
     if (!mounted || _isDisposed) return;
     Navigator.pushNamed(context, AppRoutes.login);
   }
 
-  // ✅ Navigate to sign up screen
+  // Navigate to sign up screen
   void _navigateToSignUp() {
     if (!mounted || _isDisposed) return;
     Navigator.pushNamed(context, AppRoutes.signup);
@@ -273,7 +273,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
     );
   }
 
-  // ✅ Login Required State - Styled like the image
+  // Login Required State - Styled like the image
   Widget _buildLoginRequiredState(bool isDark) {
     if (_isDisposed) return const SizedBox.shrink();
 
@@ -307,6 +307,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             Text(
               'you_are_not_signed_in'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -318,6 +319,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             Text(
               'sign_in_to_access_bookings'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -338,10 +340,15 @@ class _BookingsScreenState extends State<BookingsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 0,
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 child: Text(
                   'sign_in'.tr(context),
                   style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -365,10 +372,15 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 child: Text(
                   'create_account'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : AppTheme.kLightText,
@@ -382,7 +394,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
     );
   }
 
-  // ✅ Skeleton Loading Widget
+  // Skeleton Loading Widget
   Widget _buildSkeletonLoading(bool isDark) {
     final skeletonBaseColor = isDark
         ? const Color(0xFF1E3A5F)
@@ -495,11 +507,38 @@ class _BookingsScreenState extends State<BookingsScreen> {
       ),
       onSelected: _changeStatus,
       itemBuilder: (context) => [
-        const PopupMenuItem(value: '', child: Text('All')),
-        const PopupMenuItem(value: 'pending', child: Text('Pending')),
-        const PopupMenuItem(value: 'confirmed', child: Text('Confirmed')),
-        const PopupMenuItem(value: 'completed', child: Text('Completed')),
-        const PopupMenuItem(value: 'cancelled', child: Text('Cancelled')),
+        const PopupMenuItem(
+          value: '',
+          child: Text('All', style: TextStyle(fontFamily: AppTheme.fontFamily)),
+        ),
+        const PopupMenuItem(
+          value: 'pending',
+          child: Text(
+            'Pending',
+            style: TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'confirmed',
+          child: Text(
+            'Confirmed',
+            style: TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'completed',
+          child: Text(
+            'Completed',
+            style: TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'cancelled',
+          child: Text(
+            'Cancelled',
+            style: TextStyle(fontFamily: AppTheme.fontFamily),
+          ),
+        ),
       ],
     );
   }
@@ -522,6 +561,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             Text(
               _userFriendlyErrorMessage,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -541,6 +581,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
+                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: Text('retry'.tr(context)),
@@ -569,6 +610,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             Text(
               'no_bookings_found'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -581,6 +623,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   ? 'no_bookings_desc'.tr(context)
                   : 'no_bookings_status_desc'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                 fontSize: 14,
               ),
@@ -592,7 +635,10 @@ class _BookingsScreenState extends State<BookingsScreen> {
                 onPressed: () => _changeStatus(''),
                 child: Text(
                   'clear_filters'.tr(context),
-                  style: const TextStyle(color: AppTheme.kAccent),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    color: AppTheme.kAccent,
+                  ),
                 ),
               ),
             ],
@@ -613,7 +659,10 @@ class _BookingsScreenState extends State<BookingsScreen> {
           Expanded(
             child: TextField(
               controller: _searchController,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: isDark ? Colors.white : Colors.black,
+              ),
               decoration:
                   AppTheme.textFieldDecoration(
                     Icons.search,
@@ -621,6 +670,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   ).copyWith(
                     labelText: 'search_bookings'.tr(context),
                     labelStyle: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      color: isDark
+                          ? AppTheme.kTextSub
+                          : AppTheme.kLightTextSub,
+                    ),
+                    hintStyle: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,
@@ -671,6 +727,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
           Text(
             '$_currentPage / $totalPages',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             ),
           ),

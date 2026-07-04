@@ -25,7 +25,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   bool _isDisposed = false;
   bool _isCheckingAuth = true;
 
-  // ✅ Get user-friendly error message
+  // Get user-friendly error message
   String get _userFriendlyErrorMessage {
     if (_errorMessage.isEmpty) return 'something_went_wrong'.tr(context);
 
@@ -57,7 +57,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     super.dispose();
   }
 
-  // ✅ Check if user is authenticated
+  // Check if user is authenticated
   Future<void> _checkAuthentication() async {
     setState(() {
       _isCheckingAuth = true;
@@ -93,7 +93,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  // ✅ Redirect to login screen
+  // Redirect to login screen
   void _redirectToLogin() {
     if (!_isDisposed && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -236,7 +236,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('all_notifications_read'.tr(context)),
+            content: Text(
+              'all_notifications_read'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -246,7 +249,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
       if (!_isDisposed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to mark all as read: $e'),
+            content: Text(
+              'Failed to mark all as read: $e',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 2),
           ),
@@ -286,7 +292,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // ✅ Show loading while checking auth
+    // Show loading while checking auth
     if (_isCheckingAuth) {
       return Scaffold(
         backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -302,6 +308,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Text(
                 'loading'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -329,6 +336,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         title: Text(
           'notifications'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -381,6 +389,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Text(
                 'loading'.tr(context),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -391,7 +400,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       );
     }
 
-    // ✅ Show friendly error message
+    // Show friendly error message
     if (_hasError) {
       return SliverFillRemaining(
         child: Center(
@@ -409,6 +418,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 Text(
                   _userFriendlyErrorMessage,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -428,6 +438,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
+                    textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
                   ),
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text('retry'.tr(context)),
@@ -460,6 +471,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           .tr(context)
                           .replaceAll('{category}', _selectedCat),
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                   fontSize: 16,
                 ),
@@ -537,6 +549,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     Text(
                       catDisplayName,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: sel
                             ? const Color(0xFF0A1828)
                             : (isDark
@@ -604,6 +617,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             title: Text(
               notification.title,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
                 fontWeight: notification.isRead
@@ -619,6 +633,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 Text(
                   notification.description,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                     fontSize: 13,
                   ),
@@ -629,6 +644,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 Text(
                   notification.datetime,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 11,
                   ),
@@ -776,6 +792,7 @@ class NotificationDetailDialog extends StatelessWidget {
                       child: Text(
                         notification.category,
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: const Color(0xFF0A1828),
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -797,6 +814,7 @@ class NotificationDetailDialog extends StatelessWidget {
                 child: Text(
                   notification.title,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -818,6 +836,7 @@ class NotificationDetailDialog extends StatelessWidget {
                 child: Text(
                   notification.description,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white70 : Colors.grey[700],
                     fontSize: 14,
                     height: 1.6,
@@ -852,10 +871,15 @@ class NotificationDetailDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 0,
+                    textStyle: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'OK',
-                    style: const TextStyle(
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),

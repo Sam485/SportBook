@@ -53,6 +53,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
             child: Text(
               'select_language'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -145,6 +146,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
                   Text(
                     language,
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isSelected
                           ? AppTheme.kAccent
                           : (isDark ? Colors.white : AppTheme.kLightText),
@@ -158,6 +160,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
                   Text(
                     code == 'en' ? 'English (US)' : 'ភាសាខ្មែរ',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark
                           ? AppTheme.kTextSub
                           : AppTheme.kLightTextSub,

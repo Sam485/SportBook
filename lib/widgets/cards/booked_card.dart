@@ -9,7 +9,7 @@ import 'package:sportbook/translations/app_translations.dart';
 
 class BookedCard extends StatefulWidget {
   final BookingModel booking;
-  final VoidCallback? onBookingUpdated; // ✅ Callback to refresh parent
+  final VoidCallback? onBookingUpdated;
 
   const BookedCard({super.key, required this.booking, this.onBookingUpdated});
 
@@ -20,7 +20,7 @@ class BookedCard extends StatefulWidget {
 class _BookedCardState extends State<BookedCard> {
   final BookingService _bookingService = getIt<BookingService>();
   bool _isCancelling = false;
-  BookingModel? _currentBooking; // ✅ Track current booking state
+  BookingModel? _currentBooking;
 
   // Computed properties - use _currentBooking if available, otherwise widget.booking
   BookingModel get b => _currentBooking ?? widget.booking;
@@ -104,6 +104,7 @@ class _BookedCardState extends State<BookedCard> {
         title: Text(
           'cancel_booking'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -114,6 +115,7 @@ class _BookedCardState extends State<BookedCard> {
               .tr(context)
               .replaceAll('{title}', b.slot.name),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 13,
           ),
@@ -124,6 +126,7 @@ class _BookedCardState extends State<BookedCard> {
             child: Text(
               'keep'.tr(context),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: AppTheme.kAccent,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -132,10 +135,16 @@ class _BookedCardState extends State<BookedCard> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             child: Text(
               'yes_cancel'.tr(context),
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -152,21 +161,21 @@ class _BookedCardState extends State<BookedCard> {
       final result = await _bookingService.cancelBooking(b.id);
 
       if (mounted) {
-        // ✅ Update the local booking state with the cancelled status
         setState(() {
-          _currentBooking = result; // Use the updated booking from API
+          _currentBooking = result;
           _isCancelling = false;
         });
 
-        // ✅ Notify parent that booking was updated
         widget.onBookingUpdated?.call();
 
-        // ✅ Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking cancelled successfully'),
+          SnackBar(
+            content: Text(
+              'Booking cancelled successfully',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -178,7 +187,10 @@ class _BookedCardState extends State<BookedCard> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to cancel booking: ${e.toString()}'),
+            content: Text(
+              'Failed to cancel booking: ${e.toString()}',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 3),
           ),
@@ -187,7 +199,6 @@ class _BookedCardState extends State<BookedCard> {
     }
   }
 
-  // ✅ Method to refresh booking data from API
   Future<void> _refreshBooking() async {
     try {
       final updatedBooking = await _bookingService.getBookingById(b.id);
@@ -237,6 +248,7 @@ class _BookedCardState extends State<BookedCard> {
                     child: Text(
                       'entry_pass'.tr(context),
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -298,6 +310,7 @@ class _BookedCardState extends State<BookedCard> {
                     Text(
                       b.slot.name,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark ? Colors.white : AppTheme.kLightText,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -308,6 +321,7 @@ class _BookedCardState extends State<BookedCard> {
                     Text(
                       b.sportClub.name,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
@@ -319,6 +333,7 @@ class _BookedCardState extends State<BookedCard> {
                     Text(
                       '$_formattedDate • $_timeRange',
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kAccent
                             : AppTheme.kLightTextSub,
@@ -330,6 +345,7 @@ class _BookedCardState extends State<BookedCard> {
                     Text(
                       _bookingId,
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark
                             ? AppTheme.kTextSub
                             : AppTheme.kLightTextSub,
@@ -361,6 +377,7 @@ class _BookedCardState extends State<BookedCard> {
                       child: Text(
                         'qr_instruction'.tr(context),
                         style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           color: isDark
                               ? Colors.white70
                               : AppTheme.kLightTextSub,
@@ -385,10 +402,14 @@ class _BookedCardState extends State<BookedCard> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
                   ),
                   child: Text(
                     'close'.tr(context),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -413,13 +434,11 @@ class _BookedCardState extends State<BookedCard> {
 
     return InkWell(
       onTap: () {
-        // Navigate to detailed view and listen for updates when returning
         Navigator.pushNamed(
           context,
           AppRoutes.bookedDetailed,
           arguments: b,
         ).then((_) {
-          // Refresh when coming back from detailed view
           if (mounted) {
             _refreshBooking();
           }
@@ -473,6 +492,7 @@ class _BookedCardState extends State<BookedCard> {
           : Text(
               _initials,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: color,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -493,6 +513,7 @@ class _BookedCardState extends State<BookedCard> {
                 child: Text(
                   b.slot.name,
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -538,6 +559,7 @@ class _BookedCardState extends State<BookedCard> {
       child: Text(
         _status.toUpperCase(),
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: _statusColor,
           fontSize: 10,
           fontWeight: FontWeight.w700,
@@ -555,6 +577,7 @@ class _BookedCardState extends State<BookedCard> {
           child: Text(
             text,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
               fontSize: 12,
             ),
@@ -576,6 +599,7 @@ class _BookedCardState extends State<BookedCard> {
       child: Text(
         text,
         style: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: color,
           fontSize: 11,
           fontWeight: FontWeight.w700,

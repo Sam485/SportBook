@@ -18,14 +18,15 @@ class AppTheme {
   static const kLightTextSub = Color(0xFF5A7FA8);
   static const kLightText = Color(0xFF0D2137);
 
+  // ── Font Family ──────────────────────────────────────────────────────────
+  static const String fontFamily = 'KantumruyPro';
+
   // ── ThemeData ─────────────────────────────────────────────────────────────
   static ThemeData get dark => ThemeData(
     brightness: Brightness.dark,
     scaffoldBackgroundColor: kBg,
-    colorScheme: const ColorScheme.dark(
-      primary: kAccent,
-      surface: kCard,
-    ),
+    fontFamily: fontFamily,
+    colorScheme: const ColorScheme.dark(primary: kAccent, surface: kCard),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected) ? kAccent : Colors.grey,
@@ -45,7 +46,25 @@ class AppTheme {
         fontSize: 18,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.3,
+        fontFamily: fontFamily,
       ),
+    ),
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(fontFamily: fontFamily),
+      displayMedium: TextStyle(fontFamily: fontFamily),
+      displaySmall: TextStyle(fontFamily: fontFamily),
+      headlineLarge: TextStyle(fontFamily: fontFamily),
+      headlineMedium: TextStyle(fontFamily: fontFamily),
+      headlineSmall: TextStyle(fontFamily: fontFamily),
+      titleLarge: TextStyle(fontFamily: fontFamily),
+      titleMedium: TextStyle(fontFamily: fontFamily),
+      titleSmall: TextStyle(fontFamily: fontFamily),
+      bodyLarge: TextStyle(fontFamily: fontFamily),
+      bodyMedium: TextStyle(fontFamily: fontFamily),
+      bodySmall: TextStyle(fontFamily: fontFamily),
+      labelLarge: TextStyle(fontFamily: fontFamily),
+      labelMedium: TextStyle(fontFamily: fontFamily),
+      labelSmall: TextStyle(fontFamily: fontFamily),
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
@@ -58,6 +77,7 @@ class AppTheme {
   static ThemeData get light => ThemeData(
     brightness: Brightness.light,
     scaffoldBackgroundColor: kLightBg,
+    fontFamily: fontFamily,
     colorScheme: const ColorScheme.light(
       primary: kAccent,
       surface: kLightCard,
@@ -82,7 +102,25 @@ class AppTheme {
         fontSize: 18,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.3,
+        fontFamily: fontFamily,
       ),
+    ),
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(fontFamily: fontFamily),
+      displayMedium: TextStyle(fontFamily: fontFamily),
+      displaySmall: TextStyle(fontFamily: fontFamily),
+      headlineLarge: TextStyle(fontFamily: fontFamily),
+      headlineMedium: TextStyle(fontFamily: fontFamily),
+      headlineSmall: TextStyle(fontFamily: fontFamily),
+      titleLarge: TextStyle(fontFamily: fontFamily),
+      titleMedium: TextStyle(fontFamily: fontFamily),
+      titleSmall: TextStyle(fontFamily: fontFamily),
+      bodyLarge: TextStyle(fontFamily: fontFamily),
+      bodyMedium: TextStyle(fontFamily: fontFamily),
+      bodySmall: TextStyle(fontFamily: fontFamily),
+      labelLarge: TextStyle(fontFamily: fontFamily),
+      labelMedium: TextStyle(fontFamily: fontFamily),
+      labelSmall: TextStyle(fontFamily: fontFamily),
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
@@ -92,7 +130,7 @@ class AppTheme {
     ),
   );
 
-  // ── Adaptive helpers (use these in widgets instead of hardcoded colors) ───
+  // ── Adaptive helpers ─────────────────────────────────────────────────────
 
   /// Background color
   static Color bg(BuildContext context) => _isDark(context) ? kBg : kLightBg;
@@ -125,26 +163,45 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark;
 
   // ── Text styles ───────────────────────────────────────────────────────────
-  // Static styles kept for backward compat — use adaptive() versions in new widgets
+
   static const tsTitle = TextStyle(
     color: Colors.white,
     fontSize: 18,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.3,
+    fontFamily: fontFamily,
   );
 
-  static const tsBody = TextStyle(color: Colors.white70, fontSize: 13);
-  static const tsSub = TextStyle(color: kTextSub, fontSize: 11.5);
+  static const tsBody = TextStyle(
+    color: Colors.white70,
+    fontSize: 13,
+    fontFamily: fontFamily,
+  );
+
+  static const tsSub = TextStyle(
+    color: kTextSub,
+    fontSize: 11.5,
+    fontFamily: fontFamily,
+  );
+
   static const tsAccent = TextStyle(
     color: kAccent,
     fontSize: 13,
     fontWeight: FontWeight.w700,
+    fontFamily: fontFamily,
   );
-  static const tsLabel = TextStyle(fontSize: 16, color: Colors.white);
+
+  static const tsLabel = TextStyle(
+    fontSize: 16,
+    color: Colors.white,
+    fontFamily: fontFamily,
+  );
+
   static const tsButtonLabel = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w700,
     letterSpacing: 0.3,
+    fontFamily: fontFamily,
   );
 
   // Adaptive text styles
@@ -153,16 +210,26 @@ class AppTheme {
     fontSize: 18,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.3,
+    fontFamily: fontFamily,
   );
 
-  static TextStyle tsBodyAdaptive(BuildContext context) =>
-      TextStyle(color: textSecondary(context), fontSize: 13);
+  static TextStyle tsBodyAdaptive(BuildContext context) => TextStyle(
+    color: textSecondary(context),
+    fontSize: 13,
+    fontFamily: fontFamily,
+  );
 
-  static TextStyle tsSubAdaptive(BuildContext context) =>
-      TextStyle(color: textSub(context), fontSize: 11.5);
+  static TextStyle tsSubAdaptive(BuildContext context) => TextStyle(
+    color: textSub(context),
+    fontSize: 11.5,
+    fontFamily: fontFamily,
+  );
 
-  static TextStyle tsLabelAdaptive(BuildContext context) =>
-      TextStyle(fontSize: 16, color: textPrimary(context));
+  static TextStyle tsLabelAdaptive(BuildContext context) => TextStyle(
+    fontSize: 16,
+    color: textPrimary(context),
+    fontFamily: fontFamily,
+  );
 
   // ── Button Styles ─────────────────────────────────────────────────────────
   static ButtonStyle elevatedButtonStyle({
@@ -174,6 +241,11 @@ class AppTheme {
       foregroundColor: foregroundColor ?? Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      textStyle: const TextStyle(
+        fontFamily: fontFamily,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
+      ),
     );
   }
 
@@ -185,6 +257,11 @@ class AppTheme {
       foregroundColor: Colors.white,
       side: const BorderSide(color: Color(0xFF2E3548), width: 1.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      textStyle: const TextStyle(
+        fontFamily: fontFamily,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
+      ),
     );
   }
 
@@ -197,6 +274,7 @@ class AppTheme {
   }) {
     return InputDecoration(
       hintText: 'Enter your $label',
+      hintStyle: const TextStyle(fontFamily: fontFamily),
       prefixIcon: Icon(icon),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(radius)),
@@ -256,6 +334,5 @@ class AppTheme {
     );
   }
 
-  // Add this helper method to AppTheme
-  static Color accent(BuildContext context) => kAccent; // Accent stays the same
+  static Color accent(BuildContext context) => kAccent;
 }

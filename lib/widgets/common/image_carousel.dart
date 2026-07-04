@@ -5,7 +5,7 @@ class ImageCarousel extends StatefulWidget {
   final List<String> imageUrls;
   final double height;
   final BorderRadius? borderRadius;
-  final bool showFavorite; // ✅ New parameter to control favorite button
+  final bool showFavorite; // New parameter to control favorite button
 
   const ImageCarousel({
     super.key,
@@ -236,6 +236,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                         Text(
                           '${_page + 1} / ${urls.length}',
                           style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: Colors.white70,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -425,6 +426,7 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
                             child: Text(
                               '${_cur + 1} / $total',
                               style: const TextStyle(
+                                fontFamily: AppTheme.fontFamily,
                                 color: Colors.white,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -477,7 +479,11 @@ class _FullScreenViewerState extends State<_FullScreenViewer>
               child: const Center(
                 child: Text(
                   'Swipe down to close',
-                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    color: Colors.white38,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ),

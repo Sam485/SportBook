@@ -29,6 +29,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
         title: Text(
           'Privacy & Policy',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -119,6 +120,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                 Text(
                   'Your Privacy Matters',
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white : AppTheme.kLightText,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -127,6 +129,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                 Text(
                   'We are committed to protecting your personal data',
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                     fontSize: 13,
                   ),
@@ -375,6 +378,7 @@ Phone: +855 12 345 679''',
             Text(
               'Last Updated: June 25, 2026',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -384,6 +388,7 @@ Phone: +855 12 345 679''',
             Text(
               'Version 1.0.0',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 12,
               ),
@@ -427,6 +432,7 @@ Phone: +855 12 345 679''',
               Text(
                 title,
                 style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? Colors.white : AppTheme.kLightText,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -438,6 +444,7 @@ Phone: +855 12 345 679''',
           Text(
             content,
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
               fontSize: 14,
               height: 1.6,

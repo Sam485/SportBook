@@ -55,6 +55,7 @@ class StepCourt extends StatelessWidget {
           Text(
             'select_court'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? Colors.white : AppTheme.kLightText,
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -64,6 +65,7 @@ class StepCourt extends StatelessWidget {
           Text(
             'select_court_desc'.tr(context),
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
               fontSize: 13,
             ),
@@ -89,6 +91,7 @@ class StepCourt extends StatelessWidget {
                 Text(
                   'no_courts_available'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white54 : AppTheme.kLightTextSub,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -98,6 +101,7 @@ class StepCourt extends StatelessWidget {
                 Text(
                   'please_check_back_later'.tr(context),
                   style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
                     color: isDark ? Colors.white38 : AppTheme.kLightTextSub,
                     fontSize: 13,
                   ),
@@ -118,6 +122,7 @@ class StepCourt extends StatelessWidget {
         Text(
           'select_court'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -127,6 +132,7 @@ class StepCourt extends StatelessWidget {
         Text(
           'select_court_desc'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
             fontSize: 13,
           ),
@@ -154,6 +160,7 @@ class StepCourt extends StatelessWidget {
                   child: Text(
                     'some_courts_unavailable'.tr(context),
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: Colors.orange,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -333,6 +340,7 @@ class StepCourt extends StatelessWidget {
                           child: Text(
                             'unavailable'.tr(ctx),
                             style: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -398,6 +406,7 @@ class StepCourt extends StatelessWidget {
                         Text(
                           name,
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: !isAvailable
                                 ? Colors.grey
                                 : sel
@@ -418,6 +427,7 @@ class StepCourt extends StatelessWidget {
                           Text(
                             '\$${price.toStringAsFixed(0)}/hr',
                             style: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: Colors.white70,
                               fontSize: 10,
                               shadows: [
@@ -429,6 +439,7 @@ class StepCourt extends StatelessWidget {
                           Text(
                             sport,
                             style: const TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               color: Colors.white70,
                               fontSize: 10,
                               shadows: [
@@ -514,6 +525,7 @@ class _SingleImageViewer extends StatelessWidget {
                     child: Text(
                       label,
                       style: const TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -533,7 +545,11 @@ class _SingleImageViewer extends StatelessWidget {
           child: Center(
             child: Text(
               'Pinch to zoom',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: Colors.white38,
+                fontSize: 11,
+              ),
             ),
           ),
         ),

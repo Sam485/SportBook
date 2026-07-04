@@ -20,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _rememberMe = false;
-  String? _errorMessage; // ✅ Added for error message
+  String? _errorMessage;
   final _userService = getIt<UserService>();
   final _tokenService = getIt<TokenService>();
 
@@ -31,7 +31,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // ✅ Get user-friendly error message
   String _getUserFriendlyErrorMessage(String error) {
     final msg = error.toLowerCase();
 
@@ -58,7 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // ✅ Clear previous error
     setState(() {
       _errorMessage = null;
     });
@@ -68,29 +66,27 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create login request
       final loginRequest = LoginRequestDto.fromInput(
         _identifierController.text.trim(),
         _passwordController.text.trim(),
       );
 
-      // Call login API
       final response = await _userService.loginUser(loginRequest);
 
-      // Save tokens to secure storage
       await _tokenService.saveTokens(response.tokenModel);
 
       if (mounted) {
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login successful!'),
+            content: Text(
+              'Login successful!',
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
         );
 
-        // Navigate to home
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
@@ -100,10 +96,12 @@ class _LoginScreenState extends State<LoginScreen> {
           _errorMessage = errorMsg;
         });
 
-        // ✅ Show error in SnackBar as well
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMsg),
+            content: Text(
+              errorMsg,
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -121,7 +119,17 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : AppTheme.kLightText,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
       body: SafeArea(
         child: Center(
@@ -133,13 +141,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Header with decoration - Centered
                   _buildHeader(isDark),
                   const SizedBox(height: 32),
-                  // Form Card
                   _buildFormCard(isDark),
                   const SizedBox(height: 20),
-                  // Footer
                   _buildFooter(isDark),
                 ],
               ),
@@ -156,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'Welcome Back',
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -193,6 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Text(
               'Phone or Username',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -202,11 +209,11 @@ class _LoginScreenState extends State<LoginScreen> {
             TextFormField(
               controller: _identifierController,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
               onChanged: (_) {
-                // ✅ Clear error when user types
                 if (_errorMessage != null && mounted) {
                   setState(() {
                     _errorMessage = null;
@@ -222,6 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 hintText: 'Enter phone or username',
                 hintStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -254,6 +262,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                 ),
+                errorStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -266,6 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Text(
               'Password',
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -276,11 +290,11 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _passwordController,
               obscureText: !_isPasswordVisible,
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? Colors.white : AppTheme.kLightText,
                 fontSize: 15,
               ),
               onChanged: (_) {
-                // ✅ Clear error when user types
                 if (_errorMessage != null && mounted) {
                   setState(() {
                     _errorMessage = null;
@@ -299,6 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 hintText: 'Enter your password',
                 hintStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
                   color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                   fontSize: 14,
                 ),
@@ -342,6 +357,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                 ),
+                errorStyle: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
@@ -375,6 +395,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Remember Me',
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
                         fontSize: 13,
                       ),
@@ -382,13 +403,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacementNamed(
-                    context,
-                    AppRoutes.forgetPass,
-                  ),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.forgetPass),
                   child: Text(
                     'Forgot Password?',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: AppTheme.kAccent,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -415,6 +435,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   disabledBackgroundColor: isDark
                       ? Colors.grey[800]
                       : Colors.grey[300],
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -431,6 +455,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             'Sign In',
                             style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.black : Colors.white,
@@ -462,6 +487,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text(
                     'or continue with',
                     style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
                       color: isDark ? Colors.grey[500] : Colors.grey[600],
                       fontSize: 12,
                     ),
@@ -483,7 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () =>
-                    Navigator.pushReplacementNamed(context, AppRoutes.otpLogin),
+                    Navigator.pushNamed(context, AppRoutes.otpLogin),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
                     color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
@@ -491,6 +517,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 child: Row(
@@ -505,6 +535,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Sign in with OTP',
                       style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white : AppTheme.kLightText,
@@ -527,17 +558,18 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           "Don't have an account?",
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white70 : AppTheme.kLightTextSub,
             fontSize: 14,
           ),
         ),
         const SizedBox(width: 6),
         GestureDetector(
-          onTap: () =>
-              Navigator.pushReplacementNamed(context, AppRoutes.signup),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
           child: Text(
             'Sign Up',
             style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               color: AppTheme.kAccent,
               fontSize: 14,
               fontWeight: FontWeight.w700,

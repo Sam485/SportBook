@@ -77,7 +77,10 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('password_changed_success'.tr(context)),
+            content: Text(
+              'password_changed_success'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 3),
           ),
@@ -113,7 +116,10 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: AppTheme.fontFamily),
+        ),
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 3),
       ),
@@ -139,6 +145,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
         title: Text(
           'password_security'.tr(context),
           style: TextStyle(
+            fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white : AppTheme.kLightText,
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -174,6 +181,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                         Text(
                           'security_tips'.tr(context),
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: isDark ? Colors.white : AppTheme.kLightText,
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -183,6 +191,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                         Text(
                           'strong_password_tip'.tr(context),
                           style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             color: isDark
                                 ? AppTheme.kTextSub
                                 : AppTheme.kLightTextSub,
@@ -201,6 +210,7 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
             Text(
               'change_password_section'.tr(context).toUpperCase(),
               style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -246,7 +256,11 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _changePassword,
-                style: AppTheme.elevatedButtonStyle(),
+                style: AppTheme.elevatedButtonStyle().copyWith(
+                  textStyle: const MaterialStatePropertyAll(
+                    TextStyle(fontFamily: AppTheme.fontFamily),
+                  ),
+                ),
                 child: _isLoading
                     ? const SizedBox(
                         height: 20,
@@ -256,7 +270,10 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : Text('change_password'.tr(context)),
+                    : Text(
+                        'change_password'.tr(context),
+                        style: const TextStyle(fontFamily: AppTheme.fontFamily),
+                      ),
               ),
             ),
           ],
@@ -276,12 +293,14 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
       controller: controller,
       obscureText: obscure,
       style: TextStyle(
+        fontFamily: AppTheme.fontFamily,
         color: isDark ? Colors.white : AppTheme.kLightText,
         fontSize: 16,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
           color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
         ),
         prefixIcon: Icon(
@@ -304,6 +323,19 @@ class _PasswordSecurityScreenState extends State<PasswordSecurityScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppTheme.kAccent, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        errorStyle: TextStyle(
+          fontFamily: AppTheme.fontFamily,
+          color: Colors.red.shade300,
+          fontSize: 12,
         ),
         filled: true,
         fillColor: isDark ? AppTheme.kCard : AppTheme.kLightCard,
