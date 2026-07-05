@@ -80,14 +80,14 @@ class AppTranslations {
 
       // ---------------------- Home Screen ----------------------------
       'clubs_nearby': 'Clubs Nearby',
-      'upcoming_bookings': 'Upcoming Bookings',
+      'sport_club': 'Sport Club',
       'no_bookings': 'No bookings for this sport',
-      'hello_message': 'Hello, {name} 👋',
+      'hello_message': 'Hello, {name}',
       'no_clubs_for_sport': 'No clubs for this sport',
       'favorites_empty': 'No favorite clubs yet',
       'favorites_hint': 'Start favoriting clubs you love!',
       'explore_clubs': 'Explore Clubs',
-      'no_upcoming_bookings': 'No Upcoming Bookings',
+      'no_sport_club': 'No Sport Club',
       'book_a_club_to_get_started': 'Book a club to get started',
       'browse_clubs': 'Browse Clubs',
       'loading_courts': 'Loading courts...',
@@ -246,6 +246,7 @@ class AppTranslations {
       'failed_to_load_bookings': 'Failed to load bookings',
       'no_clubs_for_this_sport': 'No clubs for this sport',
       'profile_info': 'Profile Info',
+      'are_you_sure_sign_out': 'Are you sure you want to sign out?',
 
       // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'Choose a sport to book at {name}',
@@ -318,7 +319,7 @@ class AppTranslations {
       'pi_pay_subtitle': 'Pay with Pi Pay',
       'true_money_subtitle': 'Pay with True Money',
       'pay_with': 'Pay with {name}',
-
+      'scan_with_bakong_app': 'Scan with Bakong app to pay',
       // ---------------------- Payment Success Page ----------------------------
       'payment_success_title': 'Payment Successful!',
       'payment_success_desc':
@@ -602,14 +603,14 @@ class AppTranslations {
 
       // ---------------------- Home Screen ----------------------------
       'clubs_nearby': 'ក្លឹបក្បែរអ្នក',
-      'upcoming_bookings': 'ការកក់នាពេលខាងមុខ',
+      'sport_club': 'ក្លឹបកីឡា',
       'no_bookings': 'គ្មានការកក់សម្រាប់កីឡានេះ',
       'hello_message': 'សួស្តី, {name}',
       'no_clubs_for_sport': 'គ្មានក្លឹបសម្រាប់កីឡានេះ',
       'favorites_empty': 'មិនទាន់មានក្លឹបដែលអ្នកចូលចិត្តនៅឡើយទេ',
       'favorites_hint': 'ចាប់ផ្តើមចូលចិត្តក្លឹបដែលអ្នកស្រលាញ់!',
       'explore_clubs': 'ស្វែងរកក្លឹប',
-      'no_upcoming_bookings': 'គ្មានការកក់នាពេលខាងមុខ',
+      'no_sport_club': 'គ្មានក្លឹបកីឡា',
       'book_a_club_to_get_started': 'កក់ក្លឹបដើម្បីចាប់ផ្តើម',
       'browse_clubs': 'រកមើលក្លឹប',
       'loading_courts': 'កំពុងផ្ទុកទីលាន...',
@@ -697,6 +698,7 @@ class AppTranslations {
       'cannot_select_past_date': 'មិនអាចជ្រើសរើសកាលបរិច្ឆេទកន្លងមកបានទេ',
       'cannot_select_past_time': 'មិនអាចជ្រើសរើសម៉ោងកន្លងមកបានទេ',
       'end_time_must_be_after_start': 'ម៉ោងបញ្ចប់ត្រូវតែបន្ទាប់ពីម៉ោងចាប់ផ្តើម',
+      'scan_with_bakong_app': 'ស្កេនជាមួយកម្មវិធី Bakong ដើម្បីបង់ប្រាក់',
 
       // ---------------------- Club Detailed Screen ----------------------------
       'facilities': 'បរិក្ខារ',
@@ -770,6 +772,7 @@ class AppTranslations {
       'failed_to_load_bookings': 'មិនអាចផ្ទុកការកក់បាន',
       'no_clubs_for_this_sport': 'គ្មានក្លឹបសម្រាប់កីឡានេះ',
       'profile_info': 'ព័ត៌មានប្រវត្តិរូប',
+      'are_you_sure_sign_out': 'តើអ្នកប្រាកដថាចង់ចាកចេញ?',
 
       // ---------------------- Step Category ----------------------------
       'choose_sport_at': 'ជ្រើសរើសកីឡាដើម្បីកក់នៅ {name}',

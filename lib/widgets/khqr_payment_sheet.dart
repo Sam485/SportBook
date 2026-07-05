@@ -49,6 +49,9 @@ Future<void> showKhqrPaymentSheet({
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     isDismissible: false,
+    barrierColor: Colors.black.withOpacity(
+      0.2,
+    ), // Adjust opacity (lower = brighter)
     builder: (_) => KhqrPaymentSheet(
       amount: amount,
       qrString: data['qr']!,
@@ -220,14 +223,19 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
               Container(
                 width: 44,
                 height: 44,
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0),
+                  color: const Color(0xFF1565C0).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.qr_code_2_outlined,
-                  color: Colors.white,
-                  size: 24,
+                child: Image.asset(
+                  'assets/logo/bakong-logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.qr_code_2_outlined,
+                    color: Color(0xFF1565C0),
+                    size: 24,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -281,7 +289,11 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
       children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22)),
+          decoration: BoxDecoration(
+            color: AppTheme.cardAlt(context),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppTheme.border(context), width: 1),
+          ),
           child: KhqrCardWidget(
             width: 270,
             amount: widget.amount,
@@ -320,6 +332,13 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
         ),
         const SizedBox(height: 8),
         Text('Waiting for payment...', style: AppTheme.tsSubAdaptive(context)),
+        const SizedBox(height: 8),
+        Text(
+          'Scan with Bakong app',
+          style: AppTheme.tsSubAdaptive(
+            context,
+          ).copyWith(fontSize: 12, color: AppTheme.textSub(context)),
+        ),
       ],
     );
   }
@@ -347,16 +366,9 @@ class _KhqrPaymentSheetState extends State<KhqrPaymentSheet> {
         Text('Payment Successful!', style: AppTheme.tsTitleAdaptive(context)),
         const SizedBox(height: 6),
         Text(
-          '\$ ${widget.amount.toStringAsFixed(2)} added to your balance',
+          '\$ ${widget.amount.toStringAsFixed(2)} paid successfully',
           style: AppTheme.tsBodyAdaptive(context),
           textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'New balance: \$ ${(48.50 + widget.amount).toStringAsFixed(2)}',
-          style: AppTheme.tsTitleAdaptive(
-            context,
-          ).copyWith(color: AppTheme.kAccent, fontSize: 16),
         ),
         const SizedBox(height: 28),
         SizedBox(

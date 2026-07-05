@@ -1,4 +1,3 @@
-// booking_flow_screen.dart - WITH AUTHENTICATION VALIDATION & FIXES
 import 'package:flutter/material.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
@@ -1056,28 +1055,6 @@ class _BottomBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Back button
-              GestureDetector(
-                onTap: onBack,
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.arrow_back_rounded,
-                    color: isDark ? Colors.white70 : AppTheme.kLightText,
-                    size: 22,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
               // Next/Confirm button
               Expanded(
                 child: GestureDetector(

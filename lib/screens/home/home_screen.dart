@@ -17,7 +17,6 @@ import 'package:sportbook/feature/User/model/update_dto.dart';
 import 'package:sportbook/feature/User/model/user_model.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/routes/app_routes.dart';
-import 'package:sportbook/screens/home/ViewAll/upcoming_booking_viewall.dart';
 import 'package:sportbook/translations/app_translations.dart';
 import 'package:sportbook/widgets/cards/booking_card.dart';
 import 'package:sportbook/widgets/common/banner_carousel.dart';
@@ -479,33 +478,6 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, AppRoutes.explore);
   }
 
-  void _navigateBookings() {
-    final upcoming = _upcomingBookings;
-    if (upcoming.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'no_upcoming_bookings'.tr(context),
-            style: const TextStyle(fontFamily: AppTheme.fontFamily),
-          ),
-          backgroundColor: Colors.grey,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => UpcomingBookingViewAll(
-          title: 'upcoming_bookings'.tr(context),
-          bookings: upcoming,
-        ),
-      ),
-    );
-  }
-
   void _navigateViewAll() {
     final clubs = _filteredClubs;
     if (clubs.isEmpty) return;
@@ -645,8 +617,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(child: _clubsList(isDark)),
               SliverToBoxAdapter(
                 child: SectionHeader(
-                  title: 'upcoming_bookings'.tr(context),
-                  onAction: _navigateBookings,
+                  title: 'sport_club'.tr(context),
                   isDark: isDark,
                 ),
               ),
