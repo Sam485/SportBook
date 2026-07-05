@@ -721,7 +721,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to sign out?',
+          'are_you_sure_sign_out'.tr(context),
           style: const TextStyle(
             fontFamily: AppTheme.fontFamily,
             color: AppTheme.kTextSub,
@@ -1772,9 +1772,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text(
                               'notifications'.tr(context),
-                              style: AppTheme.tsLabelAdaptive(context).copyWith(
+                              style: TextStyle(
                                 fontFamily: AppTheme.fontFamily,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppTheme.kLightText,
                                 fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             Text(

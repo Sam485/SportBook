@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
 import 'package:sportbook/feature/User/service/user_service.dart';
 import 'package:sportbook/translations/app_translations.dart';
-import 'package:sportbook/widgets/aba_payway_sheet.dart';
 import 'package:sportbook/widgets/khqr_payment_sheet.dart';
-
-enum PaymentMethod { khqr, aba, bakong }
 
 class StepPayment extends StatefulWidget {
   final VoidCallback onConfirm;
@@ -37,8 +33,6 @@ class StepPayment extends StatefulWidget {
 
 class StepPaymentState extends State<StepPayment>
     with TickerProviderStateMixin {
-  PaymentMethod? _selected;
-  PaymentMethod? _selectedSubMethod;
   bool _isPaymentCompleted = false;
   bool _isLoadingUserData = true;
 
@@ -55,10 +49,6 @@ class StepPaymentState extends State<StepPayment>
   void initState() {
     super.initState();
 
-    if (widget.selectedPaymentMethod != null) {
-      _selected = _getPaymentMethodFromString(widget.selectedPaymentMethod!);
-    }
-
     _khqrAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -68,10 +58,8 @@ class StepPaymentState extends State<StepPayment>
       duration: const Duration(milliseconds: 350),
     );
 
-    if (_selected != null) {
-      _khqrAnim.forward();
-      _detailAnim.forward(from: 0);
-    }
+    _khqrAnim.forward();
+    _detailAnim.forward(from: 0);
 
     _loadUserData();
   }
@@ -96,8 +84,6 @@ class StepPaymentState extends State<StepPayment>
       if (user != null && mounted) {
         if (user.fullName.isNotEmpty) {
           _nameController.text = user.fullName;
-        } else if (user.fullName.isNotEmpty) {
-          _nameController.text = user.fullName;
         }
 
         if (user.phone.isNotEmpty) {
@@ -117,138 +103,33 @@ class StepPaymentState extends State<StepPayment>
     }
   }
 
-  PaymentMethod _getPaymentMethodFromString(String method) {
-    switch (method.toLowerCase()) {
-      case 'khqr':
-        return PaymentMethod.khqr;
-      case 'aba':
-        return PaymentMethod.aba;
-      case 'bakong':
-        return PaymentMethod.bakong;
-      default:
-        return PaymentMethod.khqr;
-    }
-  }
-
-  String _getPaymentMethodString(PaymentMethod method) {
-    switch (method) {
-      case PaymentMethod.khqr:
-        return 'khqr';
-      case PaymentMethod.aba:
-        return 'aba';
-      case PaymentMethod.bakong:
-        return 'bakong';
-    }
-  }
-
-  void _selectMethod() {
-    HapticFeedback.selectionClick();
-    _showPaymentBottomSheet();
-  }
-
-  void _showPaymentBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _PaymentSelectionBottomSheet(
-        totalPrice: widget.totalPrice,
-        isDark: Theme.of(context).brightness == Brightness.dark,
-        onSelected: (method) {
-          setState(() {
-            _selectedSubMethod = method;
-            _isPaymentCompleted = false;
-            widget.onPaymentMethodSelected(_getPaymentMethodString(method));
-          });
-          _khqrAnim.forward();
-          _detailAnim.forward(from: 0);
-          Navigator.pop(context);
-
-          _showPaymentSheet(method);
-        },
-      ),
-    );
-  }
-
-  void _showPaymentSheet(PaymentMethod method) {
+  void _showPaymentSheet() {
     final amount = widget.totalPrice.toDouble();
 
-    switch (method) {
-      case PaymentMethod.aba:
-        showAbaPaywaySheet(
-          context: context,
-          amount: amount,
-          onSuccess: () {
-            setState(() {
-              _isPaymentCompleted = true;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Payment successful!',
-                  style: const TextStyle(fontFamily: AppTheme.fontFamily),
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
+    showKhqrPaymentSheet(
+      context: context,
+      amount: amount,
+      onSuccess: () {
+        setState(() {
+          _isPaymentCompleted = true;
+        });
+        widget.onPaymentMethodSelected('khqr');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'payment_successful'.tr(context),
+              style: const TextStyle(fontFamily: AppTheme.fontFamily),
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
         );
-        break;
-
-      case PaymentMethod.bakong:
-      case PaymentMethod.khqr:
-        showKhqrPaymentSheet(
-          context: context,
-          amount: amount,
-          onSuccess: () {
-            setState(() {
-              _isPaymentCompleted = true;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Payment successful!',
-                  style: const TextStyle(fontFamily: AppTheme.fontFamily),
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
-        );
-        break;
-    }
+      },
+    );
   }
 
   void handleConfirm() {
     if (!mounted) return;
-
-    if (_selectedSubMethod == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'select_payment_method'.tr(context),
-            style: const TextStyle(fontFamily: AppTheme.fontFamily),
-          ),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    if (!_isPaymentCompleted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'please_complete_payment_first'.tr(context),
-            style: const TextStyle(fontFamily: AppTheme.fontFamily),
-          ),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
 
     if (_formKey.currentState!.validate()) {
       widget.onConfirm();
@@ -256,9 +137,7 @@ class StepPaymentState extends State<StepPayment>
   }
 
   void _retryPayment() {
-    if (_selectedSubMethod != null) {
-      _showPaymentSheet(_selectedSubMethod!);
-    }
+    _showPaymentSheet();
   }
 
   @override
@@ -316,10 +195,9 @@ class StepPaymentState extends State<StepPayment>
         ),
         const SizedBox(height: 12),
         _PaymentCard(
-          selected: _selectedSubMethod != null,
           isPaymentCompleted: _isPaymentCompleted,
           animController: _khqrAnim,
-          onTap: _selectMethod,
+          onTap: _showPaymentSheet,
           onRetry: _retryPayment,
           icon: _isPaymentCompleted
               ? const Icon(
@@ -327,16 +205,25 @@ class StepPaymentState extends State<StepPayment>
                   color: Color(0xFF4CAF50),
                   size: 28,
                 )
-              : const Icon(
-                  Icons.qr_code_rounded,
-                  color: Color(0xFF0072CE),
-                  size: 28,
+              : Image.asset(
+                  'assets/logo/bakong-logo.png',
+                  width: 28,
+                  height: 28,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.qr_code_rounded,
+                    color: Color(0xFF0072CE),
+                    size: 28,
+                  ),
                 ),
-          title: _isPaymentCompleted ? 'Payment Completed' : 'QR / KHQR',
+          title: _isPaymentCompleted
+              ? 'payment_completed'.tr(context)
+              : 'KHQR / Bakong',
           subtitle: _isPaymentCompleted
-              ? 'Payment successful via ${_selectedSubMethod == PaymentMethod.aba ? "ABA Payway" : "Bakong/KHQR"}'
-              : 'Bakong • ABA Payway • Any QR Bank',
-          badge: _isPaymentCompleted ? 'paid' : 'instant',
+              ? 'payment_successful_via_khqr'.tr(context)
+              : 'scan_with_bakong_app'.tr(context),
+          badge: _isPaymentCompleted
+              ? 'paid'.tr(context)
+              : 'instant'.tr(context),
           badgeColor: _isPaymentCompleted
               ? const Color(0xFF4CAF50)
               : const Color(0xFF4CAF50),
@@ -347,7 +234,7 @@ class StepPaymentState extends State<StepPayment>
         ),
         const SizedBox(height: 16),
 
-        if (_selectedSubMethod != null && !_isPaymentCompleted)
+        if (!_isPaymentCompleted)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -382,9 +269,9 @@ class StepPaymentState extends State<StepPayment>
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
                   ),
-                  child: const Text(
-                    'Retry',
-                    style: TextStyle(
+                  child: Text(
+                    'retry'.tr(context),
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontFamily,
                       color: Colors.orange,
                       fontWeight: FontWeight.w700,
@@ -430,186 +317,9 @@ class StepPaymentState extends State<StepPayment>
   }
 }
 
-// ── Payment Selection Bottom Sheet ──────────────────────────────────────────
-class _PaymentSelectionBottomSheet extends StatelessWidget {
-  final int totalPrice;
-  final bool isDark;
-  final Function(PaymentMethod) onSelected;
-
-  const _PaymentSelectionBottomSheet({
-    required this.totalPrice,
-    required this.isDark,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0D0D1A) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 4,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[700] : Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'choose_payment_provider'.tr(context),
-            style: TextStyle(
-              fontFamily: AppTheme.fontFamily,
-              color: isDark ? Colors.white : AppTheme.kLightText,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'select_one_below'.tr(context),
-            style: TextStyle(
-              fontFamily: AppTheme.fontFamily,
-              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 24),
-          _PaymentOptionTile(
-            icon: Icons.account_balance_rounded,
-            title: 'ABA Payway',
-            subtitle: 'Pay with ABA Mobile',
-            color: const Color(0xFF0033A0),
-            isDark: isDark,
-            onTap: () => onSelected(PaymentMethod.aba),
-          ),
-          const SizedBox(height: 12),
-          _PaymentOptionTile(
-            icon: Icons.qr_code_2_rounded,
-            title: 'Bakong / KHQR',
-            subtitle: 'Scan with Bakong app',
-            color: const Color(0xFF0072CE),
-            isDark: isDark,
-            onTap: () => onSelected(PaymentMethod.bakong),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(fontFamily: AppTheme.fontFamily),
-              ),
-              child: Text(
-                'cancel'.tr(context),
-                style: TextStyle(
-                  fontFamily: AppTheme.fontFamily,
-                  color: isDark ? Colors.white70 : AppTheme.kLightText,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Payment Option Tile ──────────────────────────────────────────────────────
-class _PaymentOptionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _PaymentOptionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A2E) : AppTheme.kLightCardAlt,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      color: isDark ? Colors.white : AppTheme.kLightText,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      color: isDark
-                          ? AppTheme.kTextSub
-                          : AppTheme.kLightTextSub,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isDark ? AppTheme.kTextSub : AppTheme.kLightTextSub,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Payment Card (Single Option) ─────────────────────────────────────────────
+// ── Payment Card ─────────────────────────────────────────────────────────────
+// ── Payment Card ─────────────────────────────────────────────────────────────
 class _PaymentCard extends StatelessWidget {
-  final bool selected;
   final bool isPaymentCompleted;
   final AnimationController animController;
   final VoidCallback onTap;
@@ -623,7 +333,6 @@ class _PaymentCard extends StatelessWidget {
   final bool isDark;
 
   const _PaymentCard({
-    required this.selected,
     required this.isPaymentCompleted,
     required this.animController,
     required this.onTap,
@@ -645,15 +354,15 @@ class _PaymentCard extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected
+          color: isPaymentCompleted
               ? accentColor.withValues(alpha: 0.08)
               : (isDark ? AppTheme.kCardAlt : AppTheme.kLightCardAlt),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected
+            color: isPaymentCompleted
                 ? accentColor
                 : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
-            width: selected ? 1.8 : 1,
+            width: isPaymentCompleted ? 1.8 : 1,
           ),
         ),
         child: Row(
@@ -663,19 +372,31 @@ class _PaymentCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: selected
+                color: isPaymentCompleted
                     ? accentColor.withValues(alpha: 0.15)
                     : (isDark
                           ? const Color(0xFF1E1E2E)
                           : AppTheme.kLightCardAlt),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: selected
+                  color: isPaymentCompleted
                       ? accentColor.withValues(alpha: 0.4)
                       : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
                 ),
               ),
-              child: Center(child: icon),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Center(
+                  child: icon is Image
+                      ? Container(
+                          width: 52,
+                          height: 52,
+                          padding: const EdgeInsets.all(8),
+                          child: FittedBox(fit: BoxFit.contain, child: icon),
+                        )
+                      : icon,
+                ),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -688,7 +409,7 @@ class _PaymentCard extends StatelessWidget {
                         title,
                         style: TextStyle(
                           fontFamily: AppTheme.fontFamily,
-                          color: selected
+                          color: isPaymentCompleted
                               ? accentColor
                               : (isDark ? Colors.white70 : AppTheme.kLightText),
                           fontSize: 14,
@@ -747,23 +468,17 @@ class _PaymentCard extends StatelessWidget {
                 child: const Icon(Icons.check, color: Colors.white, size: 13),
               )
             else
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+              Container(
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: selected ? accentColor : Colors.transparent,
+                  color: Colors.transparent,
                   border: Border.all(
-                    color: selected
-                        ? accentColor
-                        : (isDark ? AppTheme.kBorder : AppTheme.kLightBorder),
+                    color: isDark ? AppTheme.kBorder : AppTheme.kLightBorder,
                     width: 2,
                   ),
                 ),
-                child: selected
-                    ? const Icon(Icons.check, color: Colors.white, size: 13)
-                    : null,
               ),
           ],
         ),

@@ -155,10 +155,6 @@ class BookingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
-                    // Additional booking info (optional)
-                    const SizedBox(height: 8),
-                    _bookingStatusRow(isDark),
                   ],
                 ),
               ),
@@ -318,68 +314,4 @@ class BookingCard extends StatelessWidget {
           ),
         ),
       );
-
-  // Optional: Add booking status row
-  Widget _bookingStatusRow(bool isDark) {
-    Color statusColor;
-    String statusText = booking.status;
-
-    switch (booking.status.toLowerCase()) {
-      case 'confirmed':
-        statusColor = Colors.green;
-        statusText = '✓ Confirmed';
-        break;
-      case 'pending':
-        statusColor = Colors.orange;
-        statusText = '⌛ Pending';
-        break;
-      case 'cancelled':
-        statusColor = Colors.red;
-        statusText = '✕ Cancelled';
-        break;
-      default:
-        statusColor = Colors.grey;
-    }
-
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: statusColor.withOpacity(0.3)),
-          ),
-          child: Text(
-            statusText,
-            style: TextStyle(
-              fontFamily: AppTheme.fontFamily,
-              color: statusColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        if (booking.payment != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.withOpacity(0.3)),
-            ),
-            child: Text(
-              '💰 \$${booking.payment!.amount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontFamily: AppTheme.fontFamily,
-                color: Colors.blue,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
