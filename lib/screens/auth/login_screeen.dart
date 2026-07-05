@@ -76,17 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await _tokenService.saveTokens(response.tokenModel);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Login successful!',
-              style: const TextStyle(fontFamily: AppTheme.fontFamily),
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {

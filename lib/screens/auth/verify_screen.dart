@@ -339,15 +339,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
     await _tokenService.saveTokens(response.tokenModel);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Login successful!',
-            style: const TextStyle(fontFamily: AppTheme.fontFamily),
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
       setState(() => _isLoading = false);
       Navigator.pushNamedAndRemoveUntil(
         context,
