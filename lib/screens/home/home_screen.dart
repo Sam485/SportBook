@@ -1,4 +1,3 @@
-// home_screen.dart - WITH AVATAR UPDATE FIX
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -518,7 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openLocationPicker() async {
-    final result = await showModalBottomSheet<String>(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -537,30 +536,37 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    if (result != null && result.isNotEmpty && mounted) {
+    if (result != null && mounted) {
+      // Extract the location data from the result map
+      final String locationLabel = result['label'] ?? _locationLabel;
+      final double lat = result['lat'] ?? _currentLat ?? _defaultLat;
+      final double lng = result['lng'] ?? _currentLng ?? _defaultLng;
+
+      // Update local state
       setState(() {
-        _locationLabel = result;
+        _locationLabel = locationLabel;
+        _currentLat = lat;
+        _currentLng = lng;
       });
 
+      // If user is logged in, update their profile
       if (_user != null) {
-        await _updateUserLocation(result);
+        await _updateUserLocation(locationLabel, lat, lng);
       } else {
-        if (_currentLat != null && _currentLng != null) {
-          await _saveLocationToPrefs(
-            lat: _currentLat!,
-            lng: _currentLng!,
-            label: result,
-          );
-        }
+        // Save location to preferences for guests
+        await _saveLocationToPrefs(lat: lat, lng: lng, label: locationLabel);
       }
 
-      if (_currentLat != null && _currentLng != null) {
-        await _refreshNearbyClubsWithUIUpdate(_currentLat!, _currentLng!);
-      }
+      // Refresh clubs with the new coordinates
+      await _refreshNearbyClubsWithUIUpdate(lat, lng);
     }
   }
 
-  Future<void> _updateUserLocation(String location) async {
+  Future<void> _updateUserLocation(
+    String location,
+    double lat,
+    double lng,
+  ) async {
     try {
       setState(() {
         _isLoading = true;
@@ -570,8 +576,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final updateDto = UpdateDto(
         fullName: _user?.fullName ?? '',
         location: location,
-        lat: _currentLat ?? 0.0,
-        lng: _currentLng ?? 0.0,
+        lat: lat,
+        lng: lng,
       );
 
       await _userService.updateProfile(updateDto);
@@ -579,32 +585,18 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _user = _userService.currentUser;
         _locationLabel = _user?.location ?? location;
-        _currentLat = _user?.lat;
-        _currentLng = _user?.lng;
+        _currentLat = _user?.lat ?? lat;
+        _currentLng = _user?.lng ?? lng;
         _isLoading = false;
         _isSkeletonLoading = false;
       });
 
-      if (_currentLat != null && _currentLng != null) {
-        await _saveLocationToPrefs(
-          lat: _currentLat!,
-          lng: _currentLng!,
-          label: location,
-        );
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Location updated successfully',
-              style: const TextStyle(fontFamily: AppTheme.fontFamily),
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      // Save to preferences
+      await _saveLocationToPrefs(
+        lat: _currentLat!,
+        lng: _currentLng!,
+        label: location,
+      );
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -615,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to update location',
+              'Failed to update location: ${e.toString()}',
               style: const TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             backgroundColor: Colors.red,

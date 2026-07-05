@@ -303,7 +303,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   void _confirm() {
     if (!_isDisposed && mounted) {
-      Navigator.pop(context, _resolvedLabel);
+      // Return a map with both label and coordinates
+      Navigator.pop(context, {
+        'label': _resolvedLabel,
+        'lat': _pinLocation.latitude,
+        'lng': _pinLocation.longitude,
+      });
     }
   }
 
