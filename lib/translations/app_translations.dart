@@ -200,6 +200,7 @@ class AppTranslations {
       'saved': 'Saved',
       'open_now': 'Open Now',
       'book_court': 'Book Court',
+      "more_clubs_coming_soon": "More clubs coming soon",
 
       // ---------------------- Settings Screen ----------------------------
       'settings_title': 'Profile',
@@ -726,6 +727,7 @@ class AppTranslations {
       'saved': 'បានរក្សាទុក',
       'open_now': 'កំពុងបើក',
       'book_court': 'កក់ទីលាន',
+      "more_clubs_coming_soon": "ក្លឹបបន្ថែមទៀតនឹងមកដល់ឆាប់ៗនេះ",
 
       // ---------------------- Settings Screen ----------------------------
       'settings_title': 'ប្រវត្តិរូប',

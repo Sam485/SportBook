@@ -1,4 +1,3 @@
-// main.dart
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +18,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase with proper error handling
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -49,21 +49,6 @@ void main() async {
 
   runApp(SportMateApp(navigatorKey: navigatorKey));
 }
-
-/// Initialize Firebase with proper error handling
-// Future<void> _initializeFirebase() async {
-//   try {
-//     // Initialize Firebase
-//     final initialized = await FirebaseConfig.initialize();
-
-//     if (initialized) {
-//       // Request notification permission only on supported platforms
-//       await FirebaseConfig.requestNotificationPermission();
-//     }
-//   } catch (e) {
-//     // App will continue without Firebase features
-//   }
-// }
 
 class SportMateApp extends StatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey;

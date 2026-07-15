@@ -1,4 +1,3 @@
-// screens/settings/settings_screen.dart - WITH AVATAR UPDATE FUNCTIONALITY
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
