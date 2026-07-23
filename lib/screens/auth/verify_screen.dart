@@ -386,9 +386,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final displayPhoneNumber = _phoneNumber.isNotEmpty
-        ? _phoneNumber
-        : _userData?.phone ?? '+855968877203';
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.kBg : AppTheme.kLightBg,
@@ -413,7 +410,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _buildHeader(isDark, displayPhoneNumber),
+                  _buildHeader(isDark),
                   const SizedBox(height: 32),
                   _buildFormCard(isDark),
                   const SizedBox(height: 20),
@@ -427,7 +424,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _buildHeader(bool isDark, String phoneNumber) {
+  Widget _buildHeader(bool isDark) {
     return Column(
       children: [
         Container(
@@ -469,24 +466,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
             fontFamily: AppTheme.fontFamily,
             color: isDark ? Colors.white60 : AppTheme.kLightTextSub,
             fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.kAccent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppTheme.kAccent.withValues(alpha: 0.2)),
-          ),
-          child: Text(
-            phoneNumber,
-            style: TextStyle(
-              fontFamily: AppTheme.fontFamily,
-              color: AppTheme.kAccent,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
           ),
         ),
       ],

@@ -548,17 +548,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _selectedAvatarImage = null;
           _isAvatarLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'avatar_updated'.tr(context),
-              style: const TextStyle(fontFamily: AppTheme.fontFamily),
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
       }
     } catch (e) {
       if (!_isDisposed && mounted) {
