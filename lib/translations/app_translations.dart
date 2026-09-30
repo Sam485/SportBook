@@ -221,6 +221,7 @@ class AppTranslations {
       'enter_valid_email': 'Please enter a valid email',
       'history_bookings': 'History Bookings',
       'no_booking_history': 'No booking history',
+      'no_upcoming_bookings': 'No upcoming booking',
       'past_bookings_appear_here': 'Your past bookings will appear here',
       'completed': 'Completed',
       'security': 'Security',
@@ -955,6 +956,7 @@ class AppTranslations {
       'choose_from_library': 'ជ្រើសរើសពីបណ្ណាល័យ',
       'take_a_photo': 'ថតរូប',
       'remove_photo': 'លុបរូបថត',
+      'no_upcoming_bookings': 'មិនមានការកក់ទេ',
       'create_profile_title': 'បង្កើតប្រវត្តិរូបរបស់អ្នក',
       'create_profile_desc':
           'កំណត់ប្រវត្តិរូបរបស់អ្នកដើម្បីឱ្យអ្នកលេងផ្សេងទៀត\nអាចស្វែងរក និងភ្ជាប់ជាមួយអ្នកបាន',
