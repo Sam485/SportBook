@@ -19,6 +19,8 @@ import 'package:sportbook/feature/Category/repository/category_repository.dart';
 import 'package:sportbook/feature/Notification/repository/notification_repository.dart';
 import 'package:sportbook/feature/Notification/service/notification_service.dart';
 import 'package:sportbook/feature/Notification/service/notification_service_imp.dart';
+import 'package:sportbook/feature/Slot/Repository/slot_repository.dart';
+import 'package:sportbook/feature/Slot/Service/slot_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service.dart';
 import 'package:sportbook/feature/SportClub/Service/sport_club_service_imp.dart';
 import 'package:sportbook/feature/SportClub/repository/sport_club_repository.dart';
@@ -99,6 +101,14 @@ Future<void> setupServiceLocator() async {
   );
   getIt.registerLazySingleton<UserService>(
     () => UserServiceImp(getIt<UserApiRepository>()),
+  );
+
+  // Slot
+  getIt.registerLazySingleton<SlotRepository>(
+    () => SlotRepository(getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<SlotService>(
+    () => SlotService(getIt<SlotRepository>()),
   );
 
   // Notification

@@ -44,6 +44,31 @@ class SlotService extends ChangeNotifier {
     }
   }
 
+  Future<List<SlotModel>> fetchSlotsByCategory({
+    required int sportClubId,
+    required int categoryId,
+  }) async {
+    _isLoading = true;
+    _error = '';
+    notifyListeners();
+
+    try {
+      final dto = await _repository.getSlotsBySportClubId(
+        sportClubId,
+        categoryId,
+      );
+      _slots = dto.data;
+      _isLoading = false;
+      notifyListeners();
+      return _slots;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<SlotModel> getSlotById(int slotId) async {
     try {
       return await _repository.getSlotById(slotId);

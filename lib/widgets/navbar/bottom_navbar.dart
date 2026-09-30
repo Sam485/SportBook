@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:sportbook/providers/theme_provider.dart';
 import 'package:sportbook/translations/app_translations.dart';
@@ -39,40 +38,41 @@ class AppBottomNavBar extends StatelessWidget {
         ),
         child: SafeArea(
           top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            child: GNav(
-              gap: 8,
-              activeColor: Colors.black, // ✅ Always black when active
-              color: Colors.grey, // ✅ Grey when inactive
-              iconSize: 22,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              duration: const Duration(milliseconds: 350),
-              tabBackgroundColor: AppTheme.kAccent,
-              selectedIndex: selectedIndex,
-              onTabChange: onTabChange,
-              textStyle: const TextStyle(
-                fontFamily: AppTheme.fontFamily,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black, // ✅ Always black text
-              ),
-              tabs: [
-                GButton(icon: Icons.home_rounded, text: 'home'.tr(context)),
-                GButton(
-                  icon: Icons.search_rounded,
-                  text: 'explore'.tr(context),
-                ),
-                GButton(
-                  icon: Icons.calendar_month_rounded,
-                  text: 'bookings'.tr(context),
-                ),
-                GButton(icon: Icons.person_rounded, text: 'user'.tr(context)),
-              ],
+          child: BottomNavigationBar(
+            currentIndex: selectedIndex,
+            onTap: onTabChange,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppTheme.kAccent,
+            unselectedItemColor: isDark ? Colors.grey[400] : Colors.grey[600],
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 12,
+            ),
+            items: [
+              _buildNavItem(icon: Icons.home, label: 'home'.tr(context)),
+              _buildNavItem(icon: Icons.search, label: 'explore'.tr(context)),
+              _buildNavItem(icon: Icons.storage, label: 'bookings'.tr(context)),
+              _buildNavItem(
+                icon: Icons.person_rounded,
+                label: 'profile'.tr(context),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  BottomNavigationBarItem _buildNavItem({
+    required IconData icon,
+    required String label,
+  }) {
+    return BottomNavigationBarItem(icon: Icon(icon, size: 24), label: label);
   }
 }

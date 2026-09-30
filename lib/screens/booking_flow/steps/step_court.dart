@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:sportbook/core/di/service_locator.dart';
 import 'package:sportbook/core/theme.dart';
+import 'package:sportbook/feature/Category/service/category_service.dart';
+import 'package:sportbook/feature/Slot/Model/slot_model.dart';
+import 'package:sportbook/feature/Slot/Service/slot_service.dart';
 import 'package:sportbook/feature/SportClub/model/sport_club_model.dart';
-import 'package:sportbook/feature/SportClub/model/dto/slot_dto.dart';
 import 'package:sportbook/translations/app_translations.dart';
 
-class StepCourt extends StatelessWidget {
+class StepCourt extends StatefulWidget {
   final VoidCallback onNext;
   final Function(int) onCourtSelected;
   final int? selectedCourt;
@@ -21,33 +24,141 @@ class StepCourt extends StatelessWidget {
   });
 
   @override
+  State<StepCourt> createState() => _StepCourtState();
+}
+
+class _StepCourtState extends State<StepCourt> {
+  List<SlotModel> _filteredSlots = [];
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAndFilterSlots();
+  }
+
+  @override
+  void didUpdateWidget(StepCourt oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.club != widget.club ||
+        oldWidget.selectedCategory != widget.selectedCategory) {
+      _loadAndFilterSlots();
+    }
+  }
+
+  Future<void> _loadAndFilterSlots() async {
+    if (widget.club == null || widget.selectedCategory == null) {
+      setState(() {
+        _isLoading = false;
+        _filteredSlots = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
+
+    try {
+      final slotService = getIt<SlotService>();
+      final categoryService = getIt<CategoryService>();
+
+      // Get category ID
+      int categoryId = 0;
+      final getAllCategoryDto = await categoryService.getAllCategory();
+      for (var category in getAllCategoryDto.data) {
+        if (category.name == widget.selectedCategory) {
+          categoryId = category.id;
+          break;
+        }
+      }
+
+      // Fetch slots from API
+      final fetchedSlots = await slotService.fetchSlotsByCategory(
+        sportClubId: widget.club!.id,
+        categoryId: categoryId,
+      );
+
+      // Filter: Only show slots that exist in BOTH club.slots AND fetchedSlots
+      final clubSlotIds =
+          widget.club!.slots?.map((slot) => slot.id).toSet() ?? {};
+      final fetchedSlotIds = fetchedSlots.map((slot) => slot.id).toSet();
+
+      // Get intersection of both sets
+      final validSlotIds = clubSlotIds.intersection(fetchedSlotIds);
+
+      // Filter fetched slots to only those that exist in the club's slots
+      setState(() {
+        _filteredSlots = fetchedSlots
+            .where((slot) => validSlotIds.contains(slot.id))
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading slots: $e');
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Get courts from club slots - ONLY from API
-    List<SlotDto> slots = [];
+    // Show loading state
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator(color: AppTheme.kAccent));
+    }
+
+    // Show error state
+    if (_hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading courts',
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
+                color: isDark ? Colors.white : AppTheme.kLightText,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _loadAndFilterSlots,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Extract court info from filtered slots
     List<int> courtIds = [];
     List<String> courtImages = [];
     List<String> courtNames = [];
     List<int> courtPrices = [];
     List<bool> courtAvailability = [];
 
-    if (club != null && club!.slots != null && club!.slots!.isNotEmpty) {
-      slots = club!.slots!;
-
-      // Extract court info from slots
-      for (var slot in slots) {
-        courtIds.add(slot.id);
-        courtNames.add(slot.name);
-        courtPrices.add(slot.price);
-        courtAvailability.add(slot.isAvailalbe);
-        if (slot.imageUrl.isNotEmpty) {
-          courtImages.add(slot.imageUrl);
-        }
+    for (var slot in _filteredSlots) {
+      courtIds.add(slot.id);
+      courtNames.add(slot.name);
+      courtPrices.add(slot.price.toInt());
+      courtAvailability.add(slot.isAvailable);
+      if (slot.imageUrl.isNotEmpty) {
+        courtImages.add(slot.imageUrl);
       }
     }
 
-    // If no slots from API, show empty state
+    // If no matching slots, show empty state
     if (courtIds.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -113,7 +224,7 @@ class StepCourt extends StatelessWidget {
       );
     }
 
-    final sport = selectedCategory ?? '';
+    final sport = widget.selectedCategory ?? '';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -211,7 +322,7 @@ class StepCourt extends StatelessWidget {
       itemCount: courtIds.length,
       itemBuilder: (_, i) {
         final courtId = courtIds[i];
-        final sel = selectedCourt == courtId;
+        final sel = widget.selectedCourt == courtId;
         final img = images.isNotEmpty ? images[i % images.length] : '';
         final name = names.isNotEmpty ? names[i] : 'Court ${i + 1}';
         final price = prices.isNotEmpty ? prices[i] : 0.0;
@@ -220,8 +331,11 @@ class StepCourt extends StatelessWidget {
         return GestureDetector(
           onTap: isAvailable
               ? () {
-                  onCourtSelected(courtId);
-                  Future.delayed(const Duration(milliseconds: 200), onNext);
+                  widget.onCourtSelected(courtId);
+                  Future.delayed(
+                    const Duration(milliseconds: 200),
+                    widget.onNext,
+                  );
                 }
               : null,
           child: AnimatedContainer(

@@ -88,7 +88,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
       children: [
         CarouselSlider(
           options: CarouselOptions(
-            height: 100,
+            height: 140,
             autoPlay: true,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayAnimationDuration: const Duration(milliseconds: 800),
@@ -125,7 +125,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                         : Image.network(
                             banner.imageUrl,
                             width: MediaQuery.of(context).size.width,
-                            fit: BoxFit.fitWidth,
+                            fit: BoxFit.fill,
                             errorBuilder: (_, _, _) {
                               // Mark this banner as having an error
                               _hasError[index] = true;
